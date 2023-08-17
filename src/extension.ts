@@ -356,7 +356,7 @@ async function rebuildIndexDatabase() {
 
 	}else 
 	// LOAD FROM DSC
-	if (option.label === "Reload from DSC file"){
+	if (option.label.includes("Reload from DSC file")){
 		// Pick build folder
 		let dscPath = await vscode.window.showOpenDialog({defaultUri:vscode.Uri.file(gWorkspacePath), canSelectFiles:true, canSelectFolders:false, canSelectMany:false,
 		filters:{
