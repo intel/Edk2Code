@@ -4,6 +4,7 @@
   "description": "EDK2 code support",
   "version": "0.0.1",
   "publisher": "intel-corporation",
+  "homepage": "https://github.com/intel/Edk2Code/wiki",
   "repository": {
     "type": "git",
     "url": "https://github.com/intel/Edk2Code"
