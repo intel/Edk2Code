@@ -28,17 +28,17 @@ export class ProjectReport {
             async message => {
                 
                 switch (message.command) {
-                    case 'finishCmd':
                     case 'reloadCmd':
-                        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-                        
                         // get defines in message.commands and populate settingsx.defines
                         for (const setDefine of message.data) {
                             if(setDefine.value.trim()!== "???" && setDefine.value.trim()!==""){
                                 await gConfigAgent.setBuildDefines(setDefine.name, setDefine.value);
                             }
-                            
                         }
+                    case 'finishCmd':
+                        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+                        
+
                         let settingsx = gEdkDatabase.getSettings();
                         gEdkDatabase.resetVariables();
                         await gEdkDatabase.clearWorkspace();
