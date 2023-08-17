@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "source.edk2_uni",
+  "patterns": [
+    {
+      "include": "#edk2_uni_color"
+    },
+    {
+      "include": "source.c"
+    }
+  ],
+  "repository": {
+    "edk2_uni_color": {
+      "patterns": [
+        {
+          "name": "variable.language.edk2_uni",
+          "match": "(?<=\\#)(string|language|langdef|fontdef|font)"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.edk2_uni"
+}

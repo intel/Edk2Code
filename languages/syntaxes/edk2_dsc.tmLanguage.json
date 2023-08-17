@@ -1,0 +1,76 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "source.edk2_dsc",
+  "patterns": [
+    {
+      "include": "#edk2_dsc_color"
+    }
+  ],
+  "repository": {
+    "edk2_dsc_color": {
+      "patterns": [
+        {
+          "name": "variable.language.edk2_dsc",
+          "match": "((?<!\\w)(DSC_SPECIFICATION|PLATFORM_GUID|PLATFORM_VERSION|PLATFORM_NAME|SKUID_IDENTIFIER|SUPPORTED_ARCHITECTURES|BUILD_TARGETS))(?!\\w)"
+        },
+        {
+          "name": "variable.language.edk2_dsc",
+          "match": "((?<!\\w)(OUTPUT_DIRECTORY|FLASH_DEFINITION|BUILD_NUMBER|FIX_LOAD_TOP_MEMORY_ADDRESS|TIME_STAMP_FILE|DEFINE|RFC_LANGUAGES|ISO_LANGUAGES|VPD_TOOL_GUID|PCD_INFO_GENERATION|PREBUILD|POSTBUILD))(?!\\w)"
+        },
+        {
+          "name": "variable.parameter.edk2_dsc",
+          "match": "[\\w/-]+\\.inf"
+        },
+        {
+          "name": "variable.language.edk2_dsc",
+          "match": "(!)(ifdef|elseif|ifndef|if|endif|include|else)"
+        },
+        {
+          "name": "constant.numeric.edk2_dsc",
+          "match": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+        },
+        {
+          "name": "constant.numeric.edk2_dsc",
+          "match": "(?<!\\w)\\.?\\d(?:(?:[0-9a-zA-Z_\\.]|')|(?<=[eEpP])[+-])*"
+        },
+        {
+          "name": "entity.name.type.edk2_dsc",
+          "match": "((?<!\\w)(UINT64|UINT32|UINT16|UINT8|UINTN|BOOLEAN|VOID))(?!\\w)"
+        },
+        {
+          "name": "constant.language.edk2_dsc",
+          "match": "\\bTRUE|FALSE|NULL\\b"
+        },
+        {
+          "name": "string.quoted.double.edk2_dsc",
+          "begin": "L\"|\"",
+          "end": "\""
+        },
+        {
+          "begin": "\\[",
+          "end": "\\]",
+          "patterns": [
+            {
+              "name": "string.quoted.double.edk2_dsc",
+              "match": "[a-zA-Z0-9.]+"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.edk2_dsc",
+          "match": "(?<=<)[a-zA-Z0-9.]+(?=>)"
+        },
+        {
+          "name": "support.function.edk2_dsc",
+          "match": "(?<=\\$\\()[a-zA-Z0-9_]+(?=\\))"
+        },
+        {
+          "name": "comment.line.number-sign.edk2_dsc",
+          "begin": "#",
+          "end": "\n"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.edk2_dsc"
+}

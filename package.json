@@ -1,0 +1,364 @@
+{
+  "name": "edk2code",
+  "displayName": "Edk2code",
+  "description": "EDK2 code support",
+  "version": "0.0.1",
+  "publisher": "intel-corporation",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/intel/Edk2Code"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.77.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "edk2code.rebuildIndex",
+        "title": "EDK2: Rebuild index database"
+      },
+      {
+        "command": "edk2code.reloadIndex",
+        "title": "EDK2: Reload index database"
+      },
+      {
+        "command": "edk2code.loadBuildConfiguration",
+        "title": "EDK2: Load build configuration file"
+      },
+      {
+        "command": "edk2code.gotoDefinition",
+        "title": "EDK2: Go to Definition "
+      },
+      {
+        "command": "edk2code.gotoDefinitionInput",
+        "title": "EDK2: Go to Definition Input"
+      },
+      {
+        "command": "edk2code.searchCcode",
+        "title": "EDK2: Search C code"
+      },
+      {
+        "command": "edk2code.openFile",
+        "title": "EDK2: Open source file "
+      },
+      {
+        "command": "edk2code.openLib",
+        "title": "EDK2: Open Library"
+      },
+      {
+        "command": "edk2code.openModule",
+        "title": "EDK2: Open Module "
+      },
+      {
+        "command": "edk2code.debugCommand",
+        "title": "EDK2: Debug command"
+      },
+      {
+        "command": "edk2code.showLibraryTree",
+        "title": "EDK2: Show library tree"
+      },
+      {
+        "command": "edk2code.saveBuildConfiguration",
+        "title": "EDK2: Save build configuration file"
+      },
+      {
+        "command": "edk2code.gotoInf",
+        "title": "EDK2: Goto Inf"
+      },
+      {
+        "command": "edk2code.dscUsage",
+        "title": "EDK2: Goto DSC declaration"
+      },
+      {
+        "command": "edk2code.libUsage",
+        "title": "EDK2: Show Library usage"
+      },
+      {
+        "command": "edk2code.dscInclusion",
+        "title": "EDK2: Goto DSC inclusion"
+      },
+      {
+        "command": "edk2code.showReferences",
+        "title": "EDK2: Show references"
+      },
+      {
+        "command": "edk2code.viewWarnings",
+        "title": "EDK2: view warnings window"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Edk2Code",
+        "properties": {
+          "edk2code.logLevel": {
+            "order": 1,
+            "type": "string",
+            "markdownDescription": "Debug log level",
+            "default": "None",
+            "enum": [
+              "None",
+              "Error",
+              "Warning",
+              "Info",
+              "Verbose",
+              "Debug"
+            ]
+          },
+          "edk2code.dimUnusedLibraries": {
+            "order": 2,
+            "type": "boolean",
+            "markdownDescription": "Dims unused libraries on DSC files. *This gets disabled automatically when database is build from DSC file*",
+            "default": true
+          },
+          "edk2code.generateIgnoreFile": {
+            "order": 2,
+            "type": "boolean",
+            "markdownDescription": "Generate `.ignore` file. This file reduce the scope of files consumed by vscode commands as `search` or `open file`",
+            "default": true
+          },
+          "edk2code.showEdk2LanguageWarnings": {
+            "order": 2,
+            "type": "boolean",
+            "markdownDescription": "Show Edk2 Language warnings",
+            "default": true
+          },
+          "edk2code.mainDscFile": {
+            "order": 3,
+            "type": "array",
+            "markdownDescription": "EDK2 Main DSC file for project",
+            "default": [],
+            "items": {
+              "type": "string"
+            }
+          },
+          "edk2code.buildDefines": {
+            "order": 4,
+            "type": "array",
+            "markdownDescription": "EDK2 Build DEFINEs. Format `{key}={value}`",
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "pattern": ".+?\\=.+"
+          },
+          "edk2code.buildPackagePaths": {
+            "order": 5,
+            "type": "array",
+            "markdownDescription": "EDK2 build PACKAGE_PATH list",
+            "default": [],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "detailsView",
+          "name": "Edk2",
+          "type": "tree"
+        }
+      ]
+    },
+    "menus": {
+      "editor/title": [],
+      "view/title": [],
+      "view/item/context": [],
+      "editor/context": [
+        {
+          "command": "edk2code.gotoDefinition",
+          "group": "navigation",
+          "when": "editorLangId == c"
+        },
+        {
+          "command": "edk2code.showLibraryTree",
+          "group": "navigation",
+          "when": "editorLangId == edk2_inf"
+        },
+        {
+          "command": "edk2code.gotoInf",
+          "group": "navigation",
+          "when": "editorLangId == c"
+        },
+        {
+          "command": "edk2code.dscUsage",
+          "group": "navigation",
+          "when": "editorLangId == edk2_inf"
+        },
+        {
+          "command": "edk2code.libUsage",
+          "group": "navigation",
+          "when": "editorLangId == edk2_inf"
+        },
+        {
+          "command": "edk2code.dscInclusion",
+          "group": "navigation",
+          "when": "editorLangId == edk2_dsc"
+        },
+        {
+          "command": "edk2code.showReferences",
+          "group": "navigation",
+          "when": "editorLangId == edk2_inf"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "edk2code.gotoDefinition",
+        "key": "ctrl+. g"
+      }
+    ],
+    "languages": [
+      {
+        "id": "asl",
+        "aliases": [
+          "ASL",
+          "asl"
+        ],
+        "extensions": [
+          ".asl",
+          ".asi",
+          ".aslc",
+          ".i",
+          ".ii",
+          ".iii",
+          ".iiii"
+        ],
+        "configuration": "./languages/conf/acpi.conf.json"
+      },
+      {
+        "id": "edk2_build_report",
+        "aliases": [
+          "Edk_buildReport"
+        ],
+        "extensions": [
+          ".log"
+        ],
+        "configuration": "./languages/conf/edk2_common.conf.json"
+      },
+      {
+        "id": "edk2_dsc",
+        "extensions": [
+          ".dsc",
+          ".dsc.inc"
+        ],
+        "configuration": "./languages/conf/edk2_common.conf.json"
+      },
+      {
+        "id": "edk2_dec",
+        "extensions": [
+          ".dec",
+          ".dec.inc",
+          ".dec.template"
+        ],
+        "configuration": "./languages/conf/edk2_common.conf.json"
+      },
+      {
+        "id": "edk2_vfr",
+        "extensions": [
+          ".vfr",
+          ".Vfr",
+          ".hfr"
+        ],
+        "configuration": "./languages/conf/edk2_vfr.conf.json"
+      },
+      {
+        "id": "edk2_fdf",
+        "extensions": [
+          ".fdf",
+          ".fdf.inc"
+        ],
+        "configuration": "./languages/conf/edk2_common.conf.json"
+      },
+      {
+        "id": "edk2_inf",
+        "extensions": [
+          ".inf"
+        ],
+        "configuration": "./languages/conf/edk2_common.conf.json"
+      },
+      {
+        "id": "edk2_uni",
+        "extensions": [
+          ".uni"
+        ],
+        "configuration": "./languages/conf/edk2_uni.conf.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "asl",
+        "scopeName": "source.asl",
+        "path": "./languages/syntaxes/asl.tmLanguage.json"
+      },
+      {
+        "language": "edk2_dsc",
+        "scopeName": "source.edk2_dsc",
+        "path": "./languages/syntaxes/edk2_dsc.tmLanguage.json"
+      },
+      {
+        "language": "edk2_dec",
+        "scopeName": "source.edk2_dec",
+        "path": "./languages/syntaxes/edk2_dec.tmLanguage.json"
+      },
+      {
+        "language": "edk2_fdf",
+        "scopeName": "source.edk2_fdf",
+        "path": "./languages/syntaxes/edk2_fdf.tmLanguage.json"
+      },
+      {
+        "language": "edk2_inf",
+        "scopeName": "source.edk2_inf",
+        "path": "./languages/syntaxes/edk2_inf.tmLanguage.json"
+      },
+      {
+        "language": "edk2_uni",
+        "scopeName": "source.edk2_uni",
+        "path": "./languages/syntaxes/edk2_uni.tmLanguage.json"
+      },
+      {
+        "language": "edk2_vfr",
+        "scopeName": "source.edk2_vfr",
+        "path": "./languages/syntaxes/edk2_vfr.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.77.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.1",
+    "@typescript-eslint/parser": "^5.59.1",
+    "@vscode/test-electron": "^2.2.3",
+    "eslint": "^8.39.0",
+    "fast-glob": "^3.2.12",
+    "mocha": "^10.2.0",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@bendera/vscode-webview-elements": "^0.11.0",
+    "@vscode/codicons": "0.0.32",
+    "fast-glob": "^3.2.12",
+    "vscode-ripgrep": "1.13.2"
+  }
+}

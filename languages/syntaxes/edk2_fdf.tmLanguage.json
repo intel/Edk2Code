@@ -1,0 +1,87 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "source.edk2_fdf",
+  "patterns": [
+    {
+      "include": "#edk2_fdf_color"
+    }
+  ],
+  "repository": {
+    "edk2_fdf_color": {
+      "patterns": [
+        {
+          "//": "TO-DO: Too much specific keywords in FDF, should revisit for finding better way of color syntax."
+        },
+        {
+          "name": "variable.language.edk2_fdf",
+          "match": "((?<!\\w)(FD|BaseAddress|Size|ErasePolarity|BlockSize|NumBlocks|RuleOverride|FV|SET|INF|USE|FILE|DATA))(?!\\w)"
+        },
+        {
+          "name": "variable.language.edk2_fdf",
+          "match": "((?<!\\w)(FvBaseAddress|FvForceRebase|FvAlignment|FileSystemGuid|FvNameGuid|FvUsedSizeEnable|FvNameString))(?!\\w)"
+        },
+        {
+          "name": "variable.language.edk2_fdf",
+          "match": "((?<!\\w)(MEMORY_MAPPED|LOCK_CAP|LOCK_STATUS|WRITE_LOCK_CAP|WRITE_LOCK_STATUS|WRITE_ENABLED_CAP|WRITE_DISABLED_CAP|WRITE_STATUS|STICKY_WRITE|WRITE_POLICY_RELIABLE|READ_LOCK_CAP|READ_LOCK_STATUS|READ_ENABLED_CAP|READ_DISABLED_CAP|READ_STATUS|ERASE_POLARITY))(?!\\w)"
+        },
+        {
+          "name": "support.type.edk2_fdf",
+          "match": "((?<!\\w)(SEC|PEI_CORE|PEIM|FREEFORM|PEI_DXE_COMBO|DRIVER|DXE_CORE|APPLICATION|SMM_CORE|SMM))(?!\\w)"
+        },
+        {
+          "name": "support.type.edk2_fdf",
+          "match": "((?<!\\w)(SECTION|GUIDED|VERSION|UI|FV_IMAGE|COMPAT16|PE32|PIC|TE|RAW|DXE_DEPEX|SMM|DEPEX|PEI_DEPEX))(?!\\w)"
+        },
+        {
+          "name": "variable.parameter.edk2_fdf",
+          "match": "[\\w/-]+\\.[\\w]+"
+        },
+        {
+          "name": "keyword.control.edk2_fdf",
+          "match": "(!)(ifdef|ifndef|if|endif|include|else)"
+        },
+        {
+          "name": "constant.numeric.edk2_fdf",
+          "match": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+        },
+        {
+          "name": "constant.numeric.edk2_fdf",
+          "match": "(?<!\\w)\\.?\\d(?:(?:[0-9a-zA-Z_\\.]|')|(?<=[eEpP])[+-])*"
+        },
+        {
+          "name": "constant.language.edk2_fdf",
+          "match": "((?<!\\w)TRUE|FALSE|NULL)(?!\\w)"
+        },
+        {
+          "name": "string.quoted.double.edk2_fdf",
+          "begin": "L\"|\"",
+          "end": "\""
+        },
+        {
+          "begin": "\\[",
+          "end": "\\]",
+          "patterns": [
+            {
+              "name": "string.quoted.double.edk2_fdf",
+              "match": "[a-zA-Z0-9.]+"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.edk2_fdf",
+          "match": "(?<=<)[a-zA-Z0-9.]+(?=>)"
+        },
+        {
+          "name": "support.function.edk2_fdf",
+          "match": "(?<=\\$\\()[a-zA-Z0-9_]+(?=\\))"
+        },
+        {
+          "name": "comment.line.number-sign.edk2_fdf",
+          "begin": "#|\/\/",
+          "end": "\n"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.edk2_fdf"
+}

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "source.edk2_inf",
+  "patterns": [
+    {
+      "include": "#edk2_inf_color"
+    }
+  ],
+  "repository": {
+    "edk2_inf_color": {
+      "patterns": [
+        {
+          "name": "variable.language.edk2_inf",
+          "match": "((?<!\\w)(INF_VERSION|BASE_NAME|EDK_RELEASE_VERSION|PI_SPECIFICATION_VERSION|UEFI_SPECIFICATION_VERSION|FILE_GUID|MODULE_TYPE|BUILD_NUMBER|VERSION_STRING|MODULE_UNI_FILE|LIBRARY_CLASS|PCD_IS_DRIVER|ENTRY_POINT|UNLOAD_IMAGE|CONSTRUCTOR|DESTRUCTOR|SHADOW|PCI_DEVICE_ID|PCI_VENDOR_ID|PCI_CLASS_CODE|PCI_COMPRESS|UEFI_HII_RESOURCE_SECTION|DEFINE|SPEC|CUSTOM_MAKEFILE|DPX_SOURCE))(?!\\w)"
+        },
+        {
+          "name": "variable.language.edk2_inf",
+          "match": "((?<!\\w)(DXE_CORE|PEIM|PEI_CORE|SEC|DXE_DRIVER|DXE_RUNTIME_DRIVER|DXE_SAL_DRIVER|DXE_SMM_DRIVER|SMM_CORE|UEFI_APPLICATION|UEFI_DRIVER|USER_DEFINED|HOST_APPLICATION|MM_CORE_STANDALONE|MM_STANDALONE))(?!\\w)"
+        },
+        {
+          "name": "variable.parameter.edk2_inf",
+          "match": "[\\w/-]+\\.(dec|c|uni|hfr|h|vfr|Vfr|asm|nasm|S|asl|aslc)"
+        },
+        {
+          "name": "constant.numeric.edk2_inf",
+          "match": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+        },
+        {
+          "name": "constant.language.edk2_inf",
+          "match": "((?<!\\w)TRUE|FALSE|NULL)(?!\\w)"
+        },
+        {
+          "name": "string.quoted.double.edk2_inf",
+          "begin": "L\"|\"",
+          "end": "\""
+        },
+        {
+          "begin": "\\[",
+          "end": "\\]",
+          "patterns": [
+            {
+              "name": "string.quoted.double.edk2_inf",
+              "match": "[a-zA-Z0-9.]+"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.edk2_inf",
+          "match": "(?<=<)[a-zA-Z0-9.]+(?=>)"
+        },
+        {
+          "name": "support.function.edk2_inf",
+          "match": "(?<=\\$\\()[a-zA-Z0-9_]+(?=\\))"
+        },
+        {
+          "name": "comment.line.number-sign.edk2_inf",
+          "begin": "#",
+          "end": "\n"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.edk2_inf"
+}

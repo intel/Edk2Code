@@ -1,0 +1,72 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "source.edk2_dec",
+  "patterns": [
+    {
+      "include": "#edk2_dec_color"
+    }
+  ],
+  "repository": {
+    "edk2_dec_color": {
+      "patterns": [
+        {
+          "name": "variable.language.edk2_dec",
+          "match": "((?<!\\w)(PACKAGE_NAME|PACKAGE_GUID|PACKAGE_VERSION|PACKAGE_UNI_FILE|DEC_SPECIFICATION))(?!\\w)"
+        },
+        {
+          "name": "variable.parameter.edk2_dec",
+          "match": "[\\w/-]+\\.h"
+        },
+        {
+          "name": "keyword.control.edk2_dec",
+          "match": "((?<!\\w)DEFINE)(?!\\w)|(?<=!)(ifdef|ifndef|if|endif|include|else)"
+        },
+        {
+          "name": "constant.numeric.edk2_dec",
+          "match": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+        },
+        {
+          "name": "constant.numeric.edk2_dec",
+          "match": "(?<!\\w)\\.?\\d(?:(?:[0-9a-zA-Z_\\.]|')|(?<=[eEpP])[+-])*"
+        },
+        {
+          "name": "entity.name.type.edk2_dec",
+          "match": "((?<!\\w)(UINT64|UINT32|UINT16|UINT8|UINTN|BOOLEAN|VOID))(?!\\w)"
+        },
+        {
+          "name": "constant.language.edk2_dec",
+          "match": "((?<!\\w)TRUE|FALSE|NULL)(?!\\w)"
+        },
+        {
+          "name": "string.quoted.double.edk2_dec",
+          "begin": "L\"|\"",
+          "end": "\""
+        },
+        {
+          "begin": "\\[",
+          "end": "\\]",
+          "patterns": [
+            {
+              "name": "string.quoted.double.edk2_dec",
+              "match": "[a-zA-Z0-9.]+"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.edk2_dec",
+          "match": "(?<=<)[a-zA-Z0-9.]+(?=>)"
+        },
+        {
+          "name": "support.function.edk2_dec",
+          "match": "(?<=\\$\\()[a-zA-Z0-9_]+(?=\\))"
+        },
+        {
+          "name": "comment.line.number-sign.edk2_dec",
+          "begin": "#",
+          "end": "\n"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.edk2_dec"
+}

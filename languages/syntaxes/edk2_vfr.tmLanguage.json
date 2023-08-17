@@ -1,0 +1,48 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "source.edk2_vfr",
+  "patterns": [
+    {
+      "include": "#edk2_vfr_color"
+    },
+    {
+      "include": "source.c"
+    }
+  ],
+  "repository": {
+    "edk2_vfr_color": {
+      "patterns": [
+        {
+          "name": "variable.language.edk2_vfr",
+          "match": "((?<!\\w)(endformset|formset|subtitle|title|class|subclass|help|varstore|efivarstore|name|classguid|guid|attribute|formid|form|prompt|flags|key|value|endform|text|label|string|questionid|write|set|cond|map))(?!\\w)"
+        },
+        {
+          "name": "variable.language.edk2_vfr",
+          "match": "((?<!\\w)(minsize|maxsize|endstring|numeric|endnumeric|step|minimum|maximum|oneof|endoneof|option|goto|varid|default|defaultstore|checkbox|endcheckbox|date|year|month|day|enddate|time|hour|minute|second|endtime|timeout))(?!\\w)"
+        },
+        {
+          "name": "variable.language.edk2_vfr",
+          "match": "((?<!\\w)(suppressif|grayoutif|warningif|inconsistentif|endif|ideqval|ideqvallist))(?!\\w)"
+        },
+        {
+          "name": "support.function.edk2_vfr",
+          "match": "((?<!\\w)(INTERACTIVE|DEFAULT|MANUFACTURING|RESET_REQUIRED|CHECKBOX_DEFAULT))(?!\\w)"
+        },
+        {
+          "name": "variable.parameter.edk2_vfr",
+          "match": "[\\w-]+\\.[\\w-]+"
+        },
+        {
+          "name": "constant.numeric.edk2_vfr",
+          "match": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+        },
+        {
+          "name": "string.quoted.double.edk2_vfr",
+          "begin": "L\"",
+          "end": "\""
+        }
+      ]
+    }
+  },
+  "scopeName": "source.edk2_vfr"
+}
