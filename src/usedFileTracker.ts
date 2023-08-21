@@ -12,6 +12,12 @@ export class FileUseWarning {
     }
 
     async fileOpened() {
+
+        if(!gEdkDatabase.parseComplete){
+            // Skip if source hasn't been indexed
+            return;
+        }
+
         // Get opened file
         var openedFilePath = vscode.window.activeTextEditor?.document.uri.fsPath;
         if (openedFilePath === undefined) { return; }

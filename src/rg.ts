@@ -6,14 +6,14 @@ import path = require("path");
 
 
 
-export async function rgSearch(text:string, filesPath:string[]){
+export async function rgSearch(text:string, filesPath:string[], ){
     return new Promise<Location[]>(async (resolve, reject) => {
         
-        let command = `${rgPath} ${text} `;
+        let command = `${rgPath} ${text}  `;
         for (const f of filesPath) {
             command += makeRelativeToWs(f) + " ";
         }
-        command += "--hidden --follow --crlf --fixed-strings --no-config --json";
+        command += " --hidden --follow --crlf --no-config --json -- ./";
         gDebugLog.verbose(command);
         let textResult="";
         try {

@@ -40,7 +40,7 @@ export class ProjectReport {
                         
 
                         let settingsx = gEdkDatabase.getSettings();
-                        gEdkDatabase.resetVariables();
+                        await gEdkDatabase.resetVariables();
                         await gEdkDatabase.clearWorkspace();
                         gEdkDatabase.setInputBuildDefines(settingsx.defines);
                         gEdkDatabase.setPackagesPaths(settingsx.includes);

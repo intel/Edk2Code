@@ -204,12 +204,16 @@ export async function activate(context: vscode.ExtensionContext) {
 	gGrayOutController = new GrayoutController();
 	gSymbolProducer = new Edk2SymbolProducer();
 	gEdkDatabase = new EdkDatabase();
+	await gEdkDatabase.resetVariables();
 	let settings = gEdkDatabase.getSettings();
 	if(settings.dscFiles.length > 0){
 		gEdkDatabase.setInputBuildDefines(settings.defines);
 		gEdkDatabase.setPackagesPaths(settings.includes);
 		
 		await gEdkDatabase.load(settings.dscFiles);
+	} else{
+		edkStatusBar.setText("Source not indexed");
+		
 	}
 	
 	initLanguagesProviders();
@@ -236,7 +240,7 @@ async function reloadIndex() {
 	gDebugLog.verbose("reloadIndex()");
 	let settings = gEdkDatabase.getSettings();
 	if(settings.dscFiles.length > 0){
-		gEdkDatabase.resetVariables();
+		await gEdkDatabase.resetVariables();
 		gEdkDatabase.setInputBuildDefines(settings.defines);
 		gEdkDatabase.setPackagesPaths(settings.includes);
 		await gEdkDatabase.load(settings.dscFiles);
@@ -338,7 +342,7 @@ async function rebuildIndexDatabase() {
 				if(buildData){
 					await gConfigAgent.setDimmUnusedLibraries(true);
 					gDebugLog.verbose("Delete workspace files");
-					gEdkDatabase.resetVariables();
+					await gEdkDatabase.resetVariables();
 					await gEdkDatabase.clearWorkspace();
 					buildFolder.copyFilesToRoot();
 					gEdkDatabase.setInputBuildDefines(buildData.buildDefines);
@@ -370,7 +374,7 @@ async function rebuildIndexDatabase() {
 				// disable grayout unused libraries as information may not be acurate
 				await gConfigAgent.setDimmUnusedLibraries(false); 
 				
-				gEdkDatabase.resetVariables();
+				await gEdkDatabase.resetVariables();
 				await gEdkDatabase.clearWorkspace();
 				await gEdkDatabase.load([dscPath[0].fsPath],true);
 				await gEdkDatabase.saveSettings(gEdkDatabase.getInputBuildDefines(),[dscPath[0].fsPath], gEdkDatabase.getPackagesPaths());

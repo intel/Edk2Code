@@ -451,9 +451,8 @@ export class EdkDatabase {
     /**
      * Resets internal class variables to default
      */
-    resetVariables() {
+    async resetVariables() {
         this.pcdDefinitions = new Map();
-        this.parseComplete = false;
         this.buildDefines = new Map();
         this.conditionalStack = [];
         this.currentLine = 0;
@@ -467,6 +466,9 @@ export class EdkDatabase {
         this.inputVars = new Map();
         this.includeSource = new Map();
         this.unusedLibrariesList = [];
+
+        this.parseComplete = false;
+        await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', false);
        
     }
 
@@ -485,7 +487,6 @@ export class EdkDatabase {
         this.parsersLangId.set("edk2_fdf", []);
         this.parsersLangId.set("asl", []);
 
-        this.resetVariables();
 
         let subscriptions: vscode.Disposable[] = [];
         vscode.workspace.onDidSaveTextDocument(this._onFileSave, this, subscriptions);
@@ -656,6 +657,7 @@ export class EdkDatabase {
                 vscode.window.showErrorMessage(String(error));
             }
             this.parseComplete = true;
+            await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', true);
         }
         );
 

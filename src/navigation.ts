@@ -141,9 +141,23 @@ export async function gotoDefinition() {
 
 export async function gotoDscDeclaration() {
     gDebugLog.verbose("gotoDscDeclaration()");
+
     let filePath = getOpenFilePath();
+
+
+    
     let locations:vscode.Location[] = [];
     if(filePath){
+
+        if(!gEdkDatabase.parseComplete){
+            // Skip if source hasn't been indexed. Just make a search query
+            let fileName = path.basename(filePath);
+            // TODO: a more complex query can be created
+            locations = await rgSearch(`--regexp ".*?${fileName}"`,[`-g *.dsc -g *.dsc.inc`]);
+            await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, "gotoAndPeek", "Not found");
+            return;
+        }
+
         let infPaths = await gEdkDatabase.findByValue(filePath, "edk2_dsc");
         for (const inf of infPaths) {
             gDebugLog.verbose(`${inf.filePath}:${inf.range.start.line}`);
@@ -197,6 +211,17 @@ export async function gotoDscInclusion() {
     let filePath = getOpenFilePath();
     let locations:vscode.Location[] = [];
     if(filePath){
+
+        if(!gEdkDatabase.parseComplete){
+            // Skip if source hasn't been indexed. Just make a search query
+            let fileName = path.basename(filePath);
+            // TODO: a more complex query can be created
+
+            locations = await rgSearch(`--regexp "!include\\s.*?${fileName}"`,[`-g *.dsc -g *.dsc.inc`]);
+            await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, "gotoAndPeek", "Not found");
+            return;
+        }
+
         let infPaths = await gEdkDatabase.findByValue(filePath, "edk2_dsc");
         for (const inf of infPaths) {
             gDebugLog.verbose(`${inf.filePath}:${inf.range.start.line}`);
@@ -244,8 +269,27 @@ export async function libUsage() {
 export async function gotoInf() {
     gDebugLog.verbose("gotoInf()");
     let filePath = getOpenFilePath();
+
+
+
     let locations:vscode.Location[] = [];
     if(filePath){
+
+        if(!gEdkDatabase.parseComplete){
+            // Skip if source hasn't been indexed. Just make a search query
+            let fileName = path.basename(filePath);
+            let folderPath = path.dirname(filePath);
+            let tempLocations = await rgSearch(`\\b${fileName}\\b`,["-g *.inf", "./"]);
+            for (const l of tempLocations) {
+                // Check the INF file is relative to the source file
+                if(!path.relative(path.dirname(l.uri.fsPath), folderPath).includes("..")){
+                    locations.push(l);
+                }
+            }
+            await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, "gotoAndPeek", "Not found");
+            return;
+        }
+
         let infPaths = await gEdkDatabase.findByValue(filePath, "edk2_inf");
         for (const inf of infPaths) {
             gDebugLog.verbose(`${inf.filePath}:${inf.range.start.line}`);

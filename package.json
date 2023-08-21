@@ -173,6 +173,99 @@
       ]
     },
     "menus": {
+      "commandPalette": [
+        {
+          "command": "edk2code.rebuildIndex",
+          "when": "true"
+          
+          
+        },
+        {
+          "command": "edk2code.reloadIndex",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.loadBuildConfiguration",
+          "when": "true"
+          
+        },
+        {
+          "command": "edk2code.gotoDefinition",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.gotoDefinitionInput",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.searchCcode",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.openFile",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.openLib",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.openModule",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.debugCommand",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.showLibraryTree",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.saveBuildConfiguration",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.gotoInf",
+          "when": "editorLangId == c"
+          
+        },
+        {
+          "command": "edk2code.dscUsage",
+          "when": "editorLangId == .inf"
+          
+        },
+        {
+          "command": "edk2code.libUsage",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.dscInclusion",
+          "when": "editorLangId == .dsc"
+          
+        },
+        {
+          "command": "edk2code.showReferences",
+          "when": "edk2code.parseComplete"
+          
+        },
+        {
+          "command": "edk2code.viewWarnings",
+          "when": "edk2code.parseComplete"
+          
+        }
+      ],
       "editor/title": [],
       "view/title": [],
       "view/item/context": [],
@@ -185,7 +278,7 @@
         {
           "command": "edk2code.showLibraryTree",
           "group": "navigation",
-          "when": "editorLangId == edk2_inf"
+          "when": "editorLangId == edk2_inf && edk2code.parseComplete"
         },
         {
           "command": "edk2code.gotoInf",
@@ -200,7 +293,7 @@
         {
           "command": "edk2code.libUsage",
           "group": "navigation",
-          "when": "editorLangId == edk2_inf"
+          "when": "editorLangId == edk2_inf && edk2code.parseComplete"
         },
         {
           "command": "edk2code.dscInclusion",
@@ -210,7 +303,7 @@
         {
           "command": "edk2code.showReferences",
           "group": "navigation",
-          "when": "editorLangId == edk2_inf"
+          "when": "editorLangId == edk2_inf && edk2code.parseComplete"
         }
       ]
     },

@@ -7,6 +7,7 @@ import { EdkDatabase, UNDEFINED_VARIABLE } from '../edkParser/edkDatabase';
 import { LanguageParser } from '../edkParser/languageParser';
 import { createRange, getCurrentWord } from '../utils';
 import path = require('path');
+import { rgSearch } from '../rg';
 
 
 export function gotoDecName(symbol: Edk2Symbol, edkDatabase: EdkDatabase, parser: LanguageParser) {
@@ -107,10 +108,33 @@ export async function gotoFunction (symbol: Edk2Symbol, documentSymbols: Edk2Doc
 export async function gotoInfDefine(symbol: Edk2Symbol, edkDatabase: EdkDatabase, infParser: LanguageParser) {
     gDebugLog.verbose("gotoInfDefine()");
     let selectedText = getCurrentWord();
+    gDebugLog.verbose(`Definition of: ${symbol.name}`);
+
+    if(!gEdkDatabase.parseComplete){
+        let locations;
+        // Skip if source hasn't been indexed. Just make a search query
+        switch (symbol.name.toUpperCase()) {
+            case "CONSTRUCTOR":
+            case "DESTRUCTOR":
+            case "ENTRY_POINT":
+                locations = await rgSearch(`--regexp "\\b${selectedText.word}\\b"`,[`-g *.c`]);
+                return locations;
+                
+                
+            case ("LIBRARY_CLASS"):
+                locations = await rgSearch(`--regexp "LIBRARY_CLASS\\s*=\\s*\\b${selectedText.word}\\b"`,[`-g *.inf`]);
+                return locations;
+                
+            default:
+                break;
+        }
+        return;
+    }
+
     switch (symbol.name.toUpperCase()) {
         case "CONSTRUCTOR":
-            gDebugLog.verbose("Constructor");
-            
+        case "DESTRUCTOR":
+        case "ENTRY_POINT":
             let locations = await gCscope.getDefinitionPositions(selectedText.word, false);
             let filteredLocations = [];
             if(locations){
@@ -125,7 +149,6 @@ export async function gotoInfDefine(symbol: Edk2Symbol, edkDatabase: EdkDatabase
         
         case ("LIBRARY_CLASS"):
         case ("MODULE_TYPE"):
-            gDebugLog.verbose("Library_class|Module_type");
             let symbolsList = edkDatabase.findByName(symbol.name, "edk2_inf");
             let libClassLocations:vscode.Location[] = [];
             for (const s of symbolsList) {
@@ -138,6 +161,8 @@ export async function gotoInfDefine(symbol: Edk2Symbol, edkDatabase: EdkDatabase
                 }
             }
             return libClassLocations;
+        
+
         default:
             break;
     }
@@ -146,6 +171,13 @@ export async function gotoInfDefine(symbol: Edk2Symbol, edkDatabase: EdkDatabase
 
 export async function infGotoLibraryDeclaration(symbol: Edk2Symbol, edkDatabase: EdkDatabase, infParser: LanguageParser) {
     
+
+    if(!gEdkDatabase.parseComplete){
+        // Skip if source hasn't been indexed. Just make a search query
+        let locations = await rgSearch(`--regexp "\\b${symbol.name}\\b\\s*\\|"`,[`-g *.dsc, -g *.dsc.inc`]);
+        return locations;
+    }
+
     let symbols = await gEdkDatabase.getLibraryDefinition(symbol);
     let locations:vscode.Location[]= [];
     for (const s of symbols) {
@@ -161,6 +193,13 @@ export async function infGotoLibraryDeclaration(symbol: Edk2Symbol, edkDatabase:
 export async function infGotoLibraryDefinition(symbol: Edk2Symbol, edkDatabase: EdkDatabase, infParser: LanguageParser) {
     let symbols = await gEdkDatabase.getLibraryDefinition(symbol);
     let locations:vscode.Location[]= [];
+
+    if(!gEdkDatabase.parseComplete){
+        // Skip if source hasn't been indexed. Just make a search query
+        // TODO: a more complex query can be created
+        locations = await rgSearch(`--regexp "LIBRARY_CLASS\\s*=\\s*\\b${symbol.name}\\b"`,[`-g *.inf`]);
+        return locations;
+    }
 
     for (const s of symbols) {
         let libraryClass = await gEdkDatabase.findByName("library_class", "edk2_inf", s.value);
