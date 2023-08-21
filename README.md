@@ -2,6 +2,8 @@
 
 The EDK2Code Extension is a Visual Studio Code extension designed to improve the development experience for engineers working with the EDK2 (UEFI) codebase. This extension provides support for syntax highlighting, code navigation, and error detection for the EDK2 language. By integrating these features directly into Visual Studio Code, developers can streamline their workflow and enhance productivity.
 
+![](assets/demo.gif)
+
 ## Features
 
 - Syntax highlighting for EDK2 files.
