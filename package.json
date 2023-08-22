@@ -3,6 +3,7 @@
   "displayName": "Edk2code",
   "description": "EDK2 code support",
   "version": "0.0.2",
+  "icon": "assets/icon.png",
   "publisher": "intel-corporation",
   "homepage": "https://github.com/intel/Edk2Code/wiki",
   "repository": {
