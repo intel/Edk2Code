@@ -61,7 +61,7 @@ export class ProjectReport {
                         // Remove $(variables)
                         let hint = message.data.hint;
                         let name = message.data.name;
-                        let truncatePath = hint.replaceAll("/","\\").split(")");
+                        let truncatePath = hint.replaceAll("/",path.sep).split(")");
                         truncatePath = truncatePath[truncatePath.length-1];
                         let filterOptions = new Set();
                         let options = await this.edkDatabase.findPathGlob(truncatePath);

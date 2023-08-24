@@ -3,6 +3,7 @@ import path = require('path');
 import * as vscode from 'vscode';
 import { gCscope, gDebugLog, gEdkDatabase, gExtensionContext, gWorkspacePath } from './extension';
 import { exec, execWindow, getCurrentWord, getStaticPath, normalizePath, readLines, toPosix } from './utils';
+import { execSync } from 'child_process';
 
 
 /*
@@ -64,11 +65,37 @@ export class FuncInfo
 
 export class Cscope {
     cscopePath:string = "";
-    
+    cscopeInstalled = false;
+
     public constructor() {
-        this.cscopePath = getStaticPath("cscope.exe");
+        console.log(vscode.env.remoteName);
+        if (process.platform === 'win32'){
+            this.cscopePath = getStaticPath("cscope.exe");
+        }else{
+            this.cscopePath = "cscope";
+        }
+
+        var command = `${this.cscopePath} -V`;
+        
+        try {
+            let result = execSync(command);
+            gDebugLog.info(result.toString());
+            this.cscopeInstalled = true;
+        } catch (error) {
+            gDebugLog.error("Cscope not available in the system");
+            this.cscopeInstalled = false;
+        }
+         
     }
 
+    showCscopeErrorMessage(){
+         void vscode.window.showErrorMessage("Cscope not available in the system", "Help").then(async selection => {
+            if (selection === "Help"){
+                await vscode.env.openExternal(vscode.Uri.parse(
+                    'https://github.com/intel/Edk2Code/wiki#limitations'));
+            }
+        });
+    }
 
     existCscopeFile(){
         let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
@@ -80,7 +107,8 @@ export class Cscope {
             return;
         }
         let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
-        let cscopeFiles = fileList.map((x)=>{return x.replaceAll("/",'\\');}).join("\n");
+        
+        let cscopeFiles = fileList.map((x)=>{return x.replaceAll("/",path.sep);}).join("\n");
         fs.writeFileSync(cscopeFilesPath,cscopeFiles);
         await gCscope.reload();
     }
@@ -103,6 +131,10 @@ export class Cscope {
 
     async reload(progressWindow=false){
         gDebugLog.info("CSCOPE reload database");
+        if(!this.cscopeInstalled){
+            this.showCscopeErrorMessage();
+            return;
+        }
 
         if(this.existCscopeFile()){
             if(progressWindow){
@@ -164,6 +196,10 @@ export class Cscope {
     }
 
     async cscopeCommand(text:string, cmdType:CscopeCmd){
+        if(!this.cscopeInstalled){
+            this.showCscopeErrorMessage();
+            return "";
+        }
         var command = `${this.cscopePath} -d -L${cmdType}${text}`;
         let result = await exec(command, gWorkspacePath);
         return result;
@@ -171,6 +207,12 @@ export class Cscope {
 
     async cscopeCommandWindow(text:string, cmdType:CscopeCmd, textWindow:string=""){
         let cscopeOutPath = path.join(gWorkspacePath, "cscope.out");
+
+        if(!this.cscopeInstalled){
+            void this.showCscopeErrorMessage();
+            return "";
+        }
+
         if(!fs.existsSync(cscopeOutPath)){
             gDebugLog.error("Cscope.out file doesnt exist");
         }
@@ -222,7 +264,7 @@ export class CscopeAgent {
             return;
         }
         let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
-        let cscopeFiles = fileList.map((x)=>{return x.replaceAll("/",'\\');}).join("\n");
+        let cscopeFiles = fileList.map((x)=>{return x.replaceAll("/",path.sep);}).join("\n");
         fs.writeFileSync(cscopeFilesPath,cscopeFiles);
         await gCscope.reload();
     }

@@ -28,7 +28,7 @@ export class TreeWebview {
         {
           icons,
           label: '${currentNode.label}',
-          value: '${currentNode.description?.toString().replaceAll("\\","/")}',
+          value: '${currentNode.description?.toString().replaceAll("\\",path.sep)}',
           open: true,
         `;
 
@@ -59,13 +59,13 @@ export class TreeWebview {
             }
         );
         webviewPanel.webview.onDidReceiveMessage(
-            message => {
+            async message => {
                 switch (message.command) {
                     case 'openFile':
-                        openFileSide(vscode.Uri.file(message.path), new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)));
+                        await openFileSide(vscode.Uri.file(message.path), new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)));
                         return;
                     case 'copy':
-                      copyTreeProviderToClipboard(this.treeProvider);
+                      await copyTreeProviderToClipboard(this.treeProvider);
                       return;
                 }
             },

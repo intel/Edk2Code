@@ -1,5 +1,5 @@
 
-import { gModuleReport } from "./extension";
+import { gDebugLog, gModuleReport } from "./extension";
 import { EdkIniFile, EdkModule, ModuleReport } from "./moduleReport";
 import { openFile } from "./navigation";
 import { getNonce } from "./utilities/getNonce";
@@ -28,15 +28,20 @@ class ModulePickOption implements vscode.QuickPickItem{
 }
 
 export async function showLibraryTree(){
-
+    gDebugLog.debug("CMD show library tree");
     let document = getCurrentDocument();
+    
     let moduleReport = gModuleReport;
     if(document === undefined){return;}
+
+    gDebugLog.debug(document.fileName);
+
     if(!document.fileName.endsWith(".inf")){
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showErrorMessage("Run this command when you are on a .inf file");
       return;
     }
+    
     let moduleTarget = moduleReport.getModule(document.fileName);
     if(moduleTarget===undefined){
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
