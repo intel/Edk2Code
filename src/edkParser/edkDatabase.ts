@@ -1154,7 +1154,7 @@ export class EdkDatabase {
             if (tokens.length !== 2) {
                 throw new Error("!ifndef conditionals need to be formatted correctly (spaces between each token)");
             }
-            this.pushConditional((tokens[1] !== UNDEFINED_VARIABLE));
+            this.pushConditional((tokens[1] === UNDEFINED_VARIABLE));
             return true;
         }
         else if (tokens[0].toLowerCase() === "!else") {
