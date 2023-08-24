@@ -25,6 +25,15 @@ export class FileUseWarning {
             return;
         }
 
+        
+        let langId = vscode.window.activeTextEditor?.document.languageId;
+        if(langId===undefined){return;}
+        if(!["c","cpp","edk2_dsc","edk2_inf","edk2_dec","asl","edk2_vfr","edk2_fdf"].includes(langId)){
+            edkStatusBar.setColor('statusBarItem.activeBackground');
+            edkStatusBar.setText(`No EDK file`);
+            return;
+        }
+
         // Set status bar with no contex of file
         edkStatusBar.setColor('statusBarItem.activeBackground');
         edkStatusBar.setText(``);
@@ -51,8 +60,17 @@ export class FileUseWarning {
             edkStatusBar.setColor('statusBarItem.activeBackground');
             edkStatusBar.setText(`$(check) ${baseFileName}`);
         }else{
-            edkStatusBar.setColor('statusBarItem.warningBackground');
-            edkStatusBar.setText(`$(warning) ${baseFileName} not used in current context`);
+            // Check if file is on DSC's but not compiled
+            let symbols = await gEdkDatabase.findByValue(openedFilePath,undefined,true);
+            if(symbols.length > 0){
+                // file is on DSC files but not compiled
+                edkStatusBar.setColor('statusBarItem.warningBackground');
+                edkStatusBar.setText(`$(warning) ${baseFileName} is inactive on project DSC file`);
+            }else{
+                edkStatusBar.setColor('statusBarItem.errorBackground');
+                edkStatusBar.setText(`$(error) ${baseFileName} not used in current context`);
+            }
+
         }
 
     }

@@ -896,10 +896,10 @@ export class EdkDatabase {
      * @param langId 
      * @returns 
      */
-    async findByValue(value: string, langId: string | undefined = undefined) {
+    async findByValue(value: string, langId: string | undefined = undefined, includeInactive=false) {
         let retSymbols: Edk2Symbol[] = [];
         for (const parser of this.getParsersLang(langId)) {
-            let symbols = parser.getSymbolsList();
+            let symbols = parser.getSymbolsList(includeInactive);
             for (const symb of symbols) {
                 if (symb.value === value) {
                     retSymbols.push(symb);
