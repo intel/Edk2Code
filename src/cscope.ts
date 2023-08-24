@@ -89,10 +89,10 @@ export class Cscope {
     }
 
     showCscopeErrorMessage(){
-         void vscode.window.showErrorMessage("Cscope not available in the system", "Help").then(async selection => {
+         void vscode.window.showErrorMessage("Cscope not available in the system. Check help for install", "Help").then(async selection => {
             if (selection === "Help"){
                 await vscode.env.openExternal(vscode.Uri.parse(
-                    'https://github.com/intel/Edk2Code/wiki#limitations'));
+                    'https://github.com/intel/Edk2Code/wiki#cscope'));
             }
         });
     }
