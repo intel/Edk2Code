@@ -74,8 +74,19 @@ export class LanguageParser {
         this.symbolsData.symbolList = new Set(cleanSymbolList);
     }
 
-    getSymbolsList() {
-        return this.symbolsData.symbolList;
+    getSymbolsList(includeInactive:boolean=false) {
+        if(includeInactive){
+            return this.symbolsData.symbolList;
+        }
+
+        let cleanSymbolList:Edk2Symbol[] = [];
+        for (const s of this.symbolsData.symbolList) {
+            if(s.isActive()){
+                cleanSymbolList.push(s);
+            }
+        }
+        return new Set(cleanSymbolList);
+
     }
 
     getSymbolsTree() {
@@ -102,6 +113,9 @@ export class LanguageParser {
     async preParse(){}
     async postParse(){}
 
+    /**
+     * Main Parsing function
+     */
     async parseFile() {
         gDebugLog.info(`Parsing file: ${this.filePath}`);
         if(this.edkDatabase.parseComplete){
@@ -160,7 +174,7 @@ export class LanguageParser {
         if(this.edkDatabase.parseComplete){
             await this.postParse();
         }
-        this.removeInactiveSymbols();
+        // this.removeInactiveSymbols();
         gDebugLog.info(`File parsed: ${this.filePath}`);
     }
 
@@ -177,6 +191,7 @@ export class LanguageParser {
 
     async parseLine(line: string) {
         let fullLine = line;
+        
         if (line.length === 0) { return; }
 
         // CLOSE block
