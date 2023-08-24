@@ -1,5 +1,5 @@
 
-import { gDebugLog, gModuleReport } from "./extension";
+import { gDebugLog, gEdkDatabase, gModuleReport } from "./extension";
 import { EdkIniFile, EdkModule, ModuleReport } from "./moduleReport";
 import { openFile } from "./navigation";
 import { getNonce } from "./utilities/getNonce";
@@ -41,7 +41,24 @@ export async function showLibraryTree(){
       vscode.window.showErrorMessage("Run this command when you are on a .inf file");
       return;
     }
+
+    if(!gEdkDatabase.isFileInuse(document.fileName)){
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      vscode.window.showErrorMessage("This file is not in use on the current compilation");
+      return;
+    }
     
+
+    if(!moduleReport.isPopulated){
+      void vscode.window.showErrorMessage("Module information was not generated during compilation.", "Help").then(async selection => {
+        if (selection === "Help"){
+            await vscode.env.openExternal(vscode.Uri.parse(
+                'https://github.com/intel/Edk2Code/wiki/Index-source-code#1-enable-compile-information-in-your-build'));
+        }
+      });
+      return;
+    }
+
     let moduleTarget = moduleReport.getModule(document.fileName);
     if(moduleTarget===undefined){
       // eslint-disable-next-line @typescript-eslint/no-floating-promises

@@ -191,6 +191,7 @@ export class EdkModule{
 
 export class ModuleReport
 {
+    isPopulated: boolean = false;
     private static instance: ModuleReport;
     reportPath: string;
     private data: any;
@@ -218,6 +219,12 @@ export class ModuleReport
         this.moduleData = [];
         for (const d of this.data) {
             this.moduleData.push(new EdkModule(d));
+        }
+
+        if(this.moduleData.length === 0){
+            this.isPopulated = false;
+        }else{
+            this.isPopulated = true;
         }
 
     }
