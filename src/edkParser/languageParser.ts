@@ -1,6 +1,6 @@
 import { EdkDatabase } from "./edkDatabase";
 import { Edk2DocumentSymbols, Edk2Symbol, Edk2SymbolType } from "./edkSymbols";
-import { gDebugLog, gSymbolProducer } from "../extension";
+import { gDebugLog, gEdkDatabase, gSymbolProducer } from "../extension";
 import * as vscode from 'vscode';
 import { normalizePath, readLines, split } from "../utils";
 
@@ -81,7 +81,8 @@ export class LanguageParser {
 
         let cleanSymbolList:Edk2Symbol[] = [];
         for (const s of this.symbolsData.symbolList) {
-            if(s.isActive()){
+            //TODO: add this isFileInuse and isActive inside symbol
+            if(gEdkDatabase.isFileInuse(s.filePath) && s.isActive()){
                 cleanSymbolList.push(s);
             }
         }

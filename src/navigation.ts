@@ -91,7 +91,7 @@ export async function getDefinitionLocationsSelected(){
         if(filteredLocations.length === 0){
             let allLocations:vscode.Location[] = await vscode.commands.executeCommand('vscode.executeDefinitionProvider', currentWord.uri, currentWord.range.end);
             for (const loc of allLocations) {
-                let isFileUsed = gEdkDatabase.isFileInuse(normalizePath(loc.uri.fsPath));
+                let isFileUsed = gEdkDatabase.isFileInuse(loc.uri.fsPath);
                 if(isFileUsed){
                     filteredLocations.push(loc);
                 }
