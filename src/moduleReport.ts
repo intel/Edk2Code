@@ -276,7 +276,7 @@ export class ModuleReport
 
             reportObject["children"].push({
                 "name":target.name,
-                "path":target.path,
+                "path":target.path.replaceAll(path.sep, "\\"+path.sep),
                 "children":[],
                 "recursive":true
             });
