@@ -28,7 +28,7 @@ export class LanguageParser {
     }
 
     findByValueMatchChildrens(valueRegex: RegExp) {
-        let retVal = [];
+        let retVal:Edk2Symbol[] = [];
         for (const symb of this.getSymbolsList()) {
             if (symb.value.match(valueRegex)) {
                 for (const child of symb.children) {
@@ -310,8 +310,10 @@ export class LanguageParser {
         );
         let temp;
         if("produce" in block){
+            // Block has specific produce function
             temp = await block.produce(line, this, block);
         }else{
+            // Use global produce function
             temp = gSymbolProducer.produce(block.type, line, "", line, symRange, this.filePath);
         }
         if(temp){
@@ -330,8 +332,10 @@ export class LanguageParser {
         }
         let temp;
         if("produce" in block){
+            // Block has specific produce function
             temp = await block.produce(line, this, block);
         }else{
+            // Use global produce function
             temp = gSymbolProducer.produce(block.type, line, "", setValue, symRange, this.filePath);
         }
         

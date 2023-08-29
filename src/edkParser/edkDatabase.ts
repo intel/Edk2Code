@@ -39,10 +39,12 @@ export class EdkDatabase {
     async clearWorkspace() {
         gCscopeAgent.removeFiles();
         this.deleteIgnoreFile();
+        this.deleteCompileCommands();
         await gConfigAgent.set("buildDefines", []);
         await gConfigAgent.set("mainDscFile", []);
         await gConfigAgent.set("buildPackagePaths", []);
         deleteEdkCodeFolder();
+
     }
 
 
@@ -103,7 +105,7 @@ export class EdkDatabase {
     }
 
 
-    async getLibraryDefinition(symbol: Edk2Symbol) {
+    async getLibraryDefinition(symbol: Edk2Symbol, context:Edk2Symbol|undefined=undefined) {
         let infParser = await this.getParser(symbol.filePath);
         if (!infParser) { return []; }
         let filePath = symbol.filePath;
@@ -142,13 +144,18 @@ export class EdkDatabase {
 
         // We are not sure which driver is the context of the library
         // so return all
-        if (isLibrary) {
+        if (isLibrary && context===undefined) {
             return fullSymbolLocations;
         }
 
         let infModuleTypes = infParser.findByName("MODULE_TYPE");
-        let dscModuleProperties = await this.findByValue(filePath, "edk2_dsc");
 
+        let dscModuleProperties;
+        if(context===undefined){
+            dscModuleProperties = await this.findByValue(filePath, "edk2_dsc");
+        }else{
+            dscModuleProperties = await this.findByValue(context.filePath, "edk2_dsc");
+        }
 
 
         let thisModuleProperties: Edk2SymbolProperties[] = [];
@@ -648,6 +655,8 @@ export class EdkDatabase {
                 }
 
                 edkStatusBar.setText("Ready");
+                edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki");
+                
                 edkStatusBar.clearWorking();
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 vscode.window.showInformationMessage(`Loaded ${this.usedFilesSet.size} files.`);
@@ -695,6 +704,10 @@ export class EdkDatabase {
 
     private deleteIgnoreFile() {
         fs.rmSync(path.join(gWorkspacePath, ".ignore"), { force: true });
+    }
+
+    private deleteCompileCommands() {
+        fs.rmSync(path.join(gWorkspacePath, "compile_commands.json"), { force: true });
     }
 
     /**
@@ -768,7 +781,7 @@ export class EdkDatabase {
      */
     findByTypeAndValue(type: Edk2SymbolType, value: string, langId: string | undefined = undefined) {
         let retSymbols: Edk2Symbol[] = [];
-        let parsers = this.getParsersLang();
+        let parsers = this.getParsersLang(langId);
         for (const parser of parsers) {
             for (const symbol of parser.getSymbolsList()) {
                 if (symbol.type === type &&

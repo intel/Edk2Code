@@ -276,9 +276,8 @@ export class Edk2SymbolProducer {
             onEvents = symbolData;
         }
 
-        // Debug
-        //name = `[${range.start.line},${range.end.line}] ${name}`;
 
+        gDebugLog.verbose("Edk2SymbolProducer.produce()");
         let symbol = new Edk2Symbol(name, detail, value, icon, range, range, type, onEvents, filePath);
         
         return symbol;
