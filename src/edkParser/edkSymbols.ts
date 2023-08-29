@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import { gotoValueFile, completionInfLibraries, infGotoLibraryDeclaration, gotoDecName, gotoFunction, gotoFolder, infGotoLibraryDefinition, completionInfCommon, gotoInfDefine } from '../Languages/edkOnEventFunctions';
+import { gotoValueFile, completionInfLibraries, infGotoLibraryDeclaration, gotoDecName, gotoFunction, gotoFolder, infGotoLibraryDefinition, completionInfCommon, gotoInfDefine, gotoInfSource } from '../Languages/edkOnEventFunctions';
 import { EdkDatabase } from './edkDatabase';
 import { split } from '../utils';
 import { gDebugLog, gEdkDatabase } from '../extension';
@@ -145,7 +145,7 @@ var edkSymbolProducerMap = new Map([
     [Edk2SymbolType.infSection, { "icon": vscode.SymbolKind.Class, "onCompletion":undefined,"onDefinition": undefined, "onHover": undefined , "onDeclaration": undefined}],
 
     [Edk2SymbolType.infDefine, { "icon": vscode.SymbolKind.Constant, "onCompletion":undefined,"onDefinition": gotoInfDefine, "onHover": undefined , "onDeclaration": undefined}],
-    [Edk2SymbolType.infSource, { "icon": vscode.SymbolKind.File, "onCompletion":undefined,"onDefinition": gotoValueFile, "onHover": undefined , "onDeclaration": undefined}],
+    [Edk2SymbolType.infSource, { "icon": vscode.SymbolKind.File, "onCompletion":undefined,"onDefinition": gotoInfSource, "onHover": undefined , "onDeclaration": undefined}],
     [Edk2SymbolType.infLibrary, { "icon": vscode.SymbolKind.Module, "onCompletion":undefined,"onDefinition": infGotoLibraryDefinition, "onHover": undefined , "onDeclaration": infGotoLibraryDeclaration}],
     [Edk2SymbolType.infPackage, { "icon": vscode.SymbolKind.Package, "onCompletion":undefined,"onDefinition": gotoValueFile, "onHover": undefined , "onDeclaration": undefined}],
     [Edk2SymbolType.infPpi, { "icon": vscode.SymbolKind.Event, "onCompletion":undefined,"onDefinition": gotoDecName, "onHover": undefined , "onDeclaration": undefined}],

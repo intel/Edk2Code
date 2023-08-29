@@ -47,6 +47,13 @@ export class EdkDatabase {
 
     }
 
+    /**
+     * Returns True if the current filePath should be treated as offline.
+     * It means that is not part of the index
+     */
+    isOfflineFile(filePath:string){
+        return !gEdkDatabase.parseComplete || !gEdkDatabase.isFileInuse(filePath);
+    }
 
     isFileInuse(filePath: string) {
         filePath = normalizePath(filePath).toUpperCase();
@@ -527,6 +534,7 @@ export class EdkDatabase {
     async load(dscFilesPath: string[], quick:boolean=false) {
 
         gDebugLog.verbose("Load command");
+        edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki/Index-source-code");
         edkStatusBar.setText("Reloading index...");
         edkStatusBar.setWorking();
 

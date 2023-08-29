@@ -87,7 +87,6 @@ export class LanguageParser {
             }
         }
         return new Set(cleanSymbolList);
-
     }
 
     getSymbolsTree() {

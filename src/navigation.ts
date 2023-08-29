@@ -5,6 +5,7 @@ import { getCurrentWord, getOpenFilePath, getRealPath, normalizePath, pathCompar
 import * as vscode from 'vscode';
 import { rgSearch } from "./rg";
 import { Edk2SymbolType } from "./edkParser/edkSymbols";
+import * as edkStatusBar from './statusBar';
 
 export enum CallType{
     caller= "call-incoming",
@@ -149,12 +150,14 @@ export async function gotoDscDeclaration() {
     let locations:vscode.Location[] = [];
     if(filePath){
 
-        if(!gEdkDatabase.parseComplete){
+        if(gEdkDatabase.isOfflineFile(filePath)){
             // Skip if source hasn't been indexed. Just make a search query
             let fileName = path.basename(filePath);
             // TODO: a more complex query can be created
             locations = await rgSearch(`--regexp ".*?${fileName}"`,[`-g *.dsc -g *.dsc.inc`]);
+            
             await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, "gotoAndPeek", "Not found");
+
             return;
         }
 
@@ -212,13 +215,14 @@ export async function gotoDscInclusion() {
     let locations:vscode.Location[] = [];
     if(filePath){
 
-        if(!gEdkDatabase.parseComplete){
+        if(gEdkDatabase.isOfflineFile(filePath)){
             // Skip if source hasn't been indexed. Just make a search query
             let fileName = path.basename(filePath);
             // TODO: a more complex query can be created
-
+  
             locations = await rgSearch(`--regexp "!include\\s.*?${fileName}"`,[`-g *.dsc -g *.dsc.inc`]);
             await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, "gotoAndPeek", "Not found");
+
             return;
         }
 
@@ -275,7 +279,7 @@ export async function gotoInf() {
     let locations:vscode.Location[] = [];
     if(filePath){
 
-        if(!gEdkDatabase.parseComplete){
+        if(gEdkDatabase.isOfflineFile(filePath)){
             // Skip if source hasn't been indexed. Just make a search query
             let fileName = path.basename(filePath);
             let folderPath = path.dirname(filePath);
@@ -286,7 +290,9 @@ export async function gotoInf() {
                     locations.push(l);
                 }
             }
+
             await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, "gotoAndPeek", "Not found");
+
             return;
         }
 

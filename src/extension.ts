@@ -212,6 +212,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 		await gEdkDatabase.load(settings.dscFiles);
 	} else{
+		edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki/Index-source-code");
 		edkStatusBar.setText("Source not indexed");
 		
 	}

@@ -35,7 +35,9 @@ export class InfParser extends LanguageParser {
     }
 
     async postParse(): Promise<void> {
-        
+        if(gEdkDatabase.isOfflineFile(this.filePath)){
+            return;
+        }
         let inactiveSymbols = await this.edkDatabase.getInactiveLibraries(this.filePath);
         this.edkDatabase.clearInactiveLines(this.filePath);
         for (const inac of inactiveSymbols) {

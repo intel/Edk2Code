@@ -29,11 +29,21 @@ export async function gotoFolder(symbol: Edk2Symbol, edkDatabase: EdkDatabase, p
 }
 
 export async function gotoValueFile(symbol: Edk2Symbol, edkDatabase: EdkDatabase, parser: LanguageParser) {
+
+
     let p = await edkDatabase.findPath(symbol.value, symbol.filePath);
     if (p) {
         return [new vscode.Location(vscode.Uri.file(p), new vscode.Position(0, 0))];
     }
     return [];
+}
+
+export async function gotoInfSource(symbol: Edk2Symbol, edkDatabase: EdkDatabase, parser: LanguageParser) {
+    
+    
+    return [new vscode.Location(vscode.Uri.file(symbol.value), new vscode.Position(0, 0))];
+    
+    
 }
 
 
@@ -110,7 +120,7 @@ export async function gotoInfDefine(symbol: Edk2Symbol, edkDatabase: EdkDatabase
     let selectedText = getCurrentWord();
     gDebugLog.verbose(`Definition of: ${symbol.name}`);
 
-    if(!gEdkDatabase.parseComplete){
+    if(gEdkDatabase.isOfflineFile(symbol.filePath)){
         let locations;
         // Skip if source hasn't been indexed. Just make a search query
         switch (symbol.name.toUpperCase()) {
@@ -172,7 +182,7 @@ export async function gotoInfDefine(symbol: Edk2Symbol, edkDatabase: EdkDatabase
 export async function infGotoLibraryDeclaration(symbol: Edk2Symbol, edkDatabase: EdkDatabase, infParser: LanguageParser) {
     
 
-    if(!gEdkDatabase.parseComplete){
+    if(gEdkDatabase.isOfflineFile(symbol.filePath)){
         // Skip if source hasn't been indexed. Just make a search query
         let locations = await rgSearch(`--regexp "\\b${symbol.name}\\b\\s*\\|"`,[`-g *.dsc, -g *.dsc.inc`]);
         return locations;
@@ -194,9 +204,10 @@ export async function infGotoLibraryDefinition(symbol: Edk2Symbol, edkDatabase: 
     let symbols = await gEdkDatabase.getLibraryDefinition(symbol);
     let locations:vscode.Location[]= [];
 
-    if(!gEdkDatabase.parseComplete){
+    if(gEdkDatabase.isOfflineFile(symbol.filePath)){
         // Skip if source hasn't been indexed. Just make a search query
         // TODO: a more complex query can be created
+        
         locations = await rgSearch(`--regexp "LIBRARY_CLASS\\s*=\\s*\\b${symbol.name}\\b"`,[`-g *.inf`]);
         return locations;
     }
