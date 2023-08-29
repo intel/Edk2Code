@@ -1,11 +1,28 @@
 import * as vscode from 'vscode';
+import { gExtensionContext } from './extension';
 export var myStatusBarItem: vscode.StatusBarItem;
+
+var helpUrl:string = "";
 
 export function init(context:vscode.ExtensionContext){
     // create a new status bar item that we can now manage
     myStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
+    
+    const myCommandId = 'edk2code.statusCmd';
+    
+    gExtensionContext.subscriptions.push(vscode.commands.registerCommand(myCommandId, async () => {
+        await vscode.env.openExternal(vscode.Uri.parse(
+            helpUrl));
+
+	}));
+    myStatusBarItem.command = myCommandId;
+
     context.subscriptions.push(myStatusBarItem);
     setText("Started");
+}
+
+export function setHelpUrl(url:string ){
+    helpUrl = url;
 }
 
 export function setInfo(text:string){
