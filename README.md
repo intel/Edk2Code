@@ -4,13 +4,18 @@ The EDK2Code Extension is a Visual Studio Code extension designed to improve the
 
 ![](assets/demo.gif)
 
+![](assets/demo_dsc.gif)
+
+It also includes some support for ASL language:
+
+![](assets/demo_acpi.gif)
+
 ## Features
 
 - Syntax highlighting for EDK2 files.
 - Code navigation, including "Go to Definition" and "Find All References" for EDK2 symbols.
 - Error detection and reporting for common EDK2 language issues.
 - Auto-completion for EDK2 keywords and symbols.
-
 
 ## Installation
 
@@ -19,6 +24,14 @@ The EDK2Code Extension is a Visual Studio Code extension designed to improve the
 3. Search for "EDK2Code" in the search bar.
 4. Click the "Install" button on the extension's card.
 5. Reload Visual Studio Code to activate the extension.
+
+### Linux Installation
+
+[Cscope](https://cscope.sourceforge.net/) is used for some C related functionality of the extension. On windows systems the cscope comes already included in the extension.
+
+For linux systems you need to install cscope`manually.
+
+Ubuntu installation example: `sudo apt install cscope`
 
 ## Documentation
 
