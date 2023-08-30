@@ -2,7 +2,7 @@
   "name": "edk2code",
   "displayName": "Edk2code",
   "description": "EDK2 code support",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "icon": "assets/icon.png",
   "publisher": "intel-corporation",
   "homepage": "https://github.com/intel/Edk2Code/wiki",
@@ -131,7 +131,7 @@
             "order": 2,
             "type": "boolean",
             "markdownDescription": "Show Edk2 Language warnings",
-            "default": true
+            "default": false
           },
           "edk2code.mainDscFile": {
             "order": 3,

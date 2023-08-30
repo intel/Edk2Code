@@ -2,8 +2,30 @@
 
 All notable changes to the "edk2code" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [0.0.4]
 
-## [Unreleased]
+### Added
 
-- Initial release
+- Click on status bar now shows help of current actions
+- Just EDK2 files show warnings about not being used in compilation
+- Inactive symbols work with goto definition commands
+
+## [0.0.3]
+
+### Fixed
+
+Corrected problems that prevented the extension to run on Linux systems
+
+## [0.0.2]
+
+### Changed
+
+- Hide unusual commands when running in not indexed mode
+
+### Added
+
+- Use ripgrep when running in not indexed mode
+
+## [0.0.1]
+
+- Initial release.
