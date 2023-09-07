@@ -1,486 +1,485 @@
-import { EdkDatabase } from "./edkDatabase";
-import { Edk2DocumentSymbols, Edk2Symbol, Edk2SymbolType } from "./edkSymbols";
-import { gDebugLog, gEdkDatabase, gSymbolProducer } from "../extension";
+
+import { gDebugLog } from "../extension";
 import * as vscode from 'vscode';
-import { normalizePath, readLines, split } from "../utils";
+import path = require("path");
+import { SymbolFactory } from "../symbols/symbolFactory";
+import { EdkSymbol } from "../symbols/edkSymbol";
+import { Edk2SymbolType } from '../symbols/symbolsType';
+import { WorkspaceDefinitions } from "../index/definitions";
 
-export class LanguageParser {
 
-    findByName(name: string) {
-        name = name.toLowerCase();
-        let retVal = [];
-        for (const symb of this.getSymbolsList()) {
-            if (symb.name.toLowerCase() === name) {
-                retVal.push(symb);
-            }
-        }
-        return retVal;
+export abstract class BlockParser {
+    abstract name: string; // Name of the block parser
+    abstract tag: RegExp; // Regular expression to match the block tag
+    abstract start: RegExp | undefined; // Regular expression to match the start of the block content
+    abstract end: RegExp | undefined; // Regular expression to match the end of the block content
+    abstract type: Edk2SymbolType; // Type of the block parser
+    excludeTag: RegExp | undefined; // Regular expression to exclude specific tags
+    context: BlockParser[] = []; // Array of block parsers that can be nested inside this block parser
+    abstract visible: boolean; // Indicates if the block is visible or hidden
+    exclusive: boolean = true; // Indicates if other blocks should parse this line
+    isRoot: boolean = false; // Indicates if this block is in the root block of the document
+
+    constructor(isRoot: boolean = false) {
+        this.isRoot = isRoot;
     }
-
-    findByValueMatch(valueRegex: RegExp) {
-        let retVal = [];
-        for (const symb of this.getSymbolsList()) {
-            if (symb.value.match(valueRegex)) {
-                retVal.push(symb);
-            }
-        }
-        return retVal;
-    }
-
-    findByValueMatchChildrens(valueRegex: RegExp) {
-        let retVal:Edk2Symbol[] = [];
-        for (const symb of this.getSymbolsList()) {
-            if (symb.value.match(valueRegex)) {
-                for (const child of symb.children) {
-                    retVal.push(child);
-                }
-            }
-        }
-        return retVal;
-    }
-
-    lastAddedBlock = undefined;
-    edkDatabase: EdkDatabase;
-    commentStart: string = "";
-    commentEnd: string = "";
-    commentLine: string[] = [];
-    symbolsData: Edk2DocumentSymbols;
-
-    blocks!: any[];
-    blocksDic: Map<string, any> = new Map();
-
-    inComment: boolean = false;
-    blockStack: any[] = [];
-    lineNo = 0;
-    currentLineRaw = "";
-    linesLength = 0;
-    filePath = "";
-
-    constructor(db: EdkDatabase, file: string) {
-        this.edkDatabase = db;
-        this.filePath = file;
-        this.symbolsData = new Edk2DocumentSymbols(file);
-        gDebugLog.info(`Parser created: ${file}`);
-     
-    }
-
-    private removeInactiveSymbols(){
-        let cleanSymbolList:Edk2Symbol[] = [];
-        for (const s of this.symbolsData.symbolList) {
-            if(s.isActive()){
-                cleanSymbolList.push(s);
-            }
-        }
-        this.symbolsData.symbolList = new Set(cleanSymbolList);
-    }
-
-    getSymbolsList(includeInactive:boolean=false) {
-        if(includeInactive){
-            return this.symbolsData.symbolList;
-        }
-
-        let cleanSymbolList:Edk2Symbol[] = [];
-        for (const s of this.symbolsData.symbolList) {
-            //TODO: add this isFileInuse and isActive inside symbol
-            if(gEdkDatabase.isFileInuse(s.filePath) && s.isActive()){
-                cleanSymbolList.push(s);
-            }
-        }
-        return new Set(cleanSymbolList);
-    }
-
-    getSymbolsTree() {
-        return this.symbolsData.symbols;
-    }
-
-    async reloadSymbols() {
-        await this.parseFile();
-    }
-
-    async parseInfPath(line: string) {
-        if (!line.toLowerCase().includes(".inf")) { return; }
-        line = split(line, "{", 2)[0];
-        if (line.includes("|")) {
-            let p = split(line, "|", 2)[1];
-            let sp = await this.edkDatabase.findPath(p);
-            return sp;
-        } else {
-            let sp = await this.edkDatabase.findPath(line);
-            return sp;
-        }
-    }
-
-    async preParse(){}
-    async postParse(){}
 
     /**
-     * Main Parsing function
+     * The `parse` function is used to parse a document using a defined DocumentParser.
+     *
+     * @param {DocumentParser} docParser - An instance of a DocumentParser that will be used to parse the content.
+     * @returns {boolean} - Returns true if the parsing was successful, false otherwise.
      */
-    async parseFile() {
-        gDebugLog.info(`Parsing file: ${this.filePath}`);
-        if(this.edkDatabase.parseComplete){
-            await this.preParse();
-        }
-        // Initialize variables for parsing
-        this.blockStack = [];
-        this.symbolsData = new Edk2DocumentSymbols(this.filePath);
+    parse(docParser: DocumentParser) {
+        // Check if line matches
+        const currentIndex = docParser.lineIndex;
 
-        // Populate with include source node location
-        let include = this.edkDatabase.includeSource.get(normalizePath(this.filePath).toUpperCase());
-        if(include){
-            let symb = this.edkDatabase.findByTypeAndValue(Edk2SymbolType.dscInclude,normalizePath(this.filePath));
-            if(symb.length>0 && symb[0].parent){
-                // Add a copy of the parent so it wont include original offspring
-                this.symbolsData.pushParent(symb[0].parent.clone());
-            }
+        let textLine = docParser.getNextLineTextUncomment();
+        if (textLine === undefined || textLine.length === 0) {
+            return false;
         }
 
-        this.lineNo = 0;
-        for (const b of this.blocks) {
-            b["pending"] = 0;
-            this.blocksDic.set(b.name, b);
+        if (this.excludeTag && textLine.match(this.excludeTag)) {
+            return false;
         }
 
+        if (textLine.match(this.tag)) {
+            gDebugLog.verbose(`New block ${this.name} (${this.tag.toString()} -> ${textLine})`);
 
-        let lines = readLines(this.filePath);
-        this.linesLength = lines.length;
-
-        for (let line of lines) {
-            this.currentLineRaw = line;
-            this.lineNo += 1;
-            // Skip comments
-
-            for (const comment of this.commentLine) {
-                line = line.trim().split(comment)[0].trim();
-            }
-            let rawLine = line;
-            if (line.startsWith(this.commentStart)) {
-                this.inComment = true;
-            }
-            if (line.endsWith(this.commentEnd)) {
-                this.inComment = false;
-                continue;
-            }
-            if (line.length === 0) {
-                continue;
+            // Check if symbol is root definition
+            if (this.isRoot && !docParser.isInRoot()) {
+                return false;
             }
 
-            if (!this.inComment) {
-                let rLine = this.edkDatabase.replaceVariables(rawLine);
-                await this.parseLine(rLine);
+            const line = docParser.getLineAt(currentIndex);
+            if (!line) {
+                gDebugLog.error("Wrong line");
+                return;
             }
 
-        }
-        if(this.edkDatabase.parseComplete){
-            await this.postParse();
-        }
-        // this.removeInactiveSymbols();
-        gDebugLog.info(`File parsed: ${this.filePath}`);
-    }
+            const range = new vscode.Range(line.range.start, new vscode.Position(docParser.document.lineCount, 0));
+            const symbolFactory = new SymbolFactory();
+            const location = new vscode.Location(docParser.document.uri, range);
 
-    private getCurrentBlock() {
-        return this.blockStack[this.blockStack.length - 1];
-    }
+            const symbol = symbolFactory.produceSymbol(this.type, textLine, location, docParser);
 
-    isPendingBlock() {
-        if (this.blockStack.length > 0) {
+            if (!symbol) {
+                return false;
+            }
+
+            docParser.addSymbol(symbol);
+            docParser.pushSymbolStack(symbol);
+
+            // look for block start
+            if (this.start) {
+                // read lines until start tag is found
+                while (!textLine.match(this.start)) {
+
+                    if (this.end && textLine.match(this.end)) {
+                        docParser.popSymbolStack();
+                        return true;
+                    }
+
+                    textLine = docParser.getNextLineTextUncomment();
+                    if (textLine === undefined) {
+                        docParser.popSymbolStack();
+                        return true;
+                    }
+                }
+            } else {
+                if (this.end === undefined) {
+                    docParser.popSymbolStack();
+                    return true;
+                }
+            }
+
+            // Parse block content
+            while (docParser.hasPendingLines()) {
+                // create a symbol
+                textLine = docParser.getNextLineTextUncomment();
+
+                if (textLine === undefined) {
+                    gDebugLog.error("Wrong Line in parser");
+                    return;
+                }
+                if (textLine.length === 0) {
+                    continue;
+                }
+
+                // parse block
+                const contextLength = this.context.length;
+                for (let i = 0; i < contextLength; i++) {
+                    const blockContext = this.context[i];
+                    gDebugLog.verbose(`Parse block: ${blockContext.name}`);
+                    // decrement line index as parser will get next line by default
+                    docParser.decrementLineIndex();
+                    const isSymbolAdded = blockContext.parse(docParser);
+                    if (isSymbolAdded) {
+                        gDebugLog.verbose("Added symbol");
+                        if (blockContext.exclusive) {
+                            break;
+                        }
+                    }
+                }
+
+                // Check the end tag
+                if (this.end && textLine.match(this.end)) {
+                    docParser.popSymbolStack();
+                    return true;
+                }
+            }
+
+            docParser.popSymbolStack();
             return true;
         }
+
         return false;
     }
 
-    async parseLine(line: string) {
-        let fullLine = line;
-        
-        if (line.length === 0) { return; }
-
-        // CLOSE block
-        line = fullLine;
-        if (this.isPendingBlock()) {
-
-                if (this.getCurrentBlock().end !== undefined && line.match(this.getCurrentBlock().end)) {
-                    line = this.endBlockSection(line);
-                }
+    _debug() { }
 
 
-        }
-
-        // START Block
-        line = fullLine;
-        if (this.isPendingBlock()) {
-                if (this.getCurrentBlock().start !== undefined && line.match(this.getCurrentBlock().start)) {
-                    this.startBlockSection(line);
-                }
-        }
-
-        // NEW Block
-        line = fullLine;
-        for (const block of this.blocks) {
-
-            if (line.match(block.tag)) {
-                let lineIndex = fullLine.length - line.length;
-                await this.newBlockSection(line, block, lineIndex, fullLine);
-            }
-
-        }
+}
 
 
 
-        if (this.isPendingBlock() &&
-            this.getCurrentBlock().inBlockFunction !== undefined) {
-            let line = fullLine;
-            // remove block beging
-            let matchBlock = line.match(this.getCurrentBlock().tag);
-            if (matchBlock) {
-                line = fullLine.slice(matchBlock[0].length);
-            }
-            if (line.length > 0) {
-                let block = this.getCurrentBlock();
-                let x = await block.inBlockFunction(line, this, this.getCurrentBlock());
-            }
-        }
 
+export class DocumentParser {
+    document: vscode.TextDocument; // The text document to parse
+    lineIndex: number = 1; // Current line index for parsing
+
+    commentStart: string = ""; // Start of a comment block
+    commentEnd: string = ""; // End of a comment block
+    commentLine: string[] = []; // Array to store individual lines of a comment
+    inComment: boolean = false; // Flag to track if currently inside a comment block
+
+    blockParsers: BlockParser[] = []; // Array of block parsers
+
+    symbolsTree: EdkSymbol[] = []; // Tree structure to store parsed symbols
+    symbolsList: EdkSymbol[] = []; // Flat list of parsed symbols
+    symbolStack: EdkSymbol[] = []; // Stack to track the nesting of symbols
+
+    defines: WorkspaceDefinitions = new WorkspaceDefinitions(); // Definitions for the workspace
+
+    constructor(document: vscode.TextDocument) {
+        this.document = document;
+        this.lineIndex = 0;
     }
 
+ /**
+  * Checks if the current line is a comment.
+  * 
+  * @returns Returns true if the current line is a comment, otherwise false.
+  */
+ isLineComment() {
+     // Get the text of the current line
+     let line = this.document.lineAt(this.lineIndex - 1).text;
+ 
+     // Remove any comment from the line
+     line = this.removeComment(line);
+ 
+     // If the line is empty after removing the comment, it is a comment line
+     if (line === "") {
+         return true;
+     }
+ 
+     // If the line is not empty after removing the comment, it is not a comment line
+     return false;
+ }
 
-    startBlockSection(line: string) {
-        // This is used when blocks can have nested start symbols
-        gDebugLog.debug(`START block [${this.getCurrentBlock().name}]: ${line}`);
-        this.getCurrentBlock().pending += 1;
-        // line = line.slice(1).trim();
+    /**
+     * Method to retrieve a specific line from a document.
+     *
+     * @returns {string|undefined} The retrieved line from the document, or undefined if the current index exceeds the document's line count.
+     */
+    getLine() {
+        // check if the line index is greater than or equal to the number of lines in the document
+        if (this.lineIndex >= this.document.lineCount) {
+            // if true, return undefined since no line exists at this index position
+            return undefined;
+        }
+
+        // if the line index is less, get that line from the document using the lineAt() method
+        let line = this.document.lineAt(this.lineIndex);
+        // return the retrieved line.
         return line;
-    }
-
-    endBlockSection(line: string) {
-
-        if (this.getCurrentBlock().start !== undefined) {
-            this.getCurrentBlock().pending -= 1;
-        }
-
-        if (this.getCurrentBlock().pending <= 0) {
-            // line = line.slice(1).trim();
-            gDebugLog.debug(`END BLock [${this.getCurrentBlock().name}]: ${line}`);
-            this.blockStack.pop();
-
-            let previousParent = this.symbolsData.popParent();
-            if (previousParent) {
-                let parentRange = new vscode.Range(
-                    previousParent.range.start,
-                    new vscode.Position(this.lineNo-1, line.length)
-                );
-                gDebugLog.debug("Adjust parent range:");
-                gDebugLog.debug(`  before: ${previousParent}`);
-                previousParent.range = parentRange;
-                gDebugLog.debug(`  after:  ${previousParent}`);
-                
-            }
-
-        }
-        return line;
-    }
-
-    async newBlockSection(line: string, block: any, lineIndex: number, fullLine: string, value: string | undefined = undefined) {
-        gDebugLog.debug(`CREATE [${block.name}]: ${line}`);
-        // check if this is really a valid name
-        let validName = true;
-        if (lineIndex > 0) {
-            if (!fullLine.slice(lineIndex - 1).match(block.tag)) {
-                validName = false;
-            }
-        }
-        if (validName) {
-
-            // Add new element to symbols tree
-            if (block.end !== undefined) {
-                await this.pushBlockParent(line, value, block);
-                this.blockStack.push(block);
-            } else {
-                await this.pushBlockSingle(block, line);
-                this.blockStack.push(block);
-                this.endBlockSection(line);
-            }
-            this.lastAddedBlock = block;
-        }
-    }
-
-    async pushBlockSingle(block: any, line: string) {
-        let symRange = new vscode.Range(
-            new vscode.Position(this.lineNo - 1, 0),
-            new vscode.Position(this.lineNo - 1, 0)
-        );
-        let temp;
-        if("produce" in block){
-            // Block has specific produce function
-            temp = await block.produce(line, this, block);
-        }else{
-            // Use global produce function
-            temp = gSymbolProducer.produce(block.type, line, "", line, symRange, this.filePath);
-        }
-        if(temp){
-            this.symbolsData.pushParent(temp);
-        }
-    }
-
-    async pushBlockParent(line: string, value: string | undefined, block: any) {
-        let symRange = new vscode.Range(
-            new vscode.Position(this.lineNo - 1, 0),
-            new vscode.Position(this.linesLength, this.currentLineRaw.length)
-        );
-        let setValue = line;
-        if (value) {
-            setValue = value;
-        }
-        let temp;
-        if("produce" in block){
-            // Block has specific produce function
-            temp = await block.produce(line, this, block);
-        }else{
-            // Use global produce function
-            temp = gSymbolProducer.produce(block.type, line, "", setValue, symRange, this.filePath);
-        }
-        
-        this.symbolsData.pushParent(temp);
-    }
-
-    pushSimpleSymbol(line: string, name: string, detail: string, value: string, symbolType: Edk2SymbolType, singleLine: boolean = true) {
-        let symRange;
-        if (singleLine) {
-            symRange = new vscode.Range(
-                new vscode.Position(this.lineNo - 1, 0),
-                new vscode.Position(this.lineNo - 1, this.currentLineRaw.length)
-            );
-        } else {
-            symRange = new vscode.Range(
-                new vscode.Position(this.lineNo - 1, 0),
-                new vscode.Position(this.linesLength, this.currentLineRaw.length)
-            );
-        }
-        let newSymbol = gSymbolProducer.produce(symbolType,
-            name,
-            detail,
-            value,
-            symRange,
-            this.filePath);
-        this.symbolsData.pushChild(newSymbol);
-    }
-
-
-
-    async pushBinarySymbol(line: string, splitSymbol: string, symbolType: Edk2SymbolType, skipRegex: RegExp | undefined = undefined, singleLine: boolean = true) {
-
-        if (skipRegex) {
-            if (line.match(skipRegex)) {
-                return;
-            }
-        }
-
-        if (!line.includes(splitSymbol)) { return; }
-
-        // Add new symbol
-        let [name, value] = split(line, splitSymbol, 2).map((x) => { return x.trim(); });
-        let symRange;
-        if (singleLine) {
-            symRange = new vscode.Range(
-                new vscode.Position(this.lineNo - 1, 0),
-                new vscode.Position(this.lineNo - 1, this.currentLineRaw.length)
-            );
-        } else {
-            symRange = new vscode.Range(
-                new vscode.Position(this.lineNo - 1, 0),
-                new vscode.Position(this.linesLength, this.currentLineRaw.length)
-            );
-        }
-        let detail = value;
-
-        let newSymbol = gSymbolProducer.produce(symbolType,
-            name,
-            detail,
-            value,
-            symRange,
-            this.filePath);
-        this.symbolsData.pushChild(newSymbol);
-    }
-
-
-    async parseAndPushRegexSymbol(line: string, parseRegex: RegExp, symbolType: Edk2SymbolType, skipRegex: RegExp | undefined = undefined, singleLine: boolean = true) {
-
-        if (skipRegex) {
-            if (line.match(skipRegex)) {
-                return;
-            }
-        }
-
-
-        if (line.match(parseRegex)) {
-            let result = parseRegex.exec(line);
-            if (!result) { return; }
-            let expectedResults = ["name", "detail", "value"];
-            let results: any = {
-                "name": "",
-                "detail": "",
-                "value": ""
-            };
-
-            if (result.groups) {
-                for (const keys of expectedResults) {
-                    if (keys in result.groups) {
-                        results[keys] = result.groups[keys];
-                    }
-                }
-            }
-
-            let symRange;
-            if (singleLine) {
-                symRange = new vscode.Range(
-                    new vscode.Position(this.lineNo - 1, 0),
-                    new vscode.Position(this.lineNo - 1, this.currentLineRaw.length)
-                );
-            } else {
-                symRange = new vscode.Range(
-                    new vscode.Position(this.lineNo - 1, 0),
-                    new vscode.Position(this.linesLength, this.currentLineRaw.length)
-                );
-            }
-
-
-            let newSymbol = gSymbolProducer.produce(symbolType,
-                results.name,
-                results.detail,
-                results.value,
-                symRange,
-                this.filePath);
-            this.symbolsData.pushChild(newSymbol);
-        }
-
-    }
-
-    //
-    // Block parsers
-    //
-
-    blockParserLine(line: string, thisParser: LanguageParser, block: any) {
-        thisParser.pushSimpleSymbol(line, line, "", line, block.childType);
-    }
-
-    async blockParserBinary(line: string, thisParser: LanguageParser, block: any) {
-        await thisParser.pushBinarySymbol(line, block.binarySymbol, block.childType, /^\!/gi);
     }
 
     /**
-     * Parsers a line that contains <name>|<path> or <path>
-     * @param line 
-     * @param thisParser 
-     * @param block 
+     * This function is used to get the line at a specific index from a document.
+     * It retrieves the line of text using the lineAt method of the document's object.
+     * 
+     * @param index - A number representing the index of the desired line in the document. 
+     * Zero-based index numbers should be used, meaning the first line of the document is at index 0.
+     * 
+     * @returns - Returns a `line` object at the specified index. If the index is out of bounds of the document, it will return undefined.
      */
-    async blockParserPath(line: string, thisParser: LanguageParser, block: any) {
-        line = split(line, "|", 2)[0];
-
-        let fp = await thisParser.edkDatabase.findPath(line, thisParser.filePath);
-        let value = line;
-        if (fp) {
-            value = fp;
-        }
-        thisParser.pushSimpleSymbol(line, line, "", value, block.childType);
+    getLineAt(index: number) {
+        let line = this.document.lineAt(index);
+        return line;
     }
 
+/**
+ * This function checks if there are any pending lines left in the document that have not been processed.
+ *
+ * @returns {boolean} It returns `true` if there is a pending line to be processed, `false` otherwise.
+ */
+    hasPendingLines(): boolean {
+        return this.lineIndex < this.document.lineCount;
+    }
+
+    /**
+     * Return the next line without comments.
+     * Increment the line index to prepare for the next line.
+     */
+    getNextLineTextUncomment() {
+        let line = this.getLineTextUncomment();
+        this.incrementLineIndex();
+        return line;
+    }
+
+    /**
+     * Gets the text of the current line without comments.
+     * If the line index is out of range, returns undefined.
+     */
+    getLineTextUncomment() {
+        if (this.lineIndex >= this.document.lineCount) {
+            return undefined;
+        }
+
+        let line = this.document.lineAt(this.lineIndex).text;
+        line = this.removeComment(line);
+
+        return line;
+    }
+
+    /**
+     * Function to get the current line index.
+     *
+     * This function will return the index of the current line in the document
+     * being processed. This is especially useful when needing to keep track 
+     * of the current position within a document while processing it.
+     *
+     * @returns {number} The index of the current line in the document.
+     */
+    getLineIndex() {
+        return this.lineIndex;
+    }
+
+ /**
+  * The `incrementLineIndex` function increases the `lineIndex` property by one. 
+  * This can be used to manually navigate through the lines of a document.
+  */
+    incrementLineIndex() {
+        this.lineIndex++;
+    }
+
+    /**
+     * Decreases the line index by one.
+     * This allows you to move the line index pointer to the previous line in the document.
+     */
+    decrementLineIndex() {
+        if(this.lineIndex === 0){
+            gDebugLog.error("LineIndex already 0");
+            return;
+        }
+        this.lineIndex--;
+    }
+
+    /**
+     * Removes comment from the given line
+     * @param line - The line of code to remove comments from
+     * @returns The line of code without comments
+     */
+    removeComment(line: string) {
+        // Iterate over each comment line and remove comments
+        for (const comment of this.commentLine) {
+            line = line.trim().split(comment)[0].trim(); // Remove comment substring
+        }
+
+        // Check if the line starts with the comment start marker
+        if (line.startsWith(this.commentStart)) {
+            this.inComment = true; // Set inComment flag to indicate line in a comment block
+        }
+        // Check if the line ends with the comment end marker
+        if (line.endsWith(this.commentEnd)) {
+            this.inComment = false; // Set inComment flag to indicate end of comment block
+        }
+
+        // Check if the line is inside a comment block
+        if (this.inComment) {
+            return ""; // Empty string indicates line is a comment
+        }
+        return line; // Return the line without comments
+    }
+
+    /**
+     * This function adds a new symbol to the symbol stack.
+     *
+     * @param  {EdkSymbol} symbol - The input symbol to be added to the symbol stack
+     * @returns {void}
+     */
+    pushSymbolStack(symbol: EdkSymbol) {
+        this.symbolStack.push(symbol);
+    }
+
+    /**
+     * This function checks if the symbol stack is empty.
+     *
+     * @returns A boolean indication whether the symbol stack is empty or not.
+     * If it's empty, the function will return true, indicating the symbolStack is in the root.
+     * If it's not empty, the function will return false.
+     */
+    isInRoot() {
+        return this.symbolStack.length === 0;
+    }
+
+    /**
+     * Remove the last symbol from the symbol stack and adjust its range based on its children range. 
+     * @returns The last symbol from the symbol stack after adjusting its range, or undefined if the symbol stack is empty.
+     */
+    popSymbolStack() {
+        // Retrieve the last symbol from the symbol stack
+        let lastSymbol = this.symbolStack.pop();
+
+        // Check if the symbol stack is empty
+        if (lastSymbol === undefined) {
+            // Print an error message and return undefined
+            gDebugLog.error("Symbol stack is empty");
+            return undefined;
+        }
+
+        // Adjust the range of the symbol based on its children range
+        if (lastSymbol.children.length > 0) {
+            // Get the end position of the symbol based on the range of the line before the current line index
+            let end = lastSymbol.range.end;
+            let line = this.getLineAt(this.lineIndex - 2);
+            if (line) {
+                end = line.range.end;
+            }
+
+            // Create a temporary range using the adjusted start and end positions
+            let tempRange = new vscode.Range(lastSymbol.range.start, end);
+
+            // Update the range of the last symbol
+            lastSymbol.updateRange(tempRange);
+        } else {
+            // Get the end position of the symbol based on the range of the current line index
+            let end = lastSymbol.range.end;
+            let line = this.getLineAt(this.lineIndex - 1);
+            if (line) {
+                end = line.range.end;
+            }
+
+            // Create a temporary range using the adjusted start and end positions
+            let tempRange = new vscode.Range(lastSymbol.range.start, end);
+
+            // Update the range of the last symbol
+            lastSymbol.updateRange(tempRange);
+        }
+
+        // Return the last symbol
+        return lastSymbol;
+    }
+
+/**
+ * This function adds a symbol to the tree structure. If the symbol stack is empty it means the symbol is a 
+ * root. Otherwise, the symbol is a child of the last symbol that was pushed into the stack.
+ *
+ * @param symbol - The symbol to be added.
+ */
+addSymbol(symbol: EdkSymbol) {
+    if (this.symbolStack.length === 0) {
+        this.symbolsTree.push(symbol);
+    } else {
+        let lastSymbol = this.symbolStack[this.symbolStack.length - 1];
+        lastSymbol.children.push(symbol);
+        symbol.parent = lastSymbol;
+    }
+    this.symbolsList.push(symbol);
 }
+
+
+    /**
+     * This function is responsible for parsing a file by iterating through its lines.
+     * It skips lines that are comments, and calls the parseLine function for non-comment lines.
+     * It keeps track of the progress using the lineIndex variable.
+     * This function is asynchronous, indicating that it may involve additional operations that could delay its execution.
+     */
+    async parseFile() {
+        // Log the start of the parsing process, including the file name
+        gDebugLog.info(`Parse Start: ${this.document.fileName}`);
+
+        // Reset the line index to the first line of the document
+        this.lineIndex = 1;
+
+        // Loop through each line of the document until reaching the line count
+        while (this.lineIndex < this.document.lineCount) {
+            // Check if the current line is not a line comment
+            if (!this.isLineComment()) {
+                // Parse the current non-comment line
+                await this.parseLine();
+            }
+
+            // Increment the line index to proceed to the next line
+            this.incrementLineIndex();
+        }
+
+        // Log the end of the parsing process, including the file name
+        gDebugLog.info(`Parse End: ${this.document.fileName}`);
+    }
+
+    /**
+     * Asynchronously parse a line of code.
+     * This function iterates through all block parsers to parse the current line.
+     * If a line parsed correctly and it's not the root, this function will reset the parse index and attempt
+     * to perform additional parsing on the next line until no lines remain in the document.
+     * If the current line is in the root of the document, this function will continue parsing without changing the parse index.
+     * 
+     * @async
+     */
+    async parseLine() {
+        for (let parseIndex = 0; parseIndex < this.blockParsers.length; parseIndex++) {
+            const block = this.blockParsers[parseIndex];
+            this.decrementLineIndex();
+            let parserResult = block.parse(this);
+            if (parserResult) {
+                if (block.isRoot) { continue; }
+                parseIndex = -1; // reset index
+                if (this.lineIndex >= this.document.lineCount) {
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * Retrieves the symbol that contains the specified position.
+     * @param position The position to check for symbol containment.
+     * @returns The symbol that contains the position, or undefined if no symbol is found.
+     */
+    getSelectedSymbol(position: vscode.Position) {
+        let selectedSymbol = undefined;
+        for (const symbol of this.symbolsList) {
+            if (symbol.range.contains(position)) {
+                selectedSymbol = symbol;
+            }
+        }
+
+        return selectedSymbol;
+    }
+
+
+    /**
+     * Retrieves symbols of a specific type from the symbols list.
+     *
+     * @param type - The type of the symbols to retrieve.
+     * @returns An array of symbols of the specified type.
+     */
+    getSymbolsType(type: Edk2SymbolType) {
+        return Array.from(this.symbolsList.filter((x) => { return x.type === type; }));
+    }
+}
+
+
+

@@ -1,0 +1,41 @@
+import * as vscode from 'vscode';
+import { gDebugLog } from "../extension";
+import { DscParser } from "./dscParser";
+import { FdfParser } from "./fdfParser";
+import { InfParser } from "./infParser";
+import { DecParser } from './decParser';
+import { VfrParser } from './vfrParser';
+import { AslParser } from './aslParser';
+
+
+export class ParserFactory {
+    getParser(document: vscode.TextDocument) {
+        let languageId = document.languageId;
+        switch (languageId) {
+            case "asl":
+                return new AslParser(document);
+                break;
+            case "edk2_dsc":
+                return new DscParser(document);
+                break;
+            case "edk2_dec":
+                return new DecParser(document);
+                break;
+            case "edk2_vfr":
+                return new VfrParser(document);
+                break;
+            case "edk2_fdf":
+                return new FdfParser(document);
+                break;
+            case "edk2_inf":
+                return new InfParser(document);
+                break;
+            case "edk2_uni":
+                break;
+            default:
+                gDebugLog.error(`Document parser not supportd: ${document.fileName}`);
+                return undefined;
+        }
+    }
+}
+

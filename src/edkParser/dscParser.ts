@@ -1,86 +1,230 @@
-import { Edk2SymbolType } from "../edkParser/edkSymbols";
-import { gEdkDatabase, gSymbolProducer } from "../extension";
-import { createRange, pathCompare, split } from "../utils";
+
 import * as vscode from 'vscode';
-import { LanguageParser } from "./languageParser";
+import { BlockParser, DocumentParser } from "./languageParser";
+import path = require("path");
+import { Edk2SymbolType } from '../symbols/symbolsType';
+import { REGEX_DEFINE, REGEX_INCLUDE } from './commonParser';
 
 
-export class DscParser extends LanguageParser {
+export const UNDEFINED_VARIABLE = "???";
 
+class BlockIncludes extends BlockParser {
+    name = "Include";
+    type = Edk2SymbolType.dscInclude;
+    tag = REGEX_INCLUDE;
+    start = undefined;
+    end = undefined;
+    visible:boolean = true;
+}
+
+
+
+class BlockComponentInf extends BlockParser {
+    name= "ComponentInf";
+    tag= /^[\s\.\w\$\(\)_\-\\\/]*\.inf/gi;
+    start= /.*?{/;
+    end= /(^\})|(^\[)|(^[\s\.\w\$\(\)_\-\\\/]*\.inf)|(^\!include)/gi;
+    type= Edk2SymbolType.dscModuleDefinition;
+
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlocklibraryDef(),
+        new BlockPcd(),
+    ];
+}
+
+class BlockComponentsSection extends BlockParser {
+    name= "Components";
+    tag= /\[\s*components.*?\]/gi;
+    start= undefined;
+    end= /^\[/gi;
+    type= Edk2SymbolType.dscSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockComponentInf(),
+
+        new BlockIncludes(),
+        
+        
+    ];
+
+
+
+
+}
+
+
+
+class BlocklibraryDef extends BlockParser {
+
+    name= "libraryDef";
+    tag= /^\w*\s*\|\s*[\s\.\w\$\(\)_\-\\\/]*\.inf/gi;
+    start= undefined;
+    end= undefined;
+    type= Edk2SymbolType.dscLibraryDefinition;
+    visible:boolean = true;
+
+
+}
+
+class BlockflashDefinition extends BlockParser {
+
+
+    name= "flashDefinition";
+    tag= /^flash_definition\s*\=\s*.*/gi;
+    start= undefined;
+    end= undefined;
+    type= Edk2SymbolType.dscLibraryDefinition;
+    visible:boolean = true;
+
+}
+
+
+
+class BlockDefinition extends BlockParser {
+
+    name= "Definition";
+    tag= REGEX_DEFINE;
+    start = undefined;
+    end = undefined;
+    type= Edk2SymbolType.dscDefine;
+    visible:boolean = true;
+
+}
+
+class BlockSimpleLine extends BlockParser {
+
+    name= "Text";
+    tag= /.*/gi;
+    excludeTag = /^\[/gi;
+    start= undefined;
+    end= undefined;
+    type= Edk2SymbolType.unknown;
+    visible:boolean = true;
+
+}
+
+//
+// Main sections
+//
+
+class BlockDefines extends BlockParser {
+    name= "Defines";
+    tag= /\[\s*(defines|buildoptions)\s*\]/gi;
+    start= undefined;
+    end= /^\[/gi;
+    type= Edk2SymbolType.dscSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockflashDefinition(),
+        new BlockDefinition(),
+        new BlockIncludes(),
+        
+    ];
+}
+
+
+class BlockSkuIds extends BlockParser {
+    
+    name = "SkuIds";
+    tag = /\[\s*(skuids)\s*\]/gi;
+    start = undefined;
+    end = /^\[/gi;
+    type = Edk2SymbolType.dscSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockIncludes(),
+        
+    ];
+
+
+
+}
+
+class BlockLibraryClasses extends BlockParser {
+
+    name = "LibraryClasses";
+    tag = /\[\s*libraryclasses.*?\]/gi;
+    start = undefined;
+    end = /^\[/gi;
+    type = Edk2SymbolType.dscSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlocklibraryDef(),
+        new BlockIncludes(),
+        
+    ];
+
+}
+
+
+
+class BlockPcd extends BlockParser {
+    name = "Pcds";
+    tag = /.*?\..*?\|.*$/gi;
+    start = undefined;
+    end = undefined;
+    type = Edk2SymbolType.dscPcdDefinition;
+    visible:boolean = true;
+    context: BlockParser[] = [];
+
+}
+
+class BlockPcdSection extends BlockParser {
+    name = "PcdSection";
+    tag = /\[\s*pcds.*?\]/gi;
+    start = undefined;
+    end = /^\[/gi;
+    type = Edk2SymbolType.dscSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockPcd(),
+        new BlockIncludes(),
+        
+    ];
+}
+
+class BlockGenericSection extends BlockParser {
+    name = "SectionUnknown";
+    tag = /\[/gi;
+    start = undefined;
+    end = /\[/gi;
+    type = Edk2SymbolType.unknown;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockIncludes(),
+        
+    ];
+
+
+}
+
+
+
+export class DscParser extends DocumentParser {
 
     commentStart: string = "/*";
     commentEnd: string = "*/";
     commentLine: string[] = ["#"];
 
-    
-    blocks: any[] = [
-        {name:"Components", tag: /\[\s*components.*?\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.dscSection, inBlockFunction:undefined},
-        {name:"ComponentInf", tag: /^[\s\.\w\$\(\)_\-\\\/]*\.inf/gi, start: /^\{/, end: /(^\})|(^\[)|(^[\s\.\w\$\(\)_\-\\\/]*\.inf)|(^\!include)/gi, type:Edk2SymbolType.dscModuleDefinition, inBlockFunction:undefined, produce:this.produceInf},
-        {name:"libraryDef", tag: /^\w*\s*\|\s*[\s\.\w\$\(\)_\-\\\/]*\.inf/gi, start: undefined, end: undefined, type:Edk2SymbolType.dscLibraryDefinition, inBlockFunction:undefined, produce:this.produceLib},
-        {name:"Defines", tag: /\[\s*(defines|buildoptions)\s*\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.dscSection, inBlockFunction:this.blockParserBinary, binarySymbol:"=", childType:Edk2SymbolType.dscDefine},
-        {name:"Pcds", tag: /\[\s*pcds.*?\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.dscSection, inBlockFunction:this.blockParserBinary, childType:Edk2SymbolType.dscPcdDefinition, binarySymbol:"|"},
-        {name:"LibraryClasses", tag: /\[\s*libraryclasses.*?\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.dscSection},
-        {name:"Include", tag: /\s*\!include/gi, start: undefined, end: undefined, type:Edk2SymbolType.dscInclude, inBlockFunction:undefined, produce:this.produceInclude},
+    privateDefines: Map<string, string> = new Map<string, string>();
+
+    blockParsers: BlockParser[] = [
+            new BlockDefines(),
+            new BlockComponentsSection(),
+            new BlockLibraryClasses(),
+            new BlockSkuIds(),
+            new BlockPcdSection(),
+            new BlockGenericSection(),
+
+            new BlockDefinition(true),
+            new BlockIncludes(true),
+            new BlockComponentInf(true),
+            new BlocklibraryDef(true),
+            new BlockPcd(true),
     ];
 
-    async produceInf(line:string, thisParser:LanguageParser, block:any){
-        let symRange;
-        if (!line.endsWith("{")) {
-            symRange = new vscode.Range(
-                new vscode.Position(thisParser.lineNo - 1, 0),
-                new vscode.Position(thisParser.lineNo - 1, line.length)
-            );
-        } else {
-            line = line.replace("{","").trim();
-            symRange = new vscode.Range(
-                new vscode.Position(thisParser.lineNo - 1, 0),
-                new vscode.Position(thisParser.linesLength, line.length)
-            );
-        }
-        let value = line;
-        let infPath = await thisParser.parseInfPath(line);
-        if(infPath){
-            value = infPath;
-        }
-        
-        return gSymbolProducer.produce(Edk2SymbolType.dscModuleDefinition, line, "", value, symRange, thisParser.filePath);
-        
-    }
 
-    
-    async produceLib(line:string, thisParser:LanguageParser, block:any){
-        let symRange = createRange(thisParser.lineNo-1,thisParser.lineNo-1, line.length);
-        
-        let [name,detail] = split(line,"|",2);
-        let value = detail;
-        let infPath = await thisParser.parseInfPath(detail);
-        if(infPath){
-            value = infPath;
-        }
-        return gSymbolProducer.produce(Edk2SymbolType.dscLibraryDefinition, name, detail, value, symRange, thisParser.filePath);
-        
-    }
 
-    async parseLibrary(line:string, thisParser:LanguageParser, block:any){
-        let [name,detail] = split(line,"|",2);
-        let value = detail;
-        let infPath = await thisParser.parseInfPath(detail);
-        if(infPath){
-            value = infPath;
-        }
-        thisParser.pushSimpleSymbol(line,name,detail,value,Edk2SymbolType.dscLibraryDefinition,true);
-    }
 
-    async produceInclude(line:string, thisParser:LanguageParser, block:any){
-        line = split(line," ",2)[1].trim();
-        let value = line;
-        let includedPath = await thisParser.edkDatabase.findPath(line);
-        if(includedPath){
-            value = includedPath;
-        }
-        let symRange = createRange(thisParser.lineNo-1,thisParser.lineNo-1, line.length);
-        return gSymbolProducer.produce(Edk2SymbolType.dscInclude, "INCLUDE",line,value,symRange, thisParser.filePath);
-        
-    }
-    
 }

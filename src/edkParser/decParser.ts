@@ -1,41 +1,291 @@
 
-import { Edk2SymbolType } from "../edkParser/edkSymbols";
-import { split } from "../utils";
-import { LanguageParser } from "./languageParser";
+import * as vscode from 'vscode';
+import { BlockParser, DocumentParser } from "./languageParser";
+import path = require("path");
+import { Edk2SymbolType } from '../symbols/symbolsType';
+import { REGEX_ANY_BUT_SECTION, REGEX_DEFINE, REGEX_GUID, REGEX_INCLUDE, REGEX_PATH_FILE, REGEX_PATH_FOLDER } from './commonParser';
 
 
 
-export class DecParser extends LanguageParser {
 
 
-    commentStart: string = "/*";
-    commentEnd: string = "*/";
-    commentLine: string[] = ["#", "!"];
 
-    
-    blocks: any[] = [
-        {name:"Defines", tag: /\[\s*(defines|buildoptions).*?\s*\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.decSection, inBlockFunction:this.blockParserBinary, binarySymbol:"=", childType:Edk2SymbolType.decDefine},
-        {name:"Packages", tag: /\[\s*pacakges.*?\s*\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.decSection, inBlockFunction:this.blockParserPath, childType:Edk2SymbolType.decPackage},
-        {name:"LibraryClasses", tag: /\[\s*libraryclasses.*?\s*\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.decSection, inBlockFunction:this.parseLibrary, childType:Edk2SymbolType.decLibrary},
-        {name:"Protocols", tag: /\[\s*protocols.*?\s*\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.decSection, inBlockFunction:this.blockParserBinary, childType:Edk2SymbolType.decProtocol, binarySymbol:"="},
-        {name:"Ppis", tag: /\[\s*ppis.*?\s*\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.decSection, inBlockFunction:this.blockParserBinary, childType:Edk2SymbolType.decPpi, binarySymbol:"="},
-        {name:"Guids", tag: /\[\s*guids.*?\s*\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.decSection, inBlockFunction:this.blockParserBinary, childType:Edk2SymbolType.decGuid, binarySymbol:"="},
-        {name:"Pcd", tag: /\[\s*pcd.*?\s*\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.decSection, inBlockFunction:this.blockParserBinary, childType:Edk2SymbolType.decPcd, binarySymbol:"|"},
-        {name:"Includes", tag: /\[\s*Includes.*?\s*\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.decSection, inBlockFunction:this.blockParserPath, childType:Edk2SymbolType.decIncludes},
+class BlockComponentInf extends BlockParser {
+    name= "ComponentInf";
+    tag= /^[\s\.\w\$\(\)_\-\\\/]*\.inf/gi;
+    start= /.*?{/;
+    end= /(^\})|(^\[)|(^[\s\.\w\$\(\)_\-\\\/]*\.inf)|(^\!include)/gi;
+    type= Edk2SymbolType.dscModuleDefinition;
 
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlocklibraryDef(),
+        new BlockPcd(),
     ];
-    
+}
 
-    async parseLibrary(line:string, thisParser:LanguageParser, block:any){
-        let [name,detail] = split(line,"|",2);
-        let value = detail;
-        let filePath = await thisParser.parseInfPath(detail);
-        if(filePath){
-            value = filePath;
-        }
-        thisParser.pushSimpleSymbol(line,name,detail,value,Edk2SymbolType.decLibrary,true);
-    }
+class BlockComponentsSection extends BlockParser {
+    name= "Components";
+    tag= /\[\s*components.*?\]/gi;
+    start= undefined;
+    end= /^\[/gi;
+    type= Edk2SymbolType.decSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockComponentInf(),
+
+        
+        
+    ];
+
+}
+
+
+class BlocklibraryDef extends BlockParser {
+
+    name= "Library";
+    tag= REGEX_PATH_FILE;
+    start= undefined;
+    end= undefined;
+    type= Edk2SymbolType.decLibrary;
+    visible:boolean = true;
+
+
+}
+
+
+
+
+
+class BlockDefinition extends BlockParser {
+
+    name= "Definition";
+    tag= REGEX_DEFINE;
+    start = undefined;
+    end = undefined;
+    type= Edk2SymbolType.dscDefine;
+    visible:boolean = true;
+
+}
+
+
+
+//
+// Main sections
+//
+
+class BlockDefines extends BlockParser {
+    name= "Defines";
+    tag= /\[\s*(defines|buildoptions)\s*\]/gi;
+    start= undefined;
+    end= /^\[/gi;
+    type= Edk2SymbolType.decSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockDefinition(),
+    ];
+}
+
+
+class BlockSkuIds extends BlockParser {
+    
+    name = "SkuIds";
+    tag = /\[\s*(skuids)\s*\]/gi;
+    start = undefined;
+    end = /^\[/gi;
+    type = Edk2SymbolType.decSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        
+    ];
 
 
 
 }
+
+class BlockLibraryClasses extends BlockParser {
+
+    name = "LibraryClasses";
+    tag = /\[\s*libraryclasses.*?\]/gi;
+    start = undefined;
+    end = /^\[/gi;
+    type = Edk2SymbolType.decSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlocklibraryDef(),
+        
+    ];
+
+}
+
+
+
+class BlockPcd extends BlockParser {
+    name = "Pcds";
+    tag = REGEX_ANY_BUT_SECTION;
+    start = undefined;
+    end = undefined;
+    type = Edk2SymbolType.decPcd;
+    visible:boolean = true;
+    context: BlockParser[] = [];
+
+}
+
+class BlockPcdSection extends BlockParser {
+    name = "PcdSection";
+    tag = /\[\s*pcds.*?\]/gi;
+    start = undefined;
+    end = /^\[/gi;
+    type = Edk2SymbolType.decSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockPcd(),
+        
+    ];
+}
+
+
+class BlockGenericSection extends BlockParser {
+    name = "SectionUnknown";
+    tag = /\[/gi;
+    start = undefined;
+    end = /\[/gi;
+    type = Edk2SymbolType.unknown;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        
+    ];
+
+
+}
+
+
+
+class BlockInclude extends BlockParser {
+
+    name= "Include";
+    tag= REGEX_PATH_FOLDER;
+    excludeTag = undefined;
+    start= undefined;
+    end= undefined;
+    type= Edk2SymbolType.decInclude;
+    visible:boolean = true;
+
+}
+
+class BlockIncludeSection extends BlockParser {
+    name = "Includes";
+    tag = /\[\s*includes.*?\]/gi;
+    start = undefined;
+    end = /\[/gi;
+    type = Edk2SymbolType.decSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockInclude(),
+    ];
+
+
+}
+
+
+
+class BlockGuid extends BlockParser {
+
+    name= "Guid";
+    tag= REGEX_ANY_BUT_SECTION;
+    excludeTag = undefined;
+    start= undefined;
+    end= undefined;
+    type= Edk2SymbolType.decGuid;
+    visible:boolean = true;
+
+}
+class BlockGuidsSection extends BlockParser {
+    name = "Guids";
+    tag = /\[\s*Guids.*?\]/gi;
+    start = undefined;
+    end = /\[/gi;
+    type = Edk2SymbolType.decSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockGuid(),
+    ];
+
+
+}
+
+class BlockProtocol extends BlockParser {
+
+    name= "Protocol";
+    tag= REGEX_GUID;
+    excludeTag = undefined;
+    start= undefined;
+    end= undefined;
+    type= Edk2SymbolType.decProtocol;
+    visible:boolean = true;
+
+}
+class BlockProtocolsSection extends BlockParser {
+    name = "Protocols";
+    tag = /\[\s*Protocols.*?\]/gi;
+    start = undefined;
+    end = /\[/gi;
+    type = Edk2SymbolType.decSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockProtocol(),
+    ];
+
+
+}
+
+
+class BlockPpi extends BlockParser {
+
+    name= "Ppi";
+    tag= REGEX_ANY_BUT_SECTION;
+    excludeTag = undefined;
+    start= undefined;
+    end= undefined;
+    type= Edk2SymbolType.decPpi;
+    visible:boolean = true;
+
+}
+class BlockPpisSection extends BlockParser {
+    name = "Ppis";
+    tag = /\[\s*Ppis.*?\]/gi;
+    start = undefined;
+    end = /\[/gi;
+    type = Edk2SymbolType.decSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockPpi(),
+    ];
+
+
+}
+
+
+
+export class DecParser extends DocumentParser {
+
+    commentStart: string = "/*";
+    commentEnd: string = "*/";
+    commentLine: string[] = ["#"];
+
+    privateDefines: Map<string, string> = new Map<string, string>();
+
+    blockParsers: BlockParser[] = [
+            new BlockDefines(),
+            new BlockIncludeSection(),
+            new BlockGuidsSection(),
+            new BlockProtocolsSection(),
+            new BlockPpisSection(),
+            new BlockLibraryClasses(),
+            new BlockPcdSection(),
+            new BlockGenericSection(),
+
+    ];
+
+}
+

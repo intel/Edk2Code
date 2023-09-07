@@ -1,43 +1,140 @@
-import { Edk2SymbolType } from "../edkParser/edkSymbols";
-import { gSymbolProducer } from "../extension";
+
+import { Edk2SymbolType } from "../symbols/symbolsType";
 import { createRange, split } from "../utils";
-import { LanguageParser } from "./languageParser";
+import { REGEX_DEFINE, REGEX_INCLUDE } from "./commonParser";
+import { BlockParser, DocumentParser } from "./languageParser";
+
+class BlockIncludes extends BlockParser {
+    name = "Include";
+    type = Edk2SymbolType.fdfInclude;
+    tag = REGEX_INCLUDE;
+    start = undefined;
+    end = undefined;
+    visible:boolean = true;
+}
+
+class BlockAprioriInf extends BlockParser {
+    name= "Apriori";
+    tag= /APRIORI \w+/gi;
+    start= /.*?{/;
+    end= /(^\})|(^\!include)/gi;
+    type= Edk2SymbolType.unknown;
+
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockComponentInf(),
+    ];
+}
 
 
-export class FdfParser extends LanguageParser {
+class BlockComponentInf extends BlockParser {
+    name= "ComponentInf";
+    tag= /^INF\s+[\s\.\w\$\(\)_\-\\\/]*\.inf/gi;
+    start= undefined;
+    end= undefined;
+    type= Edk2SymbolType.fdfInf;
 
+    visible:boolean = true;
+}
+
+class BlockSimpleLine extends BlockParser {
+
+    name= "Text";
+    tag= /.*/gi;
+    excludeTag = /^\[/gi;
+    start= undefined;
+    end= undefined;
+    type= Edk2SymbolType.unknown;
+    visible:boolean = true;
+
+}
+
+class BlockDefinition extends BlockParser {
+    name= "Definition";
+    tag= REGEX_DEFINE;
+    start = undefined;
+    end = undefined;
+    type= Edk2SymbolType.fdfDefinition;
+    visible:boolean = true;
+
+}
+
+class BlockFV extends BlockParser {
+    name = "FV";
+    tag = /^\[\s*FV\./gi;
+    start =  undefined;
+    end =  /^\[/gi;
+    type = Edk2SymbolType.fdfSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockComponentInf(),
+        new BlockAprioriInf(),
+        new BlockDefinition(),
+        new BlockIncludes(),
+        new BlockSimpleLine(),
+    ];
+}
+
+class BlockFd extends BlockParser {
+    name = "FD";
+    tag = /^\[\s*FD\./gi;
+    start =  undefined;
+    end =  /^\[/gi;
+    type = Edk2SymbolType.fdfSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockDefinition(),
+        new BlockIncludes(),
+        new BlockSimpleLine(),
+    ];
+}
+
+class BlockRuleSection extends BlockParser {
+    name = "Rule";
+    tag = /^\[\s*Rule\./gi;
+    start =  undefined;
+    end =  /^\[/gi;
+    type = Edk2SymbolType.fdfSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockIncludes(),
+        new BlockSimpleLine(),
+    ];
+}
+
+
+class BlockGenericSection extends BlockParser {
+    name = "SectionUnknown";
+    tag = /\[/gi;
+    start = undefined;
+    end = /^\[/gi;
+    type = Edk2SymbolType.dscSection;
+    visible:boolean = true;
+    context: BlockParser[] = [
+        new BlockIncludes(),
+        new BlockSimpleLine()
+    ];
+}
+
+
+
+export class FdfParser extends DocumentParser {
 
     commentStart: string = "/*";
     commentEnd: string = "*/";
     commentLine: string[] = ["#"];
 
-    
-    blocks: any[] = [
-        {name:"Defines", tag: /\[\s*(.*?)\s*\]/gi, start: undefined, end: /^\[/gi, type:Edk2SymbolType.fdfSection},
-        {name:"Inf", tag: /INF .+?\.inf/gi, start: undefined, end: undefined, type:Edk2SymbolType.fdfInf, produce:this.produceInf},
-        {name:"Definition", tag: /^(?!file|\!).*?\=.*/gi, start: undefined, end: undefined, type:Edk2SymbolType.fdfDefinition, produce:this.produceDefinition},
-        {name:"file", tag: /file .+?\{/gi, start: /\{/gi, end:/\}/gi, type:Edk2SymbolType.fdfFile}
-        
+    privateDefines: Map<string, string> = new Map<string, string>();
+
+    blockParsers: BlockParser[] = [
+            new BlockFV(),
+            new BlockFd(),
+            new BlockRuleSection(),
+            new BlockGenericSection(),
+
+            new BlockComponentInf(true),
+            new BlockIncludes(true),
     ];
-
-    async produceInf(line:string, thisParser:LanguageParser, block:any){
-        let symRange = createRange(thisParser.lineNo-1,thisParser.lineNo-1, line.length);
-        return gSymbolProducer.produce(Edk2SymbolType.fdfInf, line, "", line, symRange, thisParser.filePath);
-
-    }
-
-    async produceFile(line:string, thisParser:LanguageParser, block:any){
-        let symRange = createRange(thisParser.lineNo-1,thisParser.lineNo-1, line.length);
-        return gSymbolProducer.produce(Edk2SymbolType.fdfFile, line, "", line, symRange, thisParser.filePath);
-
-    }
-
-    async produceDefinition(line:string, thisParser:LanguageParser, block:any){
-        let symRange = createRange(thisParser.lineNo-1,thisParser.lineNo-1, line.length);
-        let [key, value] = split(line,'=',2);
-        return gSymbolProducer.produce(Edk2SymbolType.fdfDefinition, key, value, line, symRange, thisParser.filePath);
-
-    }
 
 
 

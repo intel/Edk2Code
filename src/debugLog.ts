@@ -53,6 +53,13 @@ export class DebugLog {
             this.outConsole.appendLine(text);
             return;
         }
+
+        if(gConfigAgent === undefined){
+            this.outConsole.appendLine(text);
+            console.log(text);
+            return;
+        }
+
         if (level <= gConfigAgent.getLogLevel()){
             this.outConsole.appendLine(text);
             if(level === LogLevel.error){

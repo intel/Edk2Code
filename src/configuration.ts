@@ -1,33 +1,144 @@
 import path = require('path');
 import * as vscode from 'vscode';
-import { gEdkDatabase, gWorkspacePath } from './extension';
+import { gDebugLog, gWorkspacePath } from './extension';
 import * as fs from 'fs';
 import { LogLevel } from './debugLog';
+import { askReloadFiles } from './ui/messages';
+import { existsEdkCodeFolderFile, getEdkCodeFolderFilePath, getEdkCodeFolderPath, readFile, writeEdkCodeFolderFile } from './utils';
+import { SettingsPanel } from './settings/settingsPanel';
+
+
+export interface WorkspaceConfig {
+    packagePaths:string[];
+    dscPaths:string[];
+    buildDefines:string[];
+}
+
+export interface WorkspaceConfigErrors{
+    packagePaths:string;
+    dscPaths:string;
+    buildDefines:string;
+}
 
 export class ConfigAgent {
 
-    public loadedConfiguration:vscode.WorkspaceConfiguration;
+    getWorkspaceErrors(): WorkspaceConfigErrors | null {
+        return {packagePaths:"", dscPaths:"", buildDefines:""};
+    }
+
+
+
+    public loadedConfiguration: vscode.WorkspaceConfiguration;
+
+    private reloadConfigs = ["mainDscFile", "buildPackagePaths", "buildDefines"];
+    private configFileWatcher: vscode.FileSystemWatcher | null = null;
+    private propertiesFile: vscode.Uri | undefined | null = undefined; // undefined and null values are handled differently
+    private settingsPanel:SettingsPanel|undefined;
+
+    private workspaceConfig:WorkspaceConfig;
+    private settingsFileName: string = "edk2_workspace_properties.json";
 
     public constructor() {
-        this.loadedConfiguration = vscode.workspace.getConfiguration('edk2code');        
-        vscode.workspace.onDidChangeConfiguration(this.updateConfiguration, this);
-
-    }
-
-    updateConfiguration() {
         this.loadedConfiguration = vscode.workspace.getConfiguration('edk2code');
+        this.workspaceConfig = this.readWpConfig();
     }
 
-    get(option:string){
+    reloadConfigFile(){
+        this.workspaceConfig = this.readWpConfig();
+    }
+
+    getConfigFileUri(){
+        return vscode.Uri.file(getEdkCodeFolderFilePath(this.settingsFileName));
+    }
+
+    private readWpConfig(){
+        let settingsPath = getEdkCodeFolderFilePath(this.settingsFileName);
+        gDebugLog.verbose(`Loading configuration from ${settingsPath}`);
+        if(existsEdkCodeFolderFile(this.settingsFileName)){
+            
+            try {
+                return JSON.parse(readFile(settingsPath));
+            } catch (error) {
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                vscode.window.showErrorMessage(`${settingsPath} is corrupted: ${error}`);
+                return this.getCleanWpConfig();
+            }
+            
+        }else{
+            return this.getCleanWpConfig();
+        }
+    }
+
+    getWorkspaceConfig(): WorkspaceConfig {
+        return this.workspaceConfig;
+    }
+
+    writeWorkspaceConfig(config:WorkspaceConfig){
+        let data = JSON.stringify(config,null,4);
+        writeEdkCodeFolderFile(this.settingsFileName,data);
+        this.workspaceConfig = config;
+    }
+    
+    clearWpConfiguration(){
+        this.workspaceConfig = this.getCleanWpConfig();
+    }
+
+    initConfigWatcher(){
+        
+        this.configFileWatcher = vscode.workspace.createFileSystemWatcher(getEdkCodeFolderFilePath(this.settingsFileName));
+
+        // this.configFileWatcher.onDidCreate((uri) => {
+        //     this.propertiesFile = uri;
+        //     this.handleConfigurationChange();
+        // });
+
+        // this.configFileWatcher.onDidDelete(() => {
+        //     this.propertiesFile = null;
+        //     this.resetToDefaultSettings(true);
+        //     this.handleConfigurationChange();
+        // });
+
+        this.configFileWatcher.onDidChange(() => {
+            this.handleConfigurationChange();
+        });
+    }
+
+    setPanel(settingsPanel: SettingsPanel) {
+        this.settingsPanel = settingsPanel;
+        settingsPanel.configValuesChanged(() => this.saveConfigurationUI());
+    }
+
+    saveConfigurationUI(){
+        console.log("saving config");
+    }
+
+    handleConfigurationChange() {
+        this.workspaceConfig = this.readWpConfig();
+        askReloadFiles();
+    }
+
+    resetToDefaultSettings(arg0: boolean) {
+        throw new Error('Method not implemented.');
+    }
+
+    getCleanWpConfig():WorkspaceConfig{
+        return {packagePaths:[], dscPaths:[], buildDefines:[]};
+    }
+
+
+
+
+
+    get(option: string) {
         return this.loadedConfiguration.get(option);
     }
 
-    async set(option:string, value:any){
-        await this.loadedConfiguration.update(option,value);
+    async set(option: string, value: any) {
+        await this.loadedConfiguration.update(option, value);
     }
 
-    getLogLevel():LogLevel{
-        let logLevel:string = <string>this.get("logLevel");
+    getLogLevel(): LogLevel {
+        let logLevel: string = <string>this.get("logLevel");
         switch (logLevel) {
             case "None":
                 return LogLevel.none;
@@ -39,35 +150,48 @@ export class ConfigAgent {
                 return LogLevel.info;
             case "Verbose":
                 return LogLevel.verbose;
+            case "Debug":
+                return LogLevel.debug;
             default:
                 return LogLevel.none;
                 break;
         }
     }
 
-    async setBuildDefines(name:string, value:string){
-        let buildDefines:string[] = <string[]>this.get("buildDefines");
-        let toSave:string[]=[];
+    async setBuildDefines(defines: Map<string, string>) {
+        
+        let toSave: string[] = [];
+        for (const [key, value] of defines.entries()) {
+            toSave.push(`${key.trim()}=${value.trim()}`);
+        }
+        this.workspaceConfig.buildDefines = toSave;
+        this.writeWorkspaceConfig(this.workspaceConfig);
+
+    }
+
+    async setBuildDefine(name: string, value: string) {
+        let buildDefines: string[] = this.workspaceConfig.buildDefines;
+        let toSave: string[] = [];
         for (const def of buildDefines) {
-            if(!def.startsWith(`${name}=`)){
+            if (!def.startsWith(`${name}=`)) {
                 toSave.push(def);
             }
         }
         toSave.push(`${name}=${value.trim()}`);
-        await this.set("buildDefines",toSave);
-
+        this.workspaceConfig.buildDefines = toSave;
+        this.writeWorkspaceConfig(this.workspaceConfig);
     }
 
-    getBuildDefines(){
-        let buildDefines:string[] = <string[]>this.get("buildDefines");
+    getBuildDefines() {
+        let buildDefines: string[] = this.workspaceConfig.buildDefines;
 
-        let buildDefinesObj:Map<string,string> = new Map();
+        let buildDefinesObj: Map<string, string> = new Map();
         for (const def of buildDefines) {
-            if(def.includes("=")){
+            if (def.includes("=")) {
                 let values = def.split("=");
-                if(values.length !==2){continue;}
-                buildDefinesObj.set(values[0].trim(),values[1].trim());
-            }else{
+                if (values.length !== 2) { continue; }
+                buildDefinesObj.set(values[0].trim(), values[1].trim());
+            } else {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 vscode.window.showErrorMessage(`Malformed define in seeting: "${def}"`);
             }
@@ -75,86 +199,86 @@ export class ConfigAgent {
         return buildDefinesObj;
     }
 
-    getBuildPackagePaths(){
-        return <string[]>this.get("buildPackagePaths");
+    getBuildPackagePaths() {
+        let paths = this.workspaceConfig.packagePaths;
+        let retPaths = [];
+        for (const p  of paths) {
+            retPaths.push(path.join(gWorkspacePath, p));
+        }
+        return retPaths;
     }
 
-    getBuildDscPaths(){
-        return <string[]>this.get("mainDscFile");
+    
+    pushBuildPackagePaths(path:string) {
+        if(this.workspaceConfig.packagePaths.includes(path)){
+            return;
+        }
+        this.workspaceConfig.packagePaths.push(path);
+        this.writeWorkspaceConfig(this.workspaceConfig);
     }
 
-    getIsGenIgnoreFile(){
+    async setBuildDscPaths(dscFiles: string[]) {
+        this.workspaceConfig.dscPaths = dscFiles;
+        this.writeWorkspaceConfig(this.workspaceConfig);
+        
+    }
+
+    getBuildDscPaths() {
+        return this.workspaceConfig.dscPaths;
+    }
+
+    getIsGenIgnoreFile() {
         return <boolean>this.get("generateIgnoreFile");
     }
 
-    getIsShowLanguageWarnings(){
+    getExtraIgnorePatterns() {
+        return <string[]>this.get("extraIgnorePatterns");
+    }
+
+    getIsGenGuidXrefFile() {
+        return <boolean>this.get("generateGuidXref");
+    }
+
+    getIsShowLanguageWarnings() {
         return <boolean>this.get("showEdk2LanguageWarnings");
     }
 
-    getIsDimmUnusedLibraries(){
+    getIsDimmUnusedLibraries() {
         return <boolean>this.get("dimUnusedLibraries");
     }
 
-    async setDimmUnusedLibraries(value:boolean){
-        await this.set("dimUnusedLibraries",value);
+    async setDimmUnusedLibraries(value: boolean) {
+        await this.set("dimUnusedLibraries", value);
     }
 
-    async saveBuildConfig(){
-        let savePath = await vscode.window.showSaveDialog({defaultUri:vscode.Uri.file(gWorkspacePath),
-            filters:{
+    async saveBuildConfig() {
+        let savePath = await vscode.window.showSaveDialog({
+            defaultUri: vscode.Uri.file(gWorkspacePath),
+            filters: {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 'Json': ['json'],
-            },});
-        if(savePath){
+            },
+        });
+        if (savePath) {
             let packages = this.getBuildPackagePaths();
             let dscs = this.getBuildDscPaths();
             let defines = this.getBuildDefines();
-            
+
             let definesList = [];
-            for (const [key,value] of defines) {
-             definesList.push(`${key}=${value}`);   
+            for (const [key, value] of defines) {
+                definesList.push(`${key}=${value}`);
             }
-             
+
 
             let object = {
-                "includePaths":packages,
+                "includePaths": packages,
                 "dscs": dscs,
-                "defines":definesList
+                "defines": definesList
             };
-            fs.writeFileSync(savePath.fsPath,JSON.stringify(object,null,2));
+            fs.writeFileSync(savePath.fsPath, JSON.stringify(object, null, 2));
         }
     }
 
-    async loadBuildConfig(){
-        let openPath = await vscode.window.showOpenDialog({defaultUri:vscode.Uri.file(gWorkspacePath),
-            filters:{
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                'Json': ['json'],
-            },});
-        if(openPath){
-            try {
-                let object = JSON.parse(fs.readFileSync(openPath[0].fsPath).toString());
-                if(object.defines === undefined ||
-                    object.dscs === undefined ||
-                    object.includePaths === undefined){
-                        throw new Error("Invalid configuration file");
-                    }
-                await this.set("buildDefines",object.defines);
-                await this.set("mainDscFile",object.dscs);
-                await this.set("buildPackagePaths",object.includePaths);
-            } catch (error) {
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                vscode.window.showErrorMessage(String(error));
-                return;
-            }
-            
-        }
-        let settings = gEdkDatabase.getSettings();
-        gEdkDatabase.setInputBuildDefines(settings.defines);
-		gEdkDatabase.setPackagesPaths(settings.includes);
-		await gEdkDatabase.load(settings.dscFiles);
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        vscode.window.showInformationMessage("Configuration loaded");
-    }
+    
 
 }

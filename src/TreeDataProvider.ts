@@ -1,4 +1,6 @@
+import path = require('path');
 import * as vscode from 'vscode';
+import { gWorkspacePath } from './extension';
 
 
 
@@ -7,26 +9,37 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
   readonly onDidChangeTreeData: vscode.Event<undefined | void> = this._onDidChangeTreeData.event;
 
   data: TreeItem[];
+  private lastChildren:TreeItem|undefined = undefined;
 
   constructor() {
     this.data = [];
   }
 
+  getLastChildren(){
+    return this.lastChildren;
+  }
+
   addChildren(item:TreeItem){
     if(!item.visible){return;}
+    this.lastChildren = item;
     this.data.push(item);
+    this.refresh();
   }
 
   clear(){
+    this.lastChildren = undefined;
     this.data = [];
+    this.refresh();
   }
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
   }
+  
   getTreeItem(element: TreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
     return element;
   }
+
   getChildren(element?: TreeItem | undefined): vscode.ProviderResult<TreeItem[]> {
     if (element === undefined) {
       return this.data;
@@ -43,6 +56,8 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
 
 }
 
+
+
 export class TreeItem extends vscode.TreeItem {
   children: TreeItem[] = [];
   private parent: TreeItem | undefined;
@@ -57,4 +72,23 @@ export class TreeItem extends vscode.TreeItem {
     this.children.push(node);
   }
 
+}
+
+export class FileTreeItem extends TreeItem{
+  uri:vscode.Uri;
+  constructor(uri:vscode.Uri, position:vscode.Position){
+    super(uri, vscode.TreeItemCollapsibleState.Expanded);
+    this.uri = uri;
+    let name = uri.fsPath.slice(gWorkspacePath.length + 1);
+    this.description = name;
+    this.label = path.basename(uri.fsPath);
+    this.iconPath = new vscode.ThemeIcon("file");
+    this.command = {
+      "command": "editor.action.peekLocations",
+      "title":"Open file",
+      "arguments": [this.uri, position, []]
+    };
+    // this.resourceUri = this.uri;
+    // this.iconPath = 
+  }
 }

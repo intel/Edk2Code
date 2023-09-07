@@ -7,14 +7,31 @@ import path = require("path");
 
 
 
-export async function rgSearch(text:string, filesPath:string[], ){
+export async function rgSearch(text:string, includeExt:string[]=[], filesPath:string[]=[], relative=false){
     return new Promise<Location[]>(async (resolve, reject) => {
         
         let command = `${rgPath} ${text}  `;
+        
+
+
         for (const f of filesPath) {
             command += makeRelativeToWs(f) + " ";
         }
-        command += " --hidden --follow --crlf --no-config --json -- ./";
+
+        for (const f of includeExt) {
+            command += " -g " + f;
+        }
+
+        if(relative){
+            command += " ./ ";
+        }
+
+        command += " --hidden --follow --crlf --no-config --json";
+
+        if(filesPath.length===0 && !relative){
+            command +=  " -- ./";
+        }
+
         gDebugLog.verbose(command);
         let textResult="";
         try {
@@ -37,6 +54,56 @@ export async function rgSearch(text:string, filesPath:string[], ){
             }
         }
         resolve(locations);
+    });
+    
+
+}
+
+export async function rgSearchText(text:string, includeExt:string[]=[], filesPath:string[]=[], relative=false){
+    return new Promise<string[]>(async (resolve, reject) => {
+        
+        let command = `${rgPath} ${text}  `;
+        
+        for (const f of filesPath) {
+            command += makeRelativeToWs(f) + " ";
+        }
+
+        for (const f of includeExt) {
+            command += " -g " + f;
+        }
+
+        if(relative){
+            command += " ./ ";
+        }
+
+        command += " --hidden --follow --crlf --no-config --json";
+
+        if(filesPath.length===0 && !relative){
+            command +=  " -- ./";
+        }
+
+        gDebugLog.verbose(command);
+        let textResult="";
+        try {
+            edkStatusBar.setWorking();
+            textResult = await exec(command, gWorkspacePath);    
+            edkStatusBar.clearWorking();
+        } catch (error) {
+            gDebugLog.verbose(`rgSearch: ${error}`);
+            resolve([]);
+        }
+        
+        gDebugLog.verbose(textResult);
+        let textMatches:string[] = [];
+        for (const jsonData of textResult.split('\n')) {
+            if(jsonData===""){continue;}
+            let data = JSON.parse(jsonData);
+            if("type" in data && data["type"]==="match"){
+                textMatches.push(data["data"]["lines"].text);
+
+            }
+        }
+        resolve(textMatches);
     });
     
 

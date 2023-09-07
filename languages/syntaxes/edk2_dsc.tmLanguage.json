@@ -10,6 +10,14 @@
     "edk2_dsc_color": {
       "patterns": [
         {
+          "name": "string.quoted.edk2_dsc",
+          "match": "(?:\\w[\\w\\d\\[\\]]+\\.)+[\\w\\d\\[\\]]+"
+        },
+        {
+          "name": "variable.language.edk2_dsc",
+          "match": "\\$\\(.*?\\)"
+        },
+        {
           "name": "variable.language.edk2_dsc",
           "match": "((?<!\\w)(DSC_SPECIFICATION|PLATFORM_GUID|PLATFORM_VERSION|PLATFORM_NAME|SKUID_IDENTIFIER|SUPPORTED_ARCHITECTURES|BUILD_TARGETS))(?!\\w)"
         },

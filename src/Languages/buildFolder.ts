@@ -2,7 +2,7 @@ import path = require("path");
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { gDebugLog, gWorkspacePath } from "../extension";
-import { getRealPath, getRealPathRelative, normalizePath, readLines, writeEdkCodeFolder, split, toPosix } from "../utils";
+import { getRealPath, getRealPathRelative, normalizePath, readLines, writeEdkCodeFolderFile, split, toPosix, readEdkCodeFolderFile } from "../utils";
 import glob = require("fast-glob");
 
 export class BuildFolder {
@@ -70,13 +70,13 @@ export class BuildFolder {
                 maplist += `${m}\n`;    
             }
         }
-        writeEdkCodeFolder("mapFiles.txt",maplist);
+        writeEdkCodeFolderFile("mapFiles.txt",maplist);
     }
 
     copyFilesToRoot() {
         let cscopeMap = new Map();
         let moduleReport = [];
-        let compileCommands = [];
+        let compileCommands:string[] = [];
 
         for (const folder of this.buildFolderPaths) {
 
@@ -84,6 +84,7 @@ export class BuildFolder {
                 continue;
             }
 
+            // Cscope
             let cscopeLines = readLines(path.join(folder, "CompileInfo", "cscope.files"));
 
             for (const l of cscopeLines) {
@@ -91,21 +92,26 @@ export class BuildFolder {
             }
 
             let commands = JSON.parse(fs.readFileSync(path.join(folder, "CompileInfo", "compile_commands.json")).toString());
+            // Merge compile commands
             for (const cmd of commands) {
                 compileCommands.push(cmd);
             }
 
             let modules = JSON.parse(fs.readFileSync(path.join(folder, "CompileInfo", "module_report.json")).toString());
+            // Merge build report
             for (const mod of modules) {
                 moduleReport.push(mod);
             }
         }
         let filteredCscope = "";
         for (const value of cscopeMap.values()) {
-            filteredCscope += `${normalizePath(value).replace(/\n$/, "")}\n`;
+            filteredCscope += `${value.replaceAll("\/","\\").replace(/\n$/, "")}\n`;
         }
-        fs.writeFileSync(path.join(gWorkspacePath, "cscope.files"), filteredCscope);
-        fs.writeFileSync(path.join(gWorkspacePath, "module_report.json"), JSON.stringify(moduleReport, null, 2));
-        fs.writeFileSync(path.join(gWorkspacePath, "compile_commands.json"), JSON.stringify(compileCommands, null, 2));
+        writeEdkCodeFolderFile("cscope.files", filteredCscope);
+        writeEdkCodeFolderFile("module_report.json", JSON.stringify(moduleReport, null, 2));
+        writeEdkCodeFolderFile("compile_commands.json", JSON.stringify(compileCommands, null, 2));
+        if(compileCommands.length === 0){
+            writeEdkCodeFolderFile(".missing", "");
+        }
     }
 }

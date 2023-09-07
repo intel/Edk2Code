@@ -2,7 +2,7 @@
   "name": "edk2code",
   "displayName": "Edk2code",
   "description": "EDK2 code support",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "icon": "assets/icon.png",
   "publisher": "intel-corporation",
   "homepage": "https://github.com/intel/Edk2Code/wiki",
@@ -25,12 +25,20 @@
   "contributes": {
     "commands": [
       {
+        "command": "edk2code.openConfigurationUi",
+        "title": "EDK2: Workspace configuration (UI)"
+      },
+      {
+        "command": "edk2code.openConfigurationJson",
+        "title": "EDK2: Workspace configuration (JSON)"
+      },
+      {
         "command": "edk2code.rebuildIndex",
         "title": "EDK2: Rebuild index database"
       },
       {
-        "command": "edk2code.reloadIndex",
-        "title": "EDK2: Reload index database"
+        "command": "edk2code.rescanIndex",
+        "title": "EDK2: Rescan Index"
       },
       {
         "command": "edk2code.loadBuildConfiguration",
@@ -77,6 +85,10 @@
         "title": "EDK2: Goto Inf"
       },
       {
+        "command": "edk2code.references",
+        "title": "EDK2: Show Reference tree"
+      },
+      {
         "command": "edk2code.dscUsage",
         "title": "EDK2: Goto DSC declaration"
       },
@@ -86,7 +98,7 @@
       },
       {
         "command": "edk2code.dscInclusion",
-        "title": "EDK2: Goto DSC inclusion"
+        "title": "EDK2: Goto include"
       },
       {
         "command": "edk2code.showReferences",
@@ -94,7 +106,7 @@
       },
       {
         "command": "edk2code.viewWarnings",
-        "title": "EDK2: view warnings window"
+        "title": "EDK2: Check for warnings"
       }
     ],
     "configuration": [
@@ -115,51 +127,31 @@
               "Debug"
             ]
           },
-          "edk2code.dimUnusedLibraries": {
-            "order": 2,
-            "type": "boolean",
-            "markdownDescription": "Dims unused libraries on DSC files. *This gets disabled automatically when database is build from DSC file*",
-            "default": true
-          },
           "edk2code.generateIgnoreFile": {
             "order": 2,
             "type": "boolean",
             "markdownDescription": "Generate `.ignore` file. This file reduce the scope of files consumed by vscode commands as `search` or `open file`",
-            "default": true
-          },
-          "edk2code.showEdk2LanguageWarnings": {
-            "order": 2,
-            "type": "boolean",
-            "markdownDescription": "Show Edk2 Language warnings",
             "default": false
           },
-          "edk2code.mainDscFile": {
-            "order": 3,
+          "edk2code.extraIgnorePatterns": {
+            "order": 2,
             "type": "array",
-            "markdownDescription": "EDK2 Main DSC file for project",
-            "default": [],
+            "markdownDescription": "patterns to append to the `.ignore` file",
+            "default": [
+              "*.log",
+              ".ignore",
+              ".gitignore",
+              ".edkCode/**/*"
+            ],
             "items": {
               "type": "string"
             }
           },
-          "edk2code.buildDefines": {
-            "order": 4,
-            "type": "array",
-            "markdownDescription": "EDK2 Build DEFINEs. Format `{key}={value}`",
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "pattern": ".+?=.+"
-          },
-          "edk2code.buildPackagePaths": {
-            "order": 5,
-            "type": "array",
-            "markdownDescription": "EDK2 build PACKAGE_PATH list",
-            "default": [],
-            "items": {
-              "type": "string"
-            }
+          "edk2code.generateGuidXref": {
+            "order": 2,
+            "type": "boolean",
+            "markdownDescription": "Generate `Guid.csv` file based on Guid.xref files on workspace. File location: `${workspaceFolder}//.Edk2Code`",
+            "default": true
           }
         }
       }
@@ -178,93 +170,77 @@
         {
           "command": "edk2code.rebuildIndex",
           "when": "true"
-          
-          
         },
         {
-          "command": "edk2code.reloadIndex",
-          "when": "edk2code.parseComplete"
-          
+          "command": "edk2code.rescanIndex",
+          "when": "true"
         },
         {
           "command": "edk2code.loadBuildConfiguration",
           "when": "true"
-          
         },
         {
           "command": "edk2code.gotoDefinition",
           "when": "edk2code.parseComplete"
-          
         },
         {
           "command": "edk2code.gotoDefinitionInput",
           "when": "edk2code.parseComplete"
-          
         },
         {
           "command": "edk2code.searchCcode",
           "when": "edk2code.parseComplete"
-          
         },
         {
           "command": "edk2code.openFile",
-          "when": "edk2code.parseComplete"
-          
+          "when": "true"
         },
         {
           "command": "edk2code.openLib",
-          "when": "edk2code.parseComplete"
-          
+          "when": "true"
         },
         {
           "command": "edk2code.openModule",
-          "when": "edk2code.parseComplete"
-          
+          "when": "true"
         },
         {
-          "command": "edk2code.debugCommand",
-          "when": "edk2code.parseComplete"
-          
+          "command": "edk2code.debugCommand"
         },
         {
           "command": "edk2code.showLibraryTree",
           "when": "edk2code.parseComplete"
-          
         },
         {
           "command": "edk2code.saveBuildConfiguration",
           "when": "edk2code.parseComplete"
-          
         },
         {
           "command": "edk2code.gotoInf",
           "when": "editorLangId == c"
-          
+        },
+        {
+          "command": "edk2code.references",
+          "when": "editorLangId == c || editorLangId == edk2_dsc || editorLangId == edk2_inf || editorLangId == edk2_fdf"
         },
         {
           "command": "edk2code.dscUsage",
           "when": "editorLangId == .inf"
-          
         },
         {
           "command": "edk2code.libUsage",
           "when": "edk2code.parseComplete"
-          
         },
         {
           "command": "edk2code.dscInclusion",
-          "when": "editorLangId == .dsc"
-          
+          "when": "editorLangId == edk2_dsc || editorLangId == edk2_fdf"
         },
         {
           "command": "edk2code.showReferences",
           "when": "edk2code.parseComplete"
-          
         },
         {
           "command": "edk2code.viewWarnings",
-          "when": "edk2code.parseComplete"
-          
+          "when": "edk2code.parseComplete && (editorLangId == edk2_inf || editorLangId == edk2_dsc)"
         }
       ],
       "editor/title": [],
@@ -287,6 +263,11 @@
           "when": "editorLangId == c"
         },
         {
+          "command": "edk2code.references",
+          "group": "navigation",
+          "when": "editorLangId == c || editorLangId == edk2_dsc || editorLangId == edk2_inf || editorLangId == edk2_fdf"
+        },
+        {
           "command": "edk2code.dscUsage",
           "group": "navigation",
           "when": "editorLangId == edk2_inf"
@@ -299,7 +280,7 @@
         {
           "command": "edk2code.dscInclusion",
           "group": "navigation",
-          "when": "editorLangId == edk2_dsc"
+          "when": "editorLangId == edk2_dsc || editorLangId == edk2_fdf"
         },
         {
           "command": "edk2code.showReferences",
@@ -438,7 +419,6 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
     "@types/vscode": "^1.77.0",
@@ -446,14 +426,15 @@
     "@typescript-eslint/parser": "^5.59.1",
     "@vscode/test-electron": "^2.2.3",
     "eslint": "^8.39.0",
-    "fast-glob": "^3.2.12",
     "mocha": "^10.2.0",
     "typescript": "^4.9.5"
   },
   "dependencies": {
     "@bendera/vscode-webview-elements": "^0.11.0",
+    "@types/glob": "^8.1.0",
     "@vscode/codicons": "0.0.32",
-    "fast-glob": "^3.2.12",
+    "fast-glob": "^3.3.2",
+    "fastest-levenshtein": "^1.0.16",
     "vscode-ripgrep": "1.13.2"
   }
 }

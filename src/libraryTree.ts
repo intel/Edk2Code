@@ -1,7 +1,7 @@
 
-import { gDebugLog, gEdkDatabase, gModuleReport } from "./extension";
+import { gDebugLog, gModuleReport } from "./extension";
 import { EdkIniFile, EdkModule, ModuleReport } from "./moduleReport";
-import { openFile } from "./navigation";
+
 import { getNonce } from "./utilities/getNonce";
 import { getUri } from "./utilities/getUri";
 import { getCurrentDocument, gotoFile } from "./utils";
@@ -42,11 +42,11 @@ export async function showLibraryTree(){
       return;
     }
 
-    if(!gEdkDatabase.isFileInuse(document.fileName)){
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      vscode.window.showErrorMessage("This file is not in use on the current compilation");
-      return;
-    }
+    // if(!gEdkDatabase.isFileInuse(document.fileName)){
+    //   // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    //   vscode.window.showErrorMessage("This file is not in use on the current compilation");
+    //   return;
+    // }
     
 
     if(!moduleReport.isPopulated){

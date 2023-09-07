@@ -1,38 +1,39 @@
 import * as vscode from 'vscode';
-import { gEdkDatabase} from './extension';
+
 import { getCurrentDocument } from './utils';
 
 export class GrayoutController {
 
     decorationsMap:Map<string,vscode.TextEditorDecorationType>;
-
-    public constructor() {
-        let subscriptions: vscode.Disposable[] = [];
-        vscode.window.onDidChangeActiveTextEditor(this.doGrayOut, this, subscriptions);
-        vscode.workspace.onDidSaveTextDocument(this.doGrayOut, this, subscriptions);
+    document:vscode.TextDocument;
+    range:vscode.Range[];
+    public constructor(document:vscode.TextDocument, range:vscode.Range[]) {
+        
+        this.document = document;
         this.decorationsMap = new Map();
+        this.range = range;
+        // let subscriptions: vscode.Disposable[] = [];
+        // vscode.window.onDidChangeActiveTextEditor(this.doGrayOut, this, subscriptions);
+        // vscode.workspace.onDidSaveTextDocument(this.doGrayOut, this, subscriptions);
+        
     }
-
-    dispose() {
-
-    }
-
     
-
-    private _grayoutRange(unusdedRanges:vscode.Range[]) {
+    private grayoutRange(unusdedRanges:vscode.Range[]) {
 
             let activeEditor = vscode.window.activeTextEditor;
+            
             if(!activeEditor){return;}
+            if(activeEditor.document !== this.document){return;}
 
-            let decoration = this.decorationsMap.get(activeEditor.document.fileName);
+            let decoration = this.decorationsMap.get(this.document.fileName);
             if(!decoration){
                 decoration = vscode.window.createTextEditorDecorationType({
                     isWholeLine: true,
                     light: {
-                        opacity: "0.5",
+                        opacity: "0.3",
                     },
                     dark: {
-                        opacity: "0.5"
+                        opacity: "0.3",
                     }
                 });
                 this.decorationsMap.set(activeEditor.document.fileName,decoration);
@@ -49,20 +50,10 @@ export class GrayoutController {
 
     }
 
-    private async _getUnusedRanges(){
-        let targetDocument = getCurrentDocument();
-        if(targetDocument===undefined){return [];}
 
-        let inactiveCode = gEdkDatabase.getInactiveLines(targetDocument.fileName);
-        if(!inactiveCode){return [];}
-        
-        return inactiveCode;
-    }
-
-    async doGrayOut(){
-        let unusedSymbols = await this._getUnusedRanges();
-        await this._grayoutRange([]);
-        await this._grayoutRange(unusedSymbols);
+    doGrayOut(){
+        this.grayoutRange([]);
+        this.grayoutRange(this.range);
     }
 
 }

@@ -1,10 +1,10 @@
 import * as fs from 'fs';
 import path = require('path');
 import * as vscode from 'vscode';
-import { gCscope, gDebugLog, gEdkDatabase, gExtensionContext, gWorkspacePath } from './extension';
-import { exec, execWindow, getCurrentWord, getStaticPath, normalizePath, readLines, toPosix } from './utils';
+import { gCscope, gDebugLog, gEdkWorkspaces } from './extension';
+import { exec, execWindow, getEdkCodeFolderFilePath, getEdkCodeFolderPath, getStaticPath, normalizePath, readLines, toPosix } from './utils';
 import { execSync } from 'child_process';
-
+import * as edkStatusBar from './statusBar';
 
 /*
 cscope -R -L -2 ".*" | awk -F ' ' '{print $2 "#" $1}' | sort | uniq
@@ -68,7 +68,7 @@ export class Cscope {
     cscopeInstalled = false;
 
     public constructor() {
-        console.log(vscode.env.remoteName);
+
         if (process.platform === 'win32'){
             this.cscopePath = getStaticPath("cscope.exe");
         }else{
@@ -88,6 +88,17 @@ export class Cscope {
          
     }
 
+
+    includesFile(filePath:vscode.Uri){
+        let lines = this.readCscopeFile();
+        for (const line of lines) {
+            if(filePath.fsPath.toLowerCase() === line.toLowerCase()){
+                return true;
+            }
+        }
+        return false;
+    }
+
     showCscopeErrorMessage(){
          void vscode.window.showErrorMessage("Cscope not available in the system. Check help for install", "Help").then(async selection => {
             if (selection === "Help"){
@@ -98,7 +109,8 @@ export class Cscope {
     }
 
     existCscopeFile(){
-        let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
+        
+        let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
         return fs.existsSync(cscopeFilesPath);
     }
 
@@ -106,25 +118,24 @@ export class Cscope {
         if(fileList.length === 0){
             return;
         }
-        let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
+        let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
         
         let cscopeFiles = fileList.map((x)=>{return x.replaceAll("/",path.sep);}).join("\n");
         fs.writeFileSync(cscopeFilesPath,cscopeFiles);
-        await gCscope.reload();
     }
 
 
     removeFiles() {
-        let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
+        let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
         fs.rmSync(cscopeFilesPath, {force:true});
 
-        let cscopeOutPath = path.join(gWorkspacePath, "cscope.out");
+        let cscopeOutPath = getEdkCodeFolderFilePath("cscope.out");
         fs.rmSync(cscopeOutPath, {force:true});
         
     }
     
     readCscopeFile():string[]{
-        let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
+        let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
         return readLines(cscopeFilesPath);
     }
 
@@ -135,14 +146,17 @@ export class Cscope {
             this.showCscopeErrorMessage();
             return;
         }
-
+        edkStatusBar.pushText("Loading Cscope...");
+        edkStatusBar.setWorking();
         if(this.existCscopeFile()){
             if(progressWindow){
-                await execWindow(`"${this.cscopePath}" -Rb`, gWorkspacePath, "Reload cscope database");
+                await execWindow(`"${this.cscopePath}" -Rb`, getEdkCodeFolderPath(), "Reload cscope database");
             }else{
-                await exec(`"${this.cscopePath}" -Rb`, gWorkspacePath);
+                await exec(`"${this.cscopePath}" -Rb`, getEdkCodeFolderPath());
             }
         }
+        edkStatusBar.popText();
+        edkStatusBar.clearWorking();
     }
 
     async getCaller(text:string){
@@ -201,12 +215,12 @@ export class Cscope {
             return "";
         }
         var command = `${this.cscopePath} -d -L${cmdType}${text}`;
-        let result = await exec(command, gWorkspacePath);
+        let result = await exec(command, getEdkCodeFolderPath());
         return result;
     }
 
     async cscopeCommandWindow(text:string, cmdType:CscopeCmd, textWindow:string=""){
-        let cscopeOutPath = path.join(gWorkspacePath, "cscope.out");
+        let cscopeOutPath = getEdkCodeFolderFilePath("cscope.out");
 
         if(!this.cscopeInstalled){
             void this.showCscopeErrorMessage();
@@ -219,9 +233,9 @@ export class Cscope {
         var command = `${this.cscopePath} -d -C -L${cmdType}${text} `;
         let result;
         if(textWindow===""){
-            result = await exec(command, gWorkspacePath);
+            result = await exec(command, getEdkCodeFolderPath());
         }else{
-            result = await execWindow(command, gWorkspacePath, textWindow);
+            result = await execWindow(command, getEdkCodeFolderPath(), textWindow);
         }
         return result;
     }
@@ -235,7 +249,6 @@ export class Cscope {
             if(data.length >= 3){
                 var refLine = Number(data[2])-1;
                 if(fs.existsSync(data[0]) && (typeof refLine === 'number')){
-
                     searchResult.push(new FuncInfo(data[1], refLine, normalizePath(data[0]), data.slice(3).join(" "), text));
                 }
             }
@@ -263,7 +276,7 @@ export class CscopeAgent {
         if(fileList.length === 0){
             return;
         }
-        let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
+        let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
         let cscopeFiles = fileList.map((x)=>{return x.replaceAll("/",path.sep);}).join("\n");
         fs.writeFileSync(cscopeFilesPath,cscopeFiles);
         await gCscope.reload();
@@ -271,16 +284,19 @@ export class CscopeAgent {
 
 
     removeFiles() {
-        let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
+        let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
         fs.rmSync(cscopeFilesPath, {force:true});
 
-        let cscopeOutPath = path.join(gWorkspacePath, "cscope.out");
+        let cscopeOutPath = getEdkCodeFolderFilePath("cscope.out");
         fs.rmSync(cscopeOutPath, {force:true});
         
     }
 
+
+
+
     readCscopeFile():string[]{
-        let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
+        let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
         let lines = readLines(cscopeFilesPath);
         if(lines.length===1 && lines[0]===''){return [];}
         return lines;
@@ -295,13 +311,12 @@ export class CscopeAgent {
         }
 
         this.taskUpdateId = setTimeout(async () => {
-            let cscopeFilesPath = path.join(gWorkspacePath, "cscope.files");
+            let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
             if(fs.existsSync(cscopeFilesPath)){
-                var scopeFiles = gEdkDatabase.getFilesInUse();
-                for (const wFile of scopeFiles) {
-                    if (wFile === savedFile.fileName){
-                        await gCscope.reload(false);
-                    }
+                
+                let isFileUsed = await gEdkWorkspaces.isFileInUse(savedFile.uri);
+                if(isFileUsed){
+                    await gCscope.reload(false);
                 }
             }
         }, this.updateFrequency);

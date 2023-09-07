@@ -2,7 +2,7 @@ import path = require("path");
 import { gModuleReport, gWorkspacePath } from "./extension";
 import * as fs from 'fs';
 import { assert } from "console";
-import { normalizePath, pathCompare, showVirtualFile } from "./utils";
+import { getEdkCodeFolderFilePath, normalizePath, pathCompare, showVirtualFile } from "./utils";
 
 
 export class EdkFile{
@@ -199,7 +199,8 @@ export class ModuleReport
     private treeString: string ="";
     
     constructor(){
-        this.reportPath = path.join(gWorkspacePath, "module_report.json");
+        
+        this.reportPath = getEdkCodeFolderFilePath("module_report.json");
         this.moduleData = [];
     }
 

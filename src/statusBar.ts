@@ -3,6 +3,7 @@ import { gExtensionContext } from './extension';
 export var myStatusBarItem: vscode.StatusBarItem;
 
 var helpUrl:string = "";
+var textStack:string[] = [];
 
 export function init(context:vscode.ExtensionContext){
     // create a new status bar item that we can now manage
@@ -16,9 +17,12 @@ export function init(context:vscode.ExtensionContext){
 
 	}));
     myStatusBarItem.command = myCommandId;
-
     context.subscriptions.push(myStatusBarItem);
     setText("Started");
+}
+
+export function setToolTip(text:string){
+    myStatusBarItem.tooltip = text;
 }
 
 export function setHelpUrl(url:string ){
@@ -29,7 +33,23 @@ export function setInfo(text:string){
     myStatusBarItem.tooltip = text;
 }
 
+
+export function pushText(text:string){
+    textStack.push(myStatusBarItem.text);
+    myStatusBarItem.text = `EDK2: ${text}`;
+    myStatusBarItem.show();
+    myStatusBarItem.tooltip = "";
+}
+
+export function popText(){
+    let text = textStack.pop();
+    myStatusBarItem.text = text? text:"EDK2: Started*";
+    myStatusBarItem.show();
+    myStatusBarItem.tooltip = "";
+}
+
 export function setText(text: string): void {
+    textStack = [];
     myStatusBarItem.text = `EDK2: ${text}`;
     myStatusBarItem.show();
     myStatusBarItem.tooltip = "";
@@ -41,7 +61,10 @@ export function setColor(color:string){
 }
 
 export function setWorking(){
-    myStatusBarItem.text = `$(sync~spin) ${myStatusBarItem.text}`;
+    if(!myStatusBarItem.text.startsWith("$(sync~spin)")){
+        myStatusBarItem.text = `$(sync~spin) ${myStatusBarItem.text}`;
+    }
+    
 }
 
 export function clearWorking(){

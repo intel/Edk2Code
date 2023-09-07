@@ -11,8 +11,6 @@ export class Edk2CallHierarchyProvider implements vscode.CallHierarchyProvider {
             },
             this
         );
-
-        
     }
 
     prepareCallHierarchy(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CallHierarchyItem | vscode.CallHierarchyItem[]> {

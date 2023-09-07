@@ -1,41 +1,41 @@
 // Original file from: https://github.com/WalonLi/edk2-vscode
 
 import * as vscode from 'vscode';
-import { gEdkDatabase } from '../extension';
-import { EdkCompletionProvider, EdkDeclarationProvider, EdkDefinitionProvider } from '../edkParser/edkSymbols';
-import { DictHoverProvider, EdkSymbolProvider, HelpHoverProvider, JsonCompletionItemLabel, JsonCompletionProvider } from './generalSymbolProvider';
-import { getStaticPath } from '../utils';
+import { DictHoverProvider, DictHoverProviderDb, EdkSymbolProvider, HelpHoverProvider, JsonCompletionItemLabel, JsonCompletionProvider } from './symbolProvider';
+import { getEdkCodeFolderFilePath, getStaticPath } from '../utils';
 import * as fs from 'fs';
+import { EdkDefinitionProvider } from './definitionProvider';
+import { EdkDeclarationProvider } from './declarationProvider';
+import { EdkCompletionProvider } from './completionProvider';
 
 
 
 export function initLanguages() {
-  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_dsc' }, new EdkSymbolProvider(gEdkDatabase));
-  vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'edk2_dsc' }, new EdkDefinitionProvider(gEdkDatabase)); 
-  vscode.languages.registerHoverProvider({ scheme: 'file', language: 'edk2_dsc' }, new DictHoverProvider(gEdkDatabase));
+  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_dsc' }, new EdkSymbolProvider());
+  vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'edk2_dsc' }, new EdkDefinitionProvider()); 
+  vscode.languages.registerHoverProvider({ scheme: 'file', language: 'edk2_dsc' }, new DictHoverProviderDb());
   
-  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_inf' }, new EdkSymbolProvider(gEdkDatabase));
-  vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'edk2_inf' }, new EdkDefinitionProvider(gEdkDatabase));
-  vscode.languages.registerCompletionItemProvider ({ scheme: 'file', language: 'edk2_inf' }, new EdkCompletionProvider(gEdkDatabase));
-  vscode.languages.registerDeclarationProvider ({ scheme: 'file', language: 'edk2_inf' }, new EdkDeclarationProvider(gEdkDatabase));
+  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_inf' }, new EdkSymbolProvider());
+  vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'edk2_inf' }, new EdkDefinitionProvider());
+  vscode.languages.registerCompletionItemProvider ({ scheme: 'file', language: 'edk2_inf' }, new EdkCompletionProvider());
+  vscode.languages.registerDeclarationProvider ({ scheme: 'file', language: 'edk2_inf' }, new EdkDeclarationProvider());
 
-  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_dec' }, new EdkSymbolProvider(gEdkDatabase));
-  vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'edk2_dec' }, new EdkDefinitionProvider(gEdkDatabase));
+  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_dec' }, new EdkSymbolProvider());
+  // vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'edk2_dec' }, new EdkDefinitionProvider());
   
-  // vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'edk2_fdf' }, new GeneralDefinitionProvider(fdfSymbolsRules));
-  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_fdf' }, new EdkSymbolProvider(gEdkDatabase));
-  
-  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_vfr' }, new EdkSymbolProvider(gEdkDatabase));
-  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'asl' }, new EdkSymbolProvider(gEdkDatabase));
+  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_fdf' }, new EdkSymbolProvider());
+  vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'edk2_fdf' }, new EdkDefinitionProvider()); 
+  vscode.languages.registerHoverProvider({ scheme: 'file', language: 'edk2_fdf' }, new DictHoverProviderDb());
 
-  // // vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_build_report' }, new MatchSymbolProvider(buildReportSymbolsRules));
-  // // vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'edk2_build_report' }, new GeneralDefinitionProvider(buildReportSymbolsRules));
+  
+  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'edk2_vfr' }, new EdkSymbolProvider());
+  vscode.languages.registerDocumentSymbolProvider({ scheme: 'file', language: 'asl' }, new EdkSymbolProvider());
 
   // // ASL support
   vscode.languages.registerCompletionItemProvider ({ scheme: 'file', language: 'asl' }, new JsonCompletionProvider("acpiHelp.json",
                                                    (x:any)=>{return new JsonCompletionItemLabel(x.title.split(" ")[0], x.description);}));
 
-  vscode.languages.registerHoverProvider({ scheme: 'file', language: 'asl' }, new HelpHoverProvider("acpiHelp.json",
+  vscode.languages.registerHoverProvider({ scheme: 'file', language: 'asl' }, new HelpHoverProvider(getStaticPath("acpiHelp.json"),
                                         (x:string, entrie:any)=>{return entrie.title.startsWith(x);},
                                         [{fieldname:"title", pre:"# ", pos:"\n\n"},
                                         {fieldname:"syntax", pre:"`", pos:"`\n\n"},
@@ -43,10 +43,6 @@ export function initLanguages() {
                                         {fieldname:"description", pre:"", pos:"\n\n *ACPI 6.3*"}])                                      
     );
 
-
-  // vscode.languages.registerHoverProvider({ scheme: 'file', language: 'edk2_vfr' }, new DefinitionHoverProvider(getStringDefinition));
-  //vscode.languages.registerDefinitionProvider({ scheme: 'file', language: 'edk2_vfr' }, new FunctionDefinitionProvider(gotoStringDefinition));
-    
 
 }
 

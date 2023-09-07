@@ -1,0 +1,492 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="style-src 'unsafe-inline'; script-src 'nonce-{{nonce}}';">
+
+    <style type="text/css">
+        @media (max-width: 1140px) {
+            #sidebar {
+                display: none;
+            }
+            #main {
+                max-width: 800px;
+                padding: 0px 20px;
+                margin: auto;
+            }
+        }
+
+        .page-margins {
+            vertical-align: top;
+            padding-top: 40px;
+            padding-bottom: 10px
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            z-index: 1;
+            left: 45px;
+            overflow-x: hidden;
+        }
+
+        .error {
+            color: var(--vscode-inputValidation-errorForeground);
+            background: var(--vscode-inputValidation-errorBackground);
+            border: solid 1px var(--vscode-inputValidation-errorBorder);
+            white-space: pre-wrap;
+            display: none;
+            padding: 1px 4px 4px 4px;
+        }
+
+        .headerBtn,
+        .headerBtn:hover,
+        .headerBtn:active {
+            cursor: pointer;
+            color: var(--vscode-foreground);
+            background: var(--vscode-background);
+            border: 0px;
+            padding: 0px;
+            outline: none;
+        }
+
+        .headerBtn:focus {
+            outline: 1px solid -webkit-focus-ring-color;
+            outline-offset: 3px;
+        }
+
+        .expand:after {
+            font-weight: bold;
+            float: right;
+            margin-right: 6px;
+            margin-top: -4px;
+            content: '\276E';
+            transform: rotate(270deg);
+        }
+
+        .collapse:after {
+            font-weight: bold;
+            float: right;
+            margin-right: 6px;
+            margin-top: -4px;
+            content: '\276E';
+            transform: rotate(90deg);
+        }
+
+        .main {
+            max-width: 800px;
+            margin-left: 320px;
+            padding: 0px 30px;
+        }
+
+        .main-title {
+            font-weight: 500;
+            font-size: 22px;
+            padding-bottom: 6px;
+            color: var(--vscode-foreground);
+        }
+
+        .section {
+            padding-bottom: 35px;
+        }
+
+        .section-title {
+            font-weight: 500;
+            font-size: 14px;
+            padding-bottom: 4px;
+            color: var(--vscode-foreground);
+        }
+
+        .section-text {
+            font-size: 14px;
+            padding-bottom: 8px;
+            color: var(--vscode-foreground);
+        }
+
+        .section-note {
+            font-size: 14px;
+            font-style: italic;
+            padding-bottom: 2px;
+            color: var(--vscode-foreground);
+        }
+
+        .codeblock {
+            vertical-align: middle;
+            padding: 2px 8px;
+            margin-top: 8px;
+            display: inline-block;
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            border-radius: 5px;
+        }
+
+        body {
+            line-height: 19px
+        }
+
+        body:not(.tabbing) button:focus {
+            outline: none;
+        }
+
+        a {
+            text-decoration: none
+        }
+
+        checkbox {
+            color: var(--vscode-settings-checkboxForeground);
+            background: var(--vscode-settings-checkboxForeground);
+            border: var(--vscode-settings-checkboxBorder);
+        }
+
+        a:focus,
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 1px solid -webkit-focus-ring-color;
+            outline-offset: -1px
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            border-bottom: 1px solid;
+        }
+
+        h1 {
+            padding-bottom: .3em;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-weight: 400
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        ::placeholder {
+            color: var(--vscode-input-placeholderForeground);
+        }
+
+        input {
+            height: 17px;
+            padding: 6px;
+            border: solid 1px;
+            font-size: 13px;
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            color: var(--vscode-settings-textInputForeground);
+            background: var(--vscode-settings-textInputBackground);
+            border: 1px solid var(--vscode-settings-textInputBorder);
+        }
+
+        textarea {
+            white-space: nowrap;
+            padding: 4px, 4px;
+            font-size: 13px;
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            color: var(--vscode-settings-textInputForeground);
+            background: var(--vscode-settings-textInputBackground);
+            border: 1px solid var(--vscode-settings-textInputBorder);
+        }
+
+        button {
+            color: var(--vscode-button-foreground);
+            background-color: var(--vscode-button-background);
+            border: solid 1px var(--vscode-contrastBorder);
+            padding: 6px 14px;
+        }
+
+        button:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+
+        button:focus {
+            outline: 1px solid -webkit-focus-ring-color;
+            outline-offset: 2px
+        }
+
+        button:active {
+            outline: none;
+        }
+
+        .select-default {
+            width: 300px;
+            height: 27px;
+            font-size: 13px;
+            font-family:sans-serif;
+            color: var(--vscode-settings-dropdownForeground);
+            background: var(--vscode-settings-dropdownBackground);
+            border: 1px solid var(--vscode-settings-dropdownBorder);
+        }
+
+        .select-editable {
+            position: relative;
+            background-color: var(--vscode-settings-textInputBackground);
+            width: 800px;
+            height: 31px;
+        }
+
+        .select-editable select {
+            position: absolute;
+            font-size: 13px;
+            font-family: sans-serif;
+            border: 1px solid var(--vscode-settings-textInputBorder);
+            height: 31px;
+            margin: auto;
+            color: var(--vscode-settings-textInputForeground);
+            background: var(--vscode-settings-textInputBackground);
+        }
+
+        .select-editable input {
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            right: 1px;
+            bottom: 1px;
+            height: 17px;
+            font-size: 13px;
+            border: none;
+            color: var(--vscode-settings-textInputForeground);
+            background: var(--vscode-settings-textInputBackground);
+        }
+
+        .select-editable input:focus {
+            outline-offset: 0px;
+        }
+
+        blockquote {
+            margin: 0 7px 0 5px;
+            padding: 0 16px 0 10px;
+            border-left: 5px solid;
+        }
+
+        code {
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            line-height: 19px
+        }
+
+        .mac code {
+            line-height: 18px
+        }
+
+        code > div {
+            padding: 16px;
+            border-radius: 3px;
+            overflow: auto
+        }
+
+        .monaco-tokenized-source {
+            white-space: pre
+        }
+
+        /** Theming */
+
+        .vscode-light {
+            color: #1e1e1e
+        }
+
+        .vscode-dark {
+            color: #ddd
+        }
+
+        .vscode-high-contrast {
+            color: #fff
+        }
+
+        .vscode-light code {
+            color: #a31515
+        }
+
+        .vscode-dark code {
+            color: #d7ba7d
+        }
+
+        .vscode-light code > div {
+            background-color: rgba(220, 220, 220, .4)
+        }
+
+        .vscode-dark code > div {
+            background-color: rgba(10, 10, 10, .4)
+        }
+
+        .vscode-light .input-disabled {
+            background-color:rgba(255, 255, 255, 0.4);
+            color: rgb(138, 138, 138);
+            border: solid 1px rgb(201, 198, 198);
+        }
+
+        .vscode-dark .input-disabled {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: rgb(167, 167, 167);
+        }
+
+        .vscode-high-contrast .input-disabled {
+            background-color: transparent;
+            color: #fff;
+            border: solid 1px rgb(255, 255, 255);
+        }
+
+        .vscode-high-contrast code > div {
+            background-color: #000
+        }
+
+        .vscode-high-contrast h1 {
+            border-color: #000
+        }
+
+        .vscode-light table > thead > tr > th {
+            border-color: rgba(0, 0, 0, .69)
+        }
+
+        .vscode-dark table > thead > tr > th {
+            border-color: rgba(255, 255, 255, .69)
+        }
+
+        .vscode-light h1,
+        .vscode-light hr,
+        .vscode-light table > tbody > tr + tr > td {
+            border-color: rgba(0, 0, 0, .18)
+        }
+
+        .vscode-dark h1,
+        .vscode-dark hr,
+        .vscode-dark table > tbody > tr + tr > td {
+            border-color: rgba(255, 255, 255, 0.18)
+        }
+
+        .vscode-light blockquote,
+        .vscode-dark blockquote {
+            background: rgba(127, 127, 127, .1);
+            border-color: rgba(0, 122, 204, .5)
+        }
+
+        .vscode-high-contrast blockquote {
+            background: transparent;
+            border-color: #fff
+        }
+
+        .vscode-light div.codeblock {
+            background-color: rgba(0, 0, 0, 0.048)
+        }
+
+        .vscode-dark div.codeblock {
+            background-color: rgba(255, 255, 255, 0.1)
+        }
+
+        .vscode-high-contrast div.codeblock {
+            background-color: rgba(255, 255, 255, 0.15)
+        }
+
+        .footer {
+            padding: 25px;
+            text-align: center
+        }
+
+        .vscode-light a {
+            color: #4080D0
+        }
+
+        .vscode-dark a {
+            color: #a2c1e8
+        }
+
+    </style>
+
+  </head>
+
+  <body class="page-margins">
+
+  <!-- sidebar -->
+  <div id="sidebar" class="sidebar">
+
+    <div style="height: 90px; display: block">
+        <table>
+            <td>
+                <div style="font-size: 20px; font-weight: 400; line-height: 24px">Intel<br><span data-loc-id="c.cpp.extension">EDK2Code Extension</span></div>
+            </td>
+          </table>
+    </div>
+
+    <hr>
+    <div style="height: 30px; display: block"></div>
+
+    <div style="padding-right: 10px; color: var(--vscode-foreground);">
+        <span data-loc-id="open.this.editor">Open this editor by using the command:</span><br>
+        <code data-loc-id="edit.configurations.ui">EDK2: Edit configurations (UI)</code>
+
+        <div style="height: 30px; display: block"></div>
+
+        <span data-loc-id="switch.to.json">Switch to the <a href="command:edk2code.openConfigurationJson" title="Edit configurations in JSON file" data-loc-id-title="edit.configurations.in.json">edk2_workspace_properties.json</a> file by clicking on the file link or using the command:</span><br>
+        <code data-loc-id="edit.configurations.json">EDK2: Edit configurations (JSON)</code>
+
+        <div style="height: 30px; display: block"></div>
+
+    </div>
+
+  </div> <!-- sidebar end -->
+
+  <!-- main -->
+  <div id="main" class="main">
+
+    <!-- title -->
+    <div style=" height: 90px; display: inline-block;">
+      <div class="main-title" data-loc-id="intellisense.configurations">EDK2 Workspace Configurations</div>
+      <div style="color: var(--vscode-foreground);">
+        <span data-loc-id="intellisense.configurations.description">Use this editor to Workspaces configuration <a href="command:edk2code.openConfigurationJson" title="Edit configurations in JSON file" data-loc-id-title="edit.configurations.in.json">edk_properties.json</a> file. Changes made in this editor only apply to the selected configuration. To edit multiple configurations at once go to <a href="command:edk2code.openConfigurationJson" title="Edit configurations in JSON file" data-loc-id-title="edit.configurations.in.json">edk_properties.json</a>.</span>
+      </div>
+    </div>
+
+    <hr>
+    <div style="height: 30px; display: block"></div>
+
+    <!-- sections -->
+    <div class="section">
+        <div class="section-title">DSC relative path</div>
+        <div class="section-text">
+            <span>Main DSC file relative paths. This are the DSC files used for your platform. In your build log you will see this as <code>Active Platform</code></span>
+        </div>
+        <div>
+          <div class="section-note" >One DSC path per line.</div>
+          <textarea name="inputValue" id="dscPaths" rows="4" cols="93" style="width: 800px"></textarea>
+          <div id="dscPathInvalid" class="error" style="margin-top: -4px; width: 794px"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Build Defines</div>
+        <div class="section-text">
+            <span>Build definitions injected on <code>build</code> command. Usually this are the <code>-D</code> arguments on your build command</span>
+        </div>
+        <div>
+          <div class="section-note" >One Build define per line in the format: <code>name=value</code></div>
+          <textarea name="inputValue" id="buildDefines" rows="20" cols="93" style="width: 800px"></textarea>
+          <div id="buildDefineInvalid" class="error" style="margin-top: -4px; width: 794px"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Package paths</div>
+        <div class="section-text">
+            <span>Workspace relative package paths. This is what you see in your build log as <code>PACKAGES_PATH</code> env variable.</span>
+        </div>
+        <div>
+          <div class="section-note" >One path per line.</div>
+          <textarea name="inputValue" id="packagePaths" rows="4" cols="93" style="width: 800px"></textarea>
+          <div id="packagePathInvalid" class="error" style="margin-top: -4px; width: 794px"></div>
+        </div>
+    </div>
+
+    
+
+
+
+    <!-- sections end -->
+
+  </div> <!-- main end -->
+
+  <script nonce="{{nonce}}" src="{{settings_js_uri}}"></script>
+
+</body>
+</html>
