@@ -2,6 +2,10 @@
 
 All notable changes to the "edk2code" extension will be documented in this file.
 
+
+## [0.0.5]
+- Fixed pattern on buildDefines configuration. This made some of the configuration options disappear
+
 ## [0.0.4]
 
 ### Added
