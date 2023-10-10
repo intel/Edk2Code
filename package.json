@@ -2,7 +2,7 @@
   "name": "edk2code",
   "displayName": "Edk2code",
   "description": "EDK2 code support",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "icon": "assets/icon.png",
   "publisher": "intel-corporation",
   "homepage": "https://github.com/intel/Edk2Code/wiki",
@@ -150,7 +150,7 @@
             "items": {
               "type": "string"
             },
-            "pattern": ".+?\\=.+"
+            "pattern": ".+?=.+"
           },
           "edk2code.buildPackagePaths": {
             "order": 5,
