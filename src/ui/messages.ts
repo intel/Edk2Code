@@ -16,7 +16,7 @@ export function askReloadFiles(){
 export function infoMissingCompileInfo(){
     void vscode.window.showInformationMessage("Compile Info folder is missing.", "How to enable?").then(async selection => {
         if (selection === "How to enable?"){
-            await vscode.env.openExternal(vscode.Uri.parse("https://github.com/intel/Edk2Code/wiki/Index-source-code#1-enable-compile-information-in-your-build"));
+            await vscode.env.openExternal(vscode.Uri.parse("https://github.com/intel/Edk2Code/wiki/Index-source-code#enable-compile-information"));
         }
       });
 }
@@ -24,7 +24,7 @@ export function infoMissingCompileInfo(){
 export function infoMissingCompilesCommandCpp(){
     void vscode.window.showInformationMessage("Build contains compile_commands.json but C++ is not configured","Fix", "Help").then(async selection => {
         if (selection === "Help"){
-            await vscode.env.openExternal(vscode.Uri.parse("https://github.com/intel/Edk2Code/wiki/Index-source-code#compile_commandsjson"));
+            await vscode.env.openExternal(vscode.Uri.parse("https://github.com/intel/Edk2Code/wiki/Index-source-code#enable-compile-information"));
         }
       });
 }

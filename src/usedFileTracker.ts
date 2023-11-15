@@ -75,7 +75,7 @@ export class FileUseWarning {
             }
 
             edkStatusBar.setColor('statusBarItem.warningBackground');
-            edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki/Functionality#unused-libraries");
+            edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki/Functionality#status-bar");
             edkStatusBar.setText(`$(warning) ${path.basename(document.fileName)}`);
             edkStatusBar.setToolTip("This file is not used by any loaded workspace");
             return;
