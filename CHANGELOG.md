@@ -1,6 +1,15 @@
 # Change Log
 
 All notable changes to the "edk2code" extension will be documented in this file.
+## [1.0.0]
+
+Mayor refactor to integrate optimizations
+- Created specific `.edkfolder` for workspace settings.html
+- Created own configuration page for workspace
+- Improved autocomplete on inf files
+- Improved EDK parser methods
+- Removed unused code
+- Added new goto commands
 
 
 ## [0.0.5]
