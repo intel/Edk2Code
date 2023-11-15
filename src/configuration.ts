@@ -30,7 +30,7 @@ export class ConfigAgent {
 
     public loadedConfiguration: vscode.WorkspaceConfiguration;
 
-    private reloadConfigs = ["mainDscFile", "buildPackagePaths", "buildDefines"];
+    private reloadConfigs = ["dscPaths", "buildDefines"];
     private configFileWatcher: vscode.FileSystemWatcher | null = null;
     private propertiesFile: vscode.Uri | undefined | null = undefined; // undefined and null values are handled differently
     private settingsPanel:SettingsPanel|undefined;
@@ -113,8 +113,18 @@ export class ConfigAgent {
     }
 
     handleConfigurationChange() {
+        let newConfig:WorkspaceConfig = this.readWpConfig();
+        let reload = false;
+        if(this.workspaceConfig.dscPaths.toString() !== newConfig.dscPaths.toString()){
+            reload = true;
+        }
+        if(this.workspaceConfig.buildDefines.toString() !== newConfig.buildDefines.toString()){
+            reload = true;
+        }
         this.workspaceConfig = this.readWpConfig();
-        askReloadFiles();
+        if(reload){
+            askReloadFiles();
+        }
     }
 
     resetToDefaultSettings(arg0: boolean) {
