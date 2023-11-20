@@ -1,6 +1,9 @@
 # Change Log
 
 All notable changes to the "edk2code" extension will be documented in this file.
+## [1.0.1]
+- Fixed continues request to re-scan for index changes
+
 ## [1.0.0]
 
 Mayor refactor to integrate optimizations
