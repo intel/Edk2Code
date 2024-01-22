@@ -241,6 +241,10 @@ export class ConfigAgent {
         return <boolean>this.get("generateIgnoreFile");
     }
 
+    getUseEdkCallHiearchy(){
+        return <boolean>this.get("useEdkCallHierarchy");
+    }
+
     getExtraIgnorePatterns() {
         return <string[]>this.get("extraIgnorePatterns");
     }

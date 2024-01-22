@@ -21,19 +21,22 @@ export class Edk2CallHierarchyProvider implements vscode.CallHierarchyProvider {
     }
 
     async provideCallHierarchyIncomingCalls(item: vscode.CallHierarchyItem, token: vscode.CancellationToken) {
-
-        let allLocations = await gCscope.getCaller(item.name);
+        
+        let allLocations:any[] = await gCscope.getCaller(item.name);
         
         // Filter results to only show files used in compilation
         let filteredLocations:vscode.CallHierarchyIncomingCall[] = [];
         for (const result of allLocations) {
-            let pos = new vscode.Position(result.line, 0);
+            let fileUri = vscode.Uri.file(result.file);
+            if(!gCscope.includesFile(fileUri)){continue;}
+            let namePosition = result.snipped.indexOf(item.name);
+            let pos = new vscode.Position(result.line, namePosition);
             let currentRange = new vscode.Range(pos, pos);
             let caller = new CallHierarchyItem(
                 SymbolKind.Function,
                 result.name,
-                `${result.file}: ${result.line}`,
-                vscode.Uri.file(result.file),
+                `${result.file}: ${result.line + 1}`,
+                fileUri,
                 currentRange,
                 currentRange
              );
@@ -48,12 +51,13 @@ export class Edk2CallHierarchyProvider implements vscode.CallHierarchyProvider {
     }
 
     async provideCallHierarchyOutgoingCalls(item: vscode.CallHierarchyItem, token: vscode.CancellationToken){
-        let allLocations = await gCscope.getCallee(item.name);
+        let allLocations:any[] = await gCscope.getCallee(item.name);
         
         // Filter results to only show files used in compilation
         let filteredLocations:vscode.CallHierarchyOutgoingCall[] = [];
         for (const result of allLocations) {
-            let pos = new vscode.Position(result.line, 0);
+            let namePosition = result.snipped.indexOf(result.name);
+            let pos = new vscode.Position(result.line, namePosition);
             let currentRange = new vscode.Range(pos, pos);
             let caller = new CallHierarchyItem(
                 SymbolKind.Function,

@@ -105,16 +105,20 @@ import { SettingsPanel } from "../settings/settingsPanel";
                     if(existsEdkCodeFolderFile(".missing")){
                         infoMissingCompileInfo();
                         await reloadSymbols();
-                        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                        vscode.window.showInformationMessage("Build data loaded");
+
 
                     }else{
-                        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                        vscode.window.showInformationMessage("Build data loaded");
-                        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                        checkCompileCommandsConfig();
+                        
+                        await checkCompileCommandsConfig();
                         await gCscope.reload();
                     }
+
+                    // Generate .ignore if setting is set and .ignore doesnt exists
+                    if (gConfigAgent.getIsGenIgnoreFile()) {
+                        await genIgnoreFile();
+                    }
+
+                    void vscode.window.showInformationMessage("Build data loaded");
 
                     await gEdkWorkspaces.loadConfig();
 
@@ -148,10 +152,12 @@ import { SettingsPanel } from "../settings/settingsPanel";
         }
         await vscode.window.showQuickPick(itemsOption, { title: "Files on workspaces", matchOnDescription: true, matchOnDetail: true }).then(async option => {
             if (option !== undefined) {
-                await vscode.commands.executeCommand("edk2code.gotoFile", vscode.Uri.file(option.description!)).then(() => {
-    
+                let path = await gPathFind.findPath(option.description!);
+                // await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, path , "gotoAndPeek", "Not found");
+                if(path.length){
+                    await vscode.commands.executeCommand("edk2code.gotoFile", path[0].uri);
                 }
-                );
+                
             }
         });
     }
@@ -540,10 +546,7 @@ import { SettingsPanel } from "../settings/settingsPanel";
             edkStatusBar.clearWorking();
             edkStatusBar.popText();
 
-                // Generate .ignore if setting is set and .ignore doesnt exists
-            if (gConfigAgent.getIsGenIgnoreFile()) {
-                await genIgnoreFile();
-            }
+
 
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             vscode.window.showInformationMessage(`Index complete: ${gCscope.readCscopeFile().length} files found`);
@@ -566,8 +569,11 @@ import { SettingsPanel } from "../settings/settingsPanel";
             return new Promise<void>((resolve, token) => {
                 let progFiles = readLines(getEdkCodeFolderFilePath("cscope.files"));
                 let filesMap = new Set();
+                let extensions = new Set();
                 for (const progFile of progFiles) {
-                    filesMap.add(toPosix(progFile.toUpperCase()));
+                    let progFileUpper = progFile.toUpperCase();
+                    filesMap.add(toPosix(progFileUpper));
+                    extensions.add(path.extname(progFileUpper));
                 }
 
                 let lookPath = toPosix(path.join(gWorkspacePath, "**"));
@@ -582,7 +588,9 @@ import { SettingsPanel } from "../settings/settingsPanel";
                 let posixWorkspacePath = toPosix(gWorkspacePath);
                 for (const f of fileList) {
                     // Just ignore EDK files
-                    if (!filesMap.has(f.toUpperCase())) {
+                    let fUpper = f.toUpperCase();
+                    let extension = path.extname(fUpper);
+                    if (extensions.has(extension) && !filesMap.has(fUpper)) {
                         progress.report({ message: f });
                         ignoreList += `${f.replace(posixWorkspacePath, "")}\n`;
                     }

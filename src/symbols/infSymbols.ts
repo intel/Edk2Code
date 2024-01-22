@@ -52,7 +52,7 @@ export class EdkSymbolInfSectionProtocols extends EdkSymbol {
     kind = vscode.SymbolKind.Class;
 
     onCompletion = async (parser:DocumentParser)=>{
-        return decCompletion(this, Edk2SymbolType.decProtocol);
+        return decCompletion(this, Edk2SymbolType.decProtocol, vscode.CompletionItemKind.Interface);
     };
     onDefinition: undefined;
     onHover: undefined;
@@ -66,7 +66,7 @@ export class EdkSymbolInfPpi extends EdkSymbol {
     kind = vscode.SymbolKind.Event;
 
     onCompletion = async (parser:DocumentParser)=>{
-        return decCompletion(this, Edk2SymbolType.decPpi);
+        return decCompletion(this, Edk2SymbolType.decPpi, vscode.CompletionItemKind.Interface);
     };
 
     onDefinition = async (parser:DocumentParser)=>{
@@ -82,7 +82,7 @@ export class EdkSymbolInfSectionPpis extends EdkSymbol {
     kind = vscode.SymbolKind.Class;
 
     onCompletion = async (parser:DocumentParser)=>{
-        return decCompletion(this, Edk2SymbolType.decPpi);
+        return decCompletion(this, Edk2SymbolType.decPpi, vscode.CompletionItemKind.Interface);
     };
     onDefinition: undefined;
     onHover: undefined;
@@ -94,7 +94,7 @@ export class EdkSymbolInfSectionGuids extends EdkSymbol {
     kind = vscode.SymbolKind.Class;
 
     onCompletion = async (parser:DocumentParser)=>{
-        return decCompletion(this, Edk2SymbolType.decGuid);
+        return decCompletion(this, Edk2SymbolType.decGuid, vscode.CompletionItemKind.Constant);
     };
     onDefinition: undefined;
     onHover: undefined;
@@ -106,7 +106,7 @@ export class EdkSymbolInfSectionPcds extends EdkSymbol {
     kind = vscode.SymbolKind.Class;
 
     onCompletion = async (parser:DocumentParser)=>{
-        return decCompletion(this, Edk2SymbolType.decPcd);
+        return decCompletion(this, Edk2SymbolType.decPcd, vscode.CompletionItemKind.Constant);
     };
     onDefinition: undefined;
     onHover: undefined;
@@ -342,7 +342,7 @@ export class EdkSymbolInfProtocol extends EdkSymbol {
     kind = vscode.SymbolKind.Event;
 
     onCompletion = async (parser:DocumentParser)=>{
-        return decCompletion(this, Edk2SymbolType.decProtocol);
+        return decCompletion(this, Edk2SymbolType.decProtocol, vscode.CompletionItemKind.Interface);
     };
     onDefinition = async (parser:DocumentParser)=>{
         return decDefinition(this, Edk2SymbolType.decProtocol);
@@ -356,7 +356,7 @@ export class EdkSymbolInfPcd extends EdkSymbol {
     kind = vscode.SymbolKind.String;
 
     onCompletion = async (parser:DocumentParser)=>{
-        return decCompletion(this, Edk2SymbolType.decPcd);
+        return decCompletion(this, Edk2SymbolType.decPcd, vscode.CompletionItemKind.Constant);
     };
     onDefinition = async (parser:DocumentParser)=>{
         return decDefinition(this, Edk2SymbolType.decPcd);
@@ -370,7 +370,7 @@ export class EdkSymbolInfGuid extends EdkSymbol {
     kind = vscode.SymbolKind.Number;
 
     onCompletion = async (parser:DocumentParser)=>{
-        return decCompletion(this, Edk2SymbolType.decGuid);
+        return decCompletion(this, Edk2SymbolType.decGuid, vscode.CompletionItemKind.Constant);
     };
     onDefinition = async (parser:DocumentParser)=>{
         return decDefinition(this,Edk2SymbolType.decGuid);
@@ -410,7 +410,7 @@ export class EdkSymbolInfFunction extends EdkSymbol {
 }
 
 
-async function decCompletion(thisSymbol:EdkSymbol, type:Edk2SymbolType){
+async function decCompletion(thisSymbol:EdkSymbol, type:Edk2SymbolType, completionKind:vscode.CompletionItemKind=vscode.CompletionItemKind.File){
     let retData = [];
     let factory = new ParserFactory();
     let thisPpi = await thisSymbol.getKey();
@@ -424,7 +424,7 @@ async function decCompletion(thisSymbol:EdkSymbol, type:Edk2SymbolType){
             let decPpis = decParser.getSymbolsType(type);
             for (const decPpi of decPpis) {
                 let decPpiValue = await decPpi.getKey();
-                retData.push(new vscode.CompletionItem({label:decPpiValue, detail:" " + path.basename(decPpi.location.uri.fsPath), description:""}, vscode.CompletionItemKind.File));
+                retData.push(new vscode.CompletionItem({label:decPpiValue, detail:" " + path.basename(decPpi.location.uri.fsPath), description:""}, completionKind));
             }
         }
     }

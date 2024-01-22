@@ -2,7 +2,7 @@
   "name": "edk2code",
   "displayName": "Edk2code",
   "description": "EDK2 code support",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "icon": "assets/icon.png",
   "publisher": "intel-corporation",
   "homepage": "https://github.com/intel/Edk2Code/wiki",
@@ -132,6 +132,12 @@
             "type": "boolean",
             "markdownDescription": "Generate `.ignore` file. This file reduce the scope of files consumed by vscode commands as `search` or `open file`",
             "default": false
+          },
+          "edk2code.useEdkCallHierarchy": {
+            "order": 2,
+            "type": "boolean",
+            "markdownDescription": "Set this to use EDK2 call hiearchy instead of vscode native one. (Need reload of vscode)",
+            "default": true
           },
           "edk2code.extraIgnorePatterns": {
             "order": 2,

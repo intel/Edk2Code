@@ -3,31 +3,38 @@ import * as vscode from 'vscode';
 import { getCurrentDocument } from './utils';
 
 export class GrayoutController {
-
-    decorationsMap:Map<string,vscode.TextEditorDecorationType>;
+    decoration:vscode.TextEditorDecorationType|undefined;
+    
     document:vscode.TextDocument;
     range:vscode.Range[];
     public constructor(document:vscode.TextDocument, range:vscode.Range[]) {
         
         this.document = document;
-        this.decorationsMap = new Map();
+
         this.range = range;
         // let subscriptions: vscode.Disposable[] = [];
         // vscode.window.onDidChangeActiveTextEditor(this.doGrayOut, this, subscriptions);
         // vscode.workspace.onDidSaveTextDocument(this.doGrayOut, this, subscriptions);
         
     }
+
+    clearDecorator(){
+
+    }
     
-    private grayoutRange(unusdedRanges:vscode.Range[]) {
+    grayoutRange(unusdedRanges:vscode.Range[]) {
 
             let activeEditor = vscode.window.activeTextEditor;
             
             if(!activeEditor){return;}
             if(activeEditor.document !== this.document){return;}
 
-            let decoration = this.decorationsMap.get(this.document.fileName);
-            if(!decoration){
-                decoration = vscode.window.createTextEditorDecorationType({
+            if(this.decoration){
+                this.decoration.dispose();
+            }
+
+            
+            let decoration = vscode.window.createTextEditorDecorationType({
                     isWholeLine: true,
                     light: {
                         opacity: "0.3",
@@ -35,9 +42,10 @@ export class GrayoutController {
                     dark: {
                         opacity: "0.3",
                     }
-                });
-                this.decorationsMap.set(activeEditor.document.fileName,decoration);
-            }
+            });
+
+            this.decoration = decoration;
+
 
     
             // Block content
@@ -52,7 +60,6 @@ export class GrayoutController {
 
 
     doGrayOut(){
-        this.grayoutRange([]);
         this.grayoutRange(this.range);
     }
 

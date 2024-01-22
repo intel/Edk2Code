@@ -130,7 +130,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	
 	// eslint-disable-next-line @typescript-eslint/no-floating-promises
 	gCscope.reload().then(()=>{
-		gEdk2CallHierarchyProvider = new Edk2CallHierarchyProvider();
+		if(gConfigAgent.getUseEdkCallHiearchy()){
+			gEdk2CallHierarchyProvider = new Edk2CallHierarchyProvider();
+		}
 	});
 
 	edkLensTreeDetailProvider = new TreeDetailsDataProvider();

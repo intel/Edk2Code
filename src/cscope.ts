@@ -88,7 +88,16 @@ export class Cscope {
          
     }
 
-
+/**
+     * Check if a file is included in the cscope.files list.
+     * 
+     * This function checks if the given file path is included in the cscope.files list,
+     * which contains a list of files used by the Cscope tool for symbol lookup.
+     * 
+     * @param filePath filePath The file path to check.
+     *
+     * @return True if the file is included in the cscope.files list, false otherwise.
+     */
     includesFile(filePath:vscode.Uri){
         let lines = this.readCscopeFile();
         for (const line of lines) {

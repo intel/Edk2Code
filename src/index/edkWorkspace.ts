@@ -237,6 +237,7 @@ export class EdkWorkspace {
     definesFdf: WorkspaceDefinitions = new WorkspaceDefinitions();
     private pcdDefinitions: Map<string,Map<string,Pcd>> = new Map();
 
+    private grayoutControllers:Map<vscode.Uri,GrayoutController>;
 
     private _filesLibraries: InfDsc[] = [];
     public get filesLibraries(): InfDsc[] {
@@ -285,8 +286,7 @@ export class EdkWorkspace {
         this.mainDsc = document;
         // generate random number
         this.id = Math.floor(Math.random() * 100000000000000);
-
-        
+        this.grayoutControllers = new Map();
     }
 
 
@@ -684,8 +684,13 @@ export class EdkWorkspace {
             // check if document is in index documents
             if (this.isDocumentInIndex(document)) {
                 let grayoutRange = this.getGrayoutRange(document);
-                let grayoutController = new GrayoutController(document, grayoutRange);
-                grayoutController.doGrayOut();
+                let grayoutController = this.grayoutControllers.get(document.uri);
+                if(!grayoutController){
+                    grayoutController = new GrayoutController(document, grayoutRange);
+                    this.grayoutControllers.set(document.uri, grayoutController);
+                }
+                grayoutController.grayoutRange(grayoutRange);
+                // grayoutController.doGrayOut();
                 return;
             }
         }
