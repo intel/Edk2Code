@@ -222,14 +222,15 @@ export class EdkWorkspace {
 
 
     id:number = 0;
-    mainDsc: vscode.TextDocument;
+    mainDsc: vscode.Uri;
     platformName: string | undefined = undefined;
     flashDefinitionDocument: vscode.TextDocument | undefined = undefined;
 
     private workInProgress: boolean = false;
     private processComplete: boolean = false;
 
-    private conditionalStack: string[] = [];
+    private conditionalStack: boolean[] = [];
+    private lastConditionalPop = true;
     private sectionsStack: string[] = [];
     private parsedDocuments: Map<string, vscode.Range[]> = new Map();
 
@@ -283,7 +284,7 @@ export class EdkWorkspace {
 
 
     constructor(document: vscode.TextDocument) {
-        this.mainDsc = document;
+        this.mainDsc = document.uri;
         // generate random number
         this.id = Math.floor(Math.random() * 100000000000000);
         this.grayoutControllers = new Map();
@@ -297,7 +298,7 @@ export class EdkWorkspace {
         }
         // reset conditional stack
         this.workInProgress = true;
-        gDebugLog.verbose(`Start finding defines in ${this.mainDsc.fileName}`);
+        gDebugLog.verbose(`Start finding defines in ${this.mainDsc.fsPath}`);
         this.conditionalStack = [];
 
         this.defines.resetDefines();
@@ -309,7 +310,8 @@ export class EdkWorkspace {
 
 
         this.parsedDocuments = new Map();
-        await this._proccessDsc(this.mainDsc);
+        let mainDscDocument = await vscode.workspace.openTextDocument(this.mainDsc);
+        await this._proccessDsc(mainDscDocument);
         this.workInProgress = false;
         gDebugLog.verbose("Finding done.");
 
@@ -451,7 +453,14 @@ export class EdkWorkspace {
                 isInUnuseRange = false;
                 let arr = this.parsedDocuments.get(document.uri.fsPath);
                 if (arr) {
-                    arr.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndex, 0)));
+                    let lineIndexEnd = lineIndex-1;
+                    
+                    // check if as special condition to match false blocks until it the !endif label.
+                    if(line === "!endif" && this.lastConditionalPop === false){
+                        lineIndexEnd = lineIndex;
+                    }
+
+                    arr.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
                 } else {
                     gDebugLog.error(`findDefines: ${document.fileName} has no range for unuseRange`);
                 }
@@ -897,14 +906,19 @@ export class EdkWorkspace {
 
 
 
-    private pushConditional(v: any) {
+    private pushConditional(v: boolean) {
         this.conditionalStack.push(v);
     }
 
     private popConditional() {
         if (this.conditionalStack.length > 0) {
+            this.lastConditionalPop = this.conditionalStack[this.conditionalStack.length -1];
             return this.conditionalStack.pop();
         }
+    }
+
+    private getLastConditional(){
+        return this.conditionalStack[this.conditionalStack.length -1];
     }
 
 
@@ -952,6 +966,8 @@ export class EdkWorkspace {
         }
         return ret;
     }
+
+    
 
     async getLib(location: vscode.Location) {
         for (const lib of this.filesLibraries) {
