@@ -197,6 +197,7 @@ export class ConfigAgent {
 
         let buildDefinesObj: Map<string, string> = new Map();
         for (const def of buildDefines) {
+            if(def.length === 0){continue;}
             if (def.includes("=")) {
                 let values = def.split("=");
                 if (values.length !== 2) { continue; }

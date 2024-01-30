@@ -26,7 +26,7 @@ export class FileUseWarning {
 
         let langId = document.languageId;
         if(langId===undefined){return;}
-        if(!["c","cpp","edk2_dsc","edk2_inf","edk2_dec","asl","edk2_vfr","edk2_fdf"].includes(langId)){
+        if(!["c","cpp","edk2_dsc","edk2_inf","edk2_dec","asl","edk2_vfr","edk2_fdf", "edk2_uni"].includes(langId)){
             edkStatusBar.setColor('statusBarItem.activeBackground');
             edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki");
             edkStatusBar.setText(`No EDK file`);

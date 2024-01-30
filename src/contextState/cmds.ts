@@ -134,7 +134,11 @@ import { SettingsPanel } from "../settings/settingsPanel";
     
     export async function rescanIndex() {
         gConfigAgent.reloadConfigFile();
-        return await reloadSymbols();
+        await reloadSymbols();
+        // Generate .ignore if setting is set and .ignore doesnt exists
+        if (gConfigAgent.getIsGenIgnoreFile()) {
+            await genIgnoreFile();
+        }
     }
 
     export async function openFile() {
@@ -491,10 +495,10 @@ import { SettingsPanel } from "../settings/settingsPanel";
                         if(parser){
                             await parser.parseFile();
                             let sources = parser.getSymbolsType(Edk2SymbolType.infSource);
+                            filesList.push(parser.document.fileName);
                             for (const source of sources) {
                                 if(reject.isCancellationRequested){break;}
                                 filesList.push(await source.getValue());
-                                
                             }
                             let decs = parser.getSymbolsType(Edk2SymbolType.infPackage);
                             for (const dec of decs) {
@@ -542,7 +546,6 @@ import { SettingsPanel } from "../settings/settingsPanel";
             filesList = filesList.concat(decList).concat(hFiles);
             writeEdkCodeFolderFile("cscope.files", filesList.join("\n"));
             await gCscope.reload();
-
             edkStatusBar.clearWorking();
             edkStatusBar.popText();
 
