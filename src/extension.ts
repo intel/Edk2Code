@@ -80,9 +80,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		// wrong
 		vscode.commands.registerCommand('edk2code.searchCcode', ()=>{throw new Error("ContextState not initialized");}),
-		vscode.commands.registerCommand('edk2code.saveBuildConfiguration', ()=>{throw new Error("ContextState not initialized");}),
-		vscode.commands.registerCommand('edk2code.loadBuildConfiguration', ()=>{throw new Error("ContextState not initialized");}),
-		
+
 
 		vscode.commands.registerCommand('edk2code.gotoInf',async (fileUri)=>{await cmds.gotoInf(fileUri);}),
 		vscode.commands.registerCommand('edk2code.dscUsage', async (fileUri)=>{await cmds.gotoDscDeclaration(fileUri);}),
@@ -128,12 +126,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	gCscope = new Cscope();
 	gCscopeAgent = new CscopeAgent();
 	
-	// eslint-disable-next-line @typescript-eslint/no-floating-promises
-	gCscope.reload().then(()=>{
-		if(gConfigAgent.getUseEdkCallHiearchy()){
-			gEdk2CallHierarchyProvider = new Edk2CallHierarchyProvider();
-		}
-	});
+	if(gCscope.existCscopeFile()){
+		// eslint-disable-next-line @typescript-eslint/no-floating-promises
+		gCscope.reload().then(()=>{
+			if(gConfigAgent.getUseEdkCallHiearchy()){
+				gEdk2CallHierarchyProvider = new Edk2CallHierarchyProvider();
+			}
+		});
+	}
+
 
 	edkLensTreeDetailProvider = new TreeDetailsDataProvider();
 	edkLensTreeDetailView = vscode.window.createTreeView('detailsView', { treeDataProvider: edkLensTreeDetailProvider, showCollapseAll:true });

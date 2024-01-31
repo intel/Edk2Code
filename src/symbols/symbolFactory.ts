@@ -3,7 +3,7 @@ import { gDebugLog } from "../extension";
 
 import { EdkSymbolDscDefine, EdkSymbolDscInclude, EdkSymbolDscLibraryDefinition, EdkSymbolDscLine, EdkSymbolDscModuleDefinition, EdkSymbolDscPcdDefinition, EdkSymbolDscSection } from "./dscSymbols";
 import { EdkSymbolFdfSection, EdkSymbolFdfInf, EdkSymbolFdfDefinition, EdkSymbolFdfFile, EdkSymbolFdfInclude } from './fdfSymbols';
-import { EdkSymbolInfSectionLibraries, EdkSymbolInfSectionProtocols, EdkSymbolInfSectionPpis, EdkSymbolInfSectionGuids, EdkSymbolInfSectionPcds, EdkSymbolInfSection, EdkSymbolInfDefine, EdkSymbolInfSource, EdkSymbolInfLibrary, EdkSymbolInfPackage, EdkSymbolInfPpi, EdkSymbolInfProtocol, EdkSymbolInfPcd, EdkSymbolInfGuid, EdkSymbolInfDepex, EdkSymbolInfBinary, EdkSymbolInfFunction, EdkSymbolInfSectionSource, EdkSymbolSectionPackages } from './infSymbols';
+import { EdkSymbolInfSectionLibraries, EdkSymbolInfSectionProtocols, EdkSymbolInfSectionPpis, EdkSymbolInfSectionGuids, EdkSymbolInfSectionPcds, EdkSymbolInfSection, EdkSymbolInfDefine, EdkSymbolInfSource, EdkSymbolInfLibrary, EdkSymbolInfPackage, EdkSymbolInfPpi, EdkSymbolInfProtocol, EdkSymbolInfPcd, EdkSymbolInfGuid, EdkSymbolInfDepex, EdkSymbolInfBinary, EdkSymbolInfFunction, EdkSymbolInfSectionSource, EdkSymbolSectionPackages, EdkSymbolinfSectionDepex } from './infSymbols';
 import { EdkSymbolDecSection, EdkSymbolDecDefine, EdkSymbolDecLibrary, EdkSymbolDecPackage, EdkSymbolDecPpi, EdkSymbolDecProtocol, EdkSymbolDecPcd, EdkSymbolDecGuid, EdkSymbolDecIncludes } from './decSymbols';
 import { EdkSymbolCondition, EdkSymbolUnknown } from './commonSymbols';
 import { Edk2SymbolType } from './symbolsType';
@@ -44,6 +44,8 @@ export class SymbolFactory {
                 return new EdkSymbolInfSectionPpis(textLine, location, true, true, parser);
             case Edk2SymbolType.infSectionGuids:
                 return new EdkSymbolInfSectionGuids(textLine, location, true, true, parser);
+            case Edk2SymbolType.infSectionDepex:
+                return new EdkSymbolinfSectionDepex(textLine, location, true, true, parser);
             case Edk2SymbolType.infSectionPcds:
                 return new EdkSymbolInfSectionPcds(textLine, location, true, true, parser);
             case Edk2SymbolType.infSection:

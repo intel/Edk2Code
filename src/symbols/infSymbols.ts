@@ -100,6 +100,20 @@ export class EdkSymbolInfSectionGuids extends EdkSymbol {
     onHover: undefined;
     onDeclaration: undefined;
 }
+
+export class EdkSymbolinfSectionDepex extends EdkSymbol {
+
+    type = Edk2SymbolType.infSectionDepex;
+    kind = vscode.SymbolKind.Class;
+
+    onCompletion = async (parser:DocumentParser)=>{
+        return decCompletion(this, Edk2SymbolType.decGuid, vscode.CompletionItemKind.Constant);
+    };
+    onDefinition: undefined;
+    onHover: undefined;
+    onDeclaration: undefined;
+}
+
 export class EdkSymbolInfSectionPcds extends EdkSymbol {
 
     type = Edk2SymbolType.infSectionPcds;
@@ -383,8 +397,13 @@ export class EdkSymbolInfDepex extends EdkSymbol {
     type = Edk2SymbolType.infDepex;
     kind = vscode.SymbolKind.Property;
 
-    onCompletion: undefined;
-    onDefinition: undefined;
+    onCompletion = async (parser:DocumentParser)=>{
+        return decCompletion(this, Edk2SymbolType.decPpi, vscode.CompletionItemKind.Interface);
+    };
+
+    onDefinition = async (parser:DocumentParser)=>{
+        return decDefinition(this,Edk2SymbolType.decPpi);
+    };
     onHover: undefined;
     onDeclaration: undefined;
 }
@@ -491,6 +510,8 @@ async function completeLib(thisSymbol:EdkSymbol) {
             // LIBRARY_CLASS = libName | values
             //                 ^^^^^^^
             let libName = text.split("=", 2)[1].split("|", 2)[0].trim();
+            // Skip NULL libraries
+            if(libName.toLowerCase() === "null"){continue;}
             if(!libNames.includes(libName)) {
                 libNames.push(libName);
                 retData.push(new vscode.CompletionItem({label:libName, detail: "", description: ""}, vscode.CompletionItemKind.Enum));

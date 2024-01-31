@@ -27,46 +27,47 @@
       {
         "command": "edk2code.openConfigurationUi",
         "title": "EDK2: Workspace configuration (UI)"
+        
       },
       {
         "command": "edk2code.openConfigurationJson",
         "title": "EDK2: Workspace configuration (JSON)"
+      
       },
       {
         "command": "edk2code.rebuildIndex",
         "title": "EDK2: Rebuild index database"
+        
       },
       {
         "command": "edk2code.rescanIndex",
         "title": "EDK2: Rescan Index"
-      },
-      {
-        "command": "edk2code.loadBuildConfiguration",
-        "title": "EDK2: Load build configuration file"
+        
       },
       {
         "command": "edk2code.gotoDefinition",
         "title": "EDK2: Go to Definition "
+        
       },
       {
         "command": "edk2code.gotoDefinitionInput",
         "title": "EDK2: Go to Definition Input"
-      },
-      {
-        "command": "edk2code.searchCcode",
-        "title": "EDK2: Search C code"
+        
       },
       {
         "command": "edk2code.openFile",
-        "title": "EDK2: Open source file "
+        "title": "EDK2: Open source file"
+        
       },
       {
         "command": "edk2code.openLib",
         "title": "EDK2: Open Library"
+        
       },
       {
         "command": "edk2code.openModule",
         "title": "EDK2: Open Module "
+        
       },
       {
         "command": "edk2code.debugCommand",
@@ -182,19 +183,11 @@
           "when": "true"
         },
         {
-          "command": "edk2code.loadBuildConfiguration",
-          "when": "true"
-        },
-        {
           "command": "edk2code.gotoDefinition",
           "when": "edk2code.parseComplete"
         },
         {
           "command": "edk2code.gotoDefinitionInput",
-          "when": "edk2code.parseComplete"
-        },
-        {
-          "command": "edk2code.searchCcode",
           "when": "edk2code.parseComplete"
         },
         {

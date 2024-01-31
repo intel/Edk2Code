@@ -165,6 +165,16 @@ class BlockGuid extends BlockParser {
     visible:boolean = true;
 }
 
+class BlockDepex extends BlockParser {
+    name = "Depex";
+    tag = REGEX_ANY_BUT_SECTION;
+    start =  undefined;
+    end =  undefined;
+    type = Edk2SymbolType.infDepex;
+    visible:boolean = true;
+
+}
+
 class BlockGuidsSection extends BlockParser {
     name = "Guids";
     tag = /^\[\s*Guids/gi;
@@ -249,10 +259,10 @@ class BlockDepexSection extends BlockParser {
     tag = /^\[\s*Depex/gi;
     start =  undefined;
     end =  /^\[/gi;
-    type = Edk2SymbolType.infSection;
+    type = Edk2SymbolType.infSectionDepex;
     visible:boolean = true;
     context: BlockParser[] = [
-        new BlockSimpleLine(),
+        new BlockDepex(),
     ];
 }
 

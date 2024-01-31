@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { gConfigAgent, gDebugLog, gPathFind, gWorkspacePath } from '../extension';
 import { GrayoutController } from '../grayout';
 import { createRange, openTextDocument, split } from '../utils';
-import { REGEX_DEFINE as REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_INCLUDE as REGEX_INCLUDE, REGEX_LIBRARY_PATH, REGEX_MODULE_PATH, REGEX_MODULE_TYPE, REGEX_PCD_LINE, REGEX_VAR_USAGE } from "../edkParser/commonParser";
+import { REGEX_DEFINE as REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_INCLUDE as REGEX_INCLUDE, REGEX_LIBRARY_PATH, REGEX_MODULE_PATH, REGEX_PCD_LINE, REGEX_VAR_USAGE } from "../edkParser/commonParser";
 import { UNDEFINED_VARIABLE, WorkspaceDefinitions } from "./definitions";
 import * as fs from 'fs';
 import path = require('path');
