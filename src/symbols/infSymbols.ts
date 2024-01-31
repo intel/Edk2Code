@@ -260,7 +260,7 @@ export class EdkSymbolInfLibrary extends EdkSymbol {
                 // Modules
                 let dscLibDeclarations:InfDsc[] = [];
                 for (const wp of wps) {
-                    dscLibDeclarations = dscLibDeclarations.concat(await wp.getLibDeclarationModule(this.location.uri, libName));
+                    dscLibDeclarations = dscLibDeclarations.concat(await wp.getLibDeclarationModule(this, libName));
                 }
                 let libDeclarationLocations:vscode.Location[] = [];
                 for (const declaration of dscLibDeclarations) {
@@ -302,7 +302,7 @@ export class EdkSymbolInfLibrary extends EdkSymbol {
                 // Libraries return all results of libraries used in workspaces
                 let dscLibDeclarations:InfDsc[] = [];
                 for (const wp of wps) {
-                    dscLibDeclarations = dscLibDeclarations.concat(await wp.getLibDeclarationModule(this.location.uri, libName));
+                    dscLibDeclarations = dscLibDeclarations.concat(await wp.getLibDeclarationModule(this, libName));
                 }
                 return dscLibDeclarations.map((x)=>{return x.location;});
             }

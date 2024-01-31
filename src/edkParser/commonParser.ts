@@ -6,7 +6,7 @@ export const REGEX_PATH_FOLDER = /^\s*[a-zA-Z\/\\0-9\._]+/gi;
 
 export const REGEX_LIBRARY_PATH = /(?<=^.*?\|\s*)[a-zA-Z\/\\0-9\._]+\.(inf)/gi;
 export const REGEX_MODULE_PATH = /^[a-zA-Z\/\\0-9\._]+\.(inf)/gi;
-export const REGEX_DSC_SECTION = /(?<=^\[\s*)[a-z\.,\s\d]+(?=\])/gi;
+export const REGEX_DSC_SECTION = /(?<=^\[\s*)[a-z\.,\s\d_]+(?=\])/gi;
 export const REGEX_ANY_BUT_SECTION = /^(?!.*?\[).*/gi;
 export const REGEX_PCD_LINE = /(?:^\w[\w\d\[\]]+\.)+[\w\d\[\]]+/gi;
 

@@ -3,12 +3,13 @@ import * as vscode from 'vscode';
 import { gConfigAgent, gDebugLog, gPathFind, gWorkspacePath } from '../extension';
 import { GrayoutController } from '../grayout';
 import { createRange, openTextDocument, split } from '../utils';
-import { REGEX_DEFINE as REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_INCLUDE as REGEX_INCLUDE, REGEX_LIBRARY_PATH, REGEX_MODULE_PATH, REGEX_PCD_LINE, REGEX_VAR_USAGE } from "../edkParser/commonParser";
+import { REGEX_DEFINE as REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_INCLUDE as REGEX_INCLUDE, REGEX_LIBRARY_PATH, REGEX_MODULE_PATH, REGEX_MODULE_TYPE, REGEX_PCD_LINE, REGEX_VAR_USAGE } from "../edkParser/commonParser";
 import { UNDEFINED_VARIABLE, WorkspaceDefinitions } from "./definitions";
 import * as fs from 'fs';
 import path = require('path');
 import { ParserFactory } from '../edkParser/parserFactory';
 import { Edk2SymbolType } from '../symbols/symbolsType';
+import { EdkSymbolInfLibrary } from '../symbols/infSymbols';
 
 interface Pcd {
     name:string;
@@ -22,48 +23,11 @@ export class Property{
     moduleType:string;
 
     constructor(sectionType:string, arch:string, moduleType:string){
-        this.sectionType = sectionType;
-        this.arch = arch;
-        this.moduleType = moduleType;
+        this.sectionType = sectionType.toLocaleLowerCase();
+        this.arch = arch.toLocaleLowerCase();
+        this.moduleType = moduleType.toLocaleLowerCase();
     }
 
-    accuracy(){
-        let count = 1;
-        if(this.arch !== "*"){
-            count = 100;
-        }
-        if(this.moduleType!== "*"){
-            count +=50;
-        }
-        return count;
-    }
-
-    equal(other:Property):number{
-
-        let accuracy = 10;
-
-        if(this.moduleType !== "*" && other.moduleType!== "*"){
-            if(this.moduleType!== other.moduleType){
-                return 0;
-            }
-        }
-
-        if(this.moduleType === other.moduleType){
-            accuracy += 100;
-        }
-
-        if(this.arch !== "*" && other.arch!== "*"){
-            if(this.arch!== other.arch){
-                return 0;
-            }
-        }
-
-        if(this.arch === other.arch){
-            accuracy += 200;
-        }
-
-        return accuracy;
-    }
 }
 
 export class InfDsc{
@@ -86,23 +50,79 @@ export class InfDsc{
             this.parent = undefined;
             let props = parent.split(",");
             for (const p of props) {
-                let [sectionType,arch,moduleType] = split(p.toLowerCase().replaceAll("common", "*"),".",3,"*");
+                let [sectionType,arch,moduleType] = split(p.toLowerCase(),".",3,"common");
                 let property = new Property(sectionType, arch, moduleType);
                 this.properties.push(property);
             }
         }
     }
 
-    compareProperties(other:InfDsc):number{
+    toString(): string {
+        return `${this.path}:${this.location.range.start.line} - ${JSON.stringify(this.properties)} }`;
+    }
+
+
+    compareArch(other:InfDsc){
         for (const thisProperty of this.properties) {
             for (const otherProperty of other.properties) {
-                let aquracy = thisProperty.equal(otherProperty);
-                if(aquracy){
-                    return aquracy;
+                if(otherProperty.arch === thisProperty.arch){
+                    return true;
                 }
             }
         }
-        return 0;
+        return false;
+    }
+
+    compareArchStr(arch:string){
+        arch = arch.toLowerCase();
+        for (const thisProperty of this.properties) {
+            if(arch === thisProperty.arch){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    compareLibSectionType(other:InfDsc){
+        for (const thisProperty of this.properties) {
+            for (const otherProperty of other.properties) {
+                if(otherProperty.sectionType === thisProperty.sectionType){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    compareLibSectionTypeStr(sectionType:string){
+        sectionType = sectionType.toLowerCase();
+        for (const thisProperty of this.properties) {
+            if(sectionType === thisProperty.sectionType){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    compareModuleType(other:InfDsc){
+        for (const thisProperty of this.properties) {
+            for (const otherProperty of other.properties) {
+                if(otherProperty.moduleType === thisProperty.moduleType){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    compareModuleTypeStr(moduleType:string){
+        moduleType = moduleType.toLowerCase();
+        for (const thisProperty of this.properties) {
+            if(moduleType === thisProperty.moduleType){
+                return true;
+            }
+        }
+        return false;
     }
 }
 
@@ -1063,17 +1083,17 @@ export class EdkWorkspace {
 
 
 
-    async getLibDeclarationModule(moduleUri:vscode.Uri,libName:string) {
+    async getLibDeclarationModule(libSymbol:EdkSymbolInfLibrary,libName:string, ) {
     
         let dscLibDeclarations: InfDsc[] = await this.getLibDeclaration(libName);
-
         
         // Check if library is overwritten in module definition
+        // 1. <LibraryClasses> associated with the INF file in the [Components] section
         for (const library of dscLibDeclarations) {
             if(library.parent === undefined){continue;}
             let parentPaths = await gPathFind.findPath(library.parent);
             for (const parentLocation of parentPaths) {
-                if(parentLocation.uri.fsPath === moduleUri.fsPath){
+                if(parentLocation.uri.fsPath === libSymbol.location.uri.fsPath){
                     return [library];
                 }
             }
@@ -1081,26 +1101,69 @@ export class EdkWorkspace {
 
         // Return libraries that match module properties
         
+        // Get MODULE_TYPE from original INF file
+        let infText = (await vscode.workspace.openTextDocument(libSymbol.location.uri)).getText();
+        let m = /MODULE_TYPE\s*=\s*\b(\w*)\b/gi.exec(infText);
+        let moduleType = "common";
+        if(m!==null){
+            moduleType = m[1].toLocaleLowerCase();
+        }
+
         //Get properties from moduleUri
-        let modulesDeclarations = await this.getDscDeclaration(moduleUri);
+        let modulesDeclarations = await this.getDscDeclaration(libSymbol.location.uri);
         let currentAccuracy = 0;
         let locations:InfDsc[] = [];
+
+        // Check all module declarations.
         for (const module of modulesDeclarations) {
+            let locationFound = false;
+
+            // Module contains the properties obtained from DSC file.
+            // Here overwrite module type with the actual definition of the INF file
+            for (const property of module.properties) {
+                property.moduleType = moduleType;
+            }
+
             for (const library of dscLibDeclarations) {
-                if(library.parent !== undefined){continue;}
-                let compareAccuracy = library.compareProperties(module);
-                if(compareAccuracy){
-                    if(compareAccuracy < currentAccuracy){continue;}
-                    if(compareAccuracy > currentAccuracy){
-                        currentAccuracy = compareAccuracy;
-                        locations = [];
-                    }
+                // 2. [LibraryClasses.$(Arch).$(MODULE_TYPE), LibraryClasses.$(Arch).$(MODULE_TYPE)]
+                // 3. [LibraryClasses.$(Arch).$(MODULE_TYPE)]
+                console.log(`${library.toString()} === ${module.toString()}`);
+                if(library.compareArch(module) && library.compareModuleType(module)){
+                    console.log("equal");
+                    locationFound = true;
                     locations.push(library);
                 }
-                let modProp = module.properties.map(x => {return `${x.arch}\t\t, ${x.moduleType}`;});
-                let libProp = library.properties.map(x => {return `${x.arch}\t\t, ${x.moduleType}`;});
-
             }
+            if(locationFound){continue;}
+
+            for (const library of dscLibDeclarations) {
+                // 4. [LibraryClasses.common.$(MODULE_TYPE)]
+                if(library.compareArchStr("common") && library.compareModuleType(module)){
+                    locationFound = true;
+                    locations.push(library);
+                }
+            }
+            if(locationFound){continue;}
+
+            for (const library of dscLibDeclarations) {
+                // 5. [LibraryClasses.$(Arch)]
+                if(library.compareArch(module)){
+                    locationFound = true;
+                    locations.push(library);
+                }
+            }
+            if(locationFound){continue;}
+
+            for (const library of dscLibDeclarations) {
+                // 6. [LibraryClasses.common] or [LibraryClasses]
+                if(library.compareArchStr("common")){
+                    locationFound = true;
+                    locations.push(library);
+                }
+            }
+            if(locationFound){continue;}
+
+            
         }
 
 
