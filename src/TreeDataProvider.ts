@@ -112,7 +112,7 @@ export class FileTreeItemLibraryTree extends TreeItem{
     super(uri, vscode.TreeItemCollapsibleState.Expanded);
     this.moduleNode = moduleNode;
     this.uri = uri;
-    let name = uri.fsPath.slice(gWorkspacePath.length + 1);
+    let name = vscode.workspace.asRelativePath(uri);
     this.description = name;
     this.label = path.basename(uri.fsPath);
     this.iconPath = new vscode.ThemeIcon("file");

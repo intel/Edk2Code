@@ -372,13 +372,14 @@ import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
                 const sectionRange = libraries[0].parent?.range.start;
                 if(sectionRange===undefined){continue;}
                 let moduleNode = new FileTreeItemLibraryTree(fileUri, sectionRange,null);
+                moduleNode.description = wp.platformName;
                 edkLensTreeDetailProvider.addChildren(moduleNode);
                 for (const library of libraries) {
                     let libDefinitions = await wp.getLibDeclarationModule(fileUri, library.name);
                     for (const libDefinition of libDefinitions) {
                         let filePaths = await gPathFind.findPath(libDefinition.path);
                         for (const path of filePaths) {
-                            let libNode = new FileTreeItemLibraryTree(path.uri, new vscode.Position(0,0),moduleNode);
+                            let libNode = new FileTreeItemLibraryTree(path.uri, libDefinition.location.range.start,moduleNode);
                             moduleNode.addChildren(libNode);
                         }
                     }
