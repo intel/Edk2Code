@@ -349,14 +349,22 @@ import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
 
 
     export async function showLibraryTree(fileUri:vscode.Uri) {
-        edkLensTreeDetailProvider.clear();
-        edkLensTreeDetailProvider.refresh();
-        edkLensTreeDetailView.title = "EDK2 Library Tree";
-        edkLensTreeDetailView.description = path.basename(fileUri.fsPath);
-        
+
 
         let parser = await getParser(fileUri);
         if(parser && (parser instanceof InfParser) ){
+            // Check if INF file is a library
+            if(parser.isLibrary()){
+                // list all modules and ask for context
+                void vscode.window.showWarningMessage("This INF is a library. This command only works with EDK Modules for now");
+                return;
+            }
+            edkLensTreeDetailProvider.clear();
+            edkLensTreeDetailProvider.refresh();
+            edkLensTreeDetailView.title = "EDK2 Library Tree";
+            edkLensTreeDetailView.description = path.basename(fileUri.fsPath);
+            
+
             let wps = await gEdkWorkspaces.getWorkspace(fileUri);
             let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
             for (const wp of wps) {

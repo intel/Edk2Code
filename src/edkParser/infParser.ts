@@ -307,6 +307,13 @@ export class InfParser extends DocumentParser {
         new BlockDefinesSection(),
         new BlockGenericSection(),
 ];
+
+    isLibrary(){
+        if(this.document.getText().match(/^\s*library_class\s*=/gmi)){
+            return true;
+        }
+        return false;
+    }
 }
 
 // export class XInfParser extends LanguageParser {
