@@ -274,7 +274,7 @@ export class EdkSymbolInfLibrary extends EdkSymbol {
                 // Modules
                 let dscLibDeclarations:InfDsc[] = [];
                 for (const wp of wps) {
-                    dscLibDeclarations = dscLibDeclarations.concat(await wp.getLibDeclarationModule(this, libName));
+                    dscLibDeclarations = dscLibDeclarations.concat(await wp.getLibDeclarationModule(this.location.uri, libName));
                 }
                 let libDeclarationLocations:vscode.Location[] = [];
                 for (const declaration of dscLibDeclarations) {
@@ -316,7 +316,7 @@ export class EdkSymbolInfLibrary extends EdkSymbol {
                 // Libraries return all results of libraries used in workspaces
                 let dscLibDeclarations:InfDsc[] = [];
                 for (const wp of wps) {
-                    dscLibDeclarations = dscLibDeclarations.concat(await wp.getLibDeclarationModule(this, libName));
+                    dscLibDeclarations = dscLibDeclarations.concat(await wp.getLibDeclarationModule(this.location.uri, libName));
                 }
                 return dscLibDeclarations.map((x)=>{return x.location;});
             }
@@ -325,6 +325,44 @@ export class EdkSymbolInfLibrary extends EdkSymbol {
             return locations;
         }
     };
+
+
+    async getDefinition(parser:DocumentParser){
+        let libName = this.textLine.replace(/\s*\|.*/, "");
+        let wps = await gEdkWorkspaces.getWorkspace(this.location.uri);
+        if(wps.length){
+
+
+            // Check if this is a library
+            let isLibrary = await isFileEdkLibrary(this.location.uri);
+
+            if(isLibrary){
+                let libDeclarationLocations:vscode.Location[] = [];
+                for (const wp of wps) {
+                    libDeclarationLocations = libDeclarationLocations.concat(await wp.getLibDefinition(libName));
+                }
+                return libDeclarationLocations;
+            }else{
+                // Modules
+                let dscLibDeclarations:InfDsc[] = [];
+                for (const wp of wps) {
+                    dscLibDeclarations = dscLibDeclarations.concat(await wp.getLibDeclarationModule(this.location.uri, libName));
+                }
+                let libDeclarationLocations:vscode.Location[] = [];
+                for (const declaration of dscLibDeclarations) {
+                    let location = await gPathFind.findPath(declaration.path);
+                    if(location.length){
+                        libDeclarationLocations.push(location[0]);
+                    }
+                }
+                return libDeclarationLocations;
+            }
+
+        }else{
+            let locations = await rgSearch(`--regexp "LIBRARY_CLASS\\s*=\\s*\\b${libName}\\b"`,["*.inf"]);
+            return locations;
+        }
+    }
 }
 export class EdkSymbolInfPackage extends EdkSymbol {
 

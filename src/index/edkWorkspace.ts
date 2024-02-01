@@ -7,7 +7,7 @@ import { REGEX_DEFINE as REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_INCLUDE as REGEX
 import { UNDEFINED_VARIABLE, WorkspaceDefinitions } from "./definitions";
 import * as fs from 'fs';
 import path = require('path');
-import { ParserFactory } from '../edkParser/parserFactory';
+import { ParserFactory, getParser } from '../edkParser/parserFactory';
 import { Edk2SymbolType } from '../symbols/symbolsType';
 import { EdkSymbolInfLibrary } from '../symbols/infSymbols';
 
@@ -587,6 +587,7 @@ export class EdkWorkspace {
         return line;
     }
 
+
     async isFileInUse(uri: vscode.Uri) {
 
         if (this.processComplete) {
@@ -643,11 +644,8 @@ export class EdkWorkspace {
                         
                         if (location.length === 0){continue;}
 
-                        let infDocument = await openTextDocument(location[0].uri);
-                        let factory = new ParserFactory();
-                        let parser = factory.getParser(infDocument);
+                        let parser = await getParser(location[0].uri);
                         if (parser) {
-                            await parser.parseFile();
                             let sources = parser.getSymbolsType(Edk2SymbolType.infSource);
                             for (const source of sources) {
                                 let location = await gPathFind.findPath(await source.getValue());
@@ -1083,7 +1081,7 @@ export class EdkWorkspace {
 
 
 
-    async getLibDeclarationModule(libSymbol:EdkSymbolInfLibrary,libName:string, ) {
+    async getLibDeclarationModule(fileUri:vscode.Uri,libName:string, ) {
     
         let dscLibDeclarations: InfDsc[] = await this.getLibDeclaration(libName);
         
@@ -1093,7 +1091,7 @@ export class EdkWorkspace {
             if(library.parent === undefined){continue;}
             let parentPaths = await gPathFind.findPath(library.parent);
             for (const parentLocation of parentPaths) {
-                if(parentLocation.uri.fsPath === libSymbol.location.uri.fsPath){
+                if(parentLocation.uri.fsPath === fileUri.fsPath){
                     return [library];
                 }
             }
@@ -1102,7 +1100,7 @@ export class EdkWorkspace {
         // Return libraries that match module properties
         
         // Get MODULE_TYPE from original INF file
-        let infText = (await vscode.workspace.openTextDocument(libSymbol.location.uri)).getText();
+        let infText = (await vscode.workspace.openTextDocument(fileUri)).getText();
         let m = /MODULE_TYPE\s*=\s*\b(\w*)\b/gi.exec(infText);
         let moduleType = "common";
         if(m!==null){
@@ -1110,7 +1108,7 @@ export class EdkWorkspace {
         }
 
         //Get properties from moduleUri
-        let modulesDeclarations = await this.getDscDeclaration(libSymbol.location.uri);
+        let modulesDeclarations = await this.getDscDeclaration(fileUri);
         let currentAccuracy = 0;
         let locations:InfDsc[] = [];
 

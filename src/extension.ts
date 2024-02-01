@@ -79,7 +79,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('edk2code.gotoDefinitionInput', ()=>{cmds.gotoDefinitionInput();}),
 
 		// wrong
-		vscode.commands.registerCommand('edk2code.searchCcode', ()=>{throw new Error("ContextState not initialized");}),
+		// vscode.commands.registerCommand('edk2code.searchCcode', ()=>{throw new Error("ContextState not initialized");}),
 
 
 		vscode.commands.registerCommand('edk2code.gotoInf',async (fileUri)=>{await cmds.gotoInf(fileUri);}),
@@ -89,7 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 		vscode.commands.registerCommand('edk2code.libUsage', ()=>{cmds.showLibUsage();}),
 		vscode.commands.registerCommand('edk2code.showReferences', ()=>{cmds.showReferences();}),
-		vscode.commands.registerCommand('edk2code.showLibraryTree', ()=>{cmds.showLibraryTree();}),
+		vscode.commands.registerTextEditorCommand('edk2code.showLibraryTree', async (editor)=>{await cmds.showLibraryTree(editor.document.uri);}),
 
 		// Internal
 		vscode.commands.registerCommand('edk2code.searchDefinition', ()=>{}),
@@ -139,6 +139,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	edkLensTreeDetailProvider = new TreeDetailsDataProvider();
 	edkLensTreeDetailView = vscode.window.createTreeView('detailsView', { treeDataProvider: edkLensTreeDetailProvider, showCollapseAll:true });
 	edkLensTreeDetailProvider.refresh();
+	edkLensTreeDetailView.onDidExpandElement(async event => {
+		let node = event.element as TreeItem;
+		await node.onExpanded();
+	});
 
 	
 }

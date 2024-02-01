@@ -9,12 +9,14 @@ import { distance, closest } from 'fastest-levenshtein';
 import { glob } from "fast-glob";
 import { BuildFolder } from "../Languages/buildFolder";
 import { EdkWorkspace, InfDsc } from "../index/edkWorkspace";
-import { FileTreeItem, TreeItem } from "../TreeDataProvider";
-import { ParserFactory } from "../edkParser/parserFactory";
+import { FileTreeItem, FileTreeItemLibraryTree, TreeItem } from "../TreeDataProvider";
+import { ParserFactory, getParser } from "../edkParser/parserFactory";
 import { Edk2SymbolType } from "../symbols/symbolsType";
 import * as edkStatusBar from '../statusBar';
 import { infoMissingCompileInfo } from "../ui/messages";
 import { SettingsPanel } from "../settings/settingsPanel";
+import { InfParser } from "../edkParser/infParser";
+import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
 
     export async function rebuildIndexDatabase() {
 
@@ -59,7 +61,7 @@ import { SettingsPanel } from "../settings/settingsPanel";
                 buildInfoFolders = buildInfoFolders.map((x) => {
                     return path.parse(String(x)).dir;
                 });
-
+                
                 // Show options for builds
                 var options: vscode.QuickPickItem[] = [];
                 for (const foundPath of buildInfoFolders) {
@@ -72,20 +74,18 @@ import { SettingsPanel } from "../settings/settingsPanel";
                     });
                 }
 
-                // Add option for all builds
-                options.push({
-                    label: "Load all",
-                    description: "Migth give inacurate results",
-                    detail: "Experimental",
-                });
 
-                let option = await vscode.window.showQuickPick(options, { title: "Select build", matchOnDescription: true, matchOnDetail: true });
-                if (option === undefined) { return; }
+                let selectedOptions = await vscode.window.showQuickPick(options, { title: "Select build", matchOnDescription: true, matchOnDetail: true , canPickMany:true});
+                if (selectedOptions === undefined) { return; }
 
-                let selectedFolders = buildInfoFolders;
-                if (option.label !== "Load all") {
-                    selectedFolders = [option.detail];
+                let selectedFolders:string[] = [];
+
+                for (const op of selectedOptions) {
+                    if(op.detail){
+                        selectedFolders.push(op.detail);
+                    }
                 }
+
 
                 gDebugLog.verbose("Loading from build");
 
@@ -345,8 +345,67 @@ import { SettingsPanel } from "../settings/settingsPanel";
     export function showReferences(): void {
         throw new Error("Method not implemented.");
     }
-    export function showLibraryTree(): void {
-        throw new Error("Method not implemented.");
+
+    export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibraryTree){
+        await vscode.commands.executeCommand("edk2code.gotoFile", fileUri);
+        let parser = await getParser(fileUri);
+        if(parser && (parser instanceof InfParser) ){
+            let wps = await gEdkWorkspaces.getWorkspace(fileUri);
+            let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
+            for (const wp of wps) {
+                // let dscDeclarations = await wp.getDscDeclaration(fileUri);
+                const sectionRange = libraries[0].parent?.range.start;
+                if(sectionRange===undefined){continue;}
+
+                for (const library of libraries) {
+                    let libDefinitions = await wp.getLibDeclarationModule(node.moduleNode?.uri!, library.name);
+                    for (const libDefinition of libDefinitions) {
+                        let filePaths = await gPathFind.findPath(libDefinition.path);
+                        for (const path of filePaths) {
+                            let libNode = new FileTreeItemLibraryTree(path.uri, new vscode.Position(0,0),node.moduleNode);
+                            node.addChildren(libNode);
+                        }
+                    }
+                }
+                
+            }
+        }
+        edkLensTreeDetailProvider.refresh();
+    }
+
+    export async function showLibraryTree(fileUri:vscode.Uri) {
+        edkLensTreeDetailProvider.clear();
+        edkLensTreeDetailProvider.refresh();
+        edkLensTreeDetailView.title = "EDK2 Library Tree";
+        edkLensTreeDetailView.description = path.basename(fileUri.fsPath);
+        
+
+        let parser = await getParser(fileUri);
+        if(parser && (parser instanceof InfParser) ){
+            let wps = await gEdkWorkspaces.getWorkspace(fileUri);
+            let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
+            for (const wp of wps) {
+                // let dscDeclarations = await wp.getDscDeclaration(fileUri);
+                const sectionRange = libraries[0].parent?.range.start;
+                if(sectionRange===undefined){continue;}
+                let moduleNode = new FileTreeItemLibraryTree(fileUri, sectionRange,null);
+                edkLensTreeDetailProvider.addChildren(moduleNode);
+                for (const library of libraries) {
+                    let libDefinitions = await wp.getLibDeclarationModule(fileUri, library.name);
+                    for (const libDefinition of libDefinitions) {
+                        let filePaths = await gPathFind.findPath(libDefinition.path);
+                        for (const path of filePaths) {
+                            let libNode = new FileTreeItemLibraryTree(path.uri, new vscode.Position(0,0),moduleNode);
+                            moduleNode.addChildren(libNode);
+                        }
+                    }
+                }
+                
+            }
+        }
+
+        await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
+            
     }
 
 

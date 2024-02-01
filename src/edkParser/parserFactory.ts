@@ -6,9 +6,20 @@ import { InfParser } from "./infParser";
 import { DecParser } from './decParser';
 import { VfrParser } from './vfrParser';
 import { AslParser } from './aslParser';
+import { openTextDocument } from '../utils';
 
+export async function getParser(uri:vscode.Uri){
+    let infDocument = await openTextDocument(uri);
+    let factory = new ParserFactory();
+    let parser = factory.getParser(infDocument);
+    if (parser) {
+        await parser.parseFile();
+    }
+    return parser;
+}
 
 export class ParserFactory {
+    
     getParser(document: vscode.TextDocument) {
         let languageId = document.languageId;
         switch (languageId) {

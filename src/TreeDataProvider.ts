@@ -72,6 +72,10 @@ export class TreeItem extends vscode.TreeItem {
     this.children.push(node);
   }
 
+  async onExpanded(){
+
+  }
+
 }
 
 export class FileTreeItem extends TreeItem{
@@ -91,4 +95,35 @@ export class FileTreeItem extends TreeItem{
     // this.resourceUri = this.uri;
     // this.iconPath = 
   }
+}
+
+export class FileTreeItemLibraryTree extends TreeItem{
+  uri:vscode.Uri;
+  moduleNode:FileTreeItemLibraryTree|null;
+
+  constructor(uri:vscode.Uri, position:vscode.Position, moduleNode:FileTreeItemLibraryTree|null){
+    super(uri, vscode.TreeItemCollapsibleState.Expanded);
+    this.moduleNode = moduleNode;
+    this.uri = uri;
+    let name = uri.fsPath.slice(gWorkspacePath.length + 1);
+    this.description = name;
+    this.label = path.basename(uri.fsPath);
+    this.iconPath = new vscode.ThemeIcon("file");
+    this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+
+    this.command = {
+      "command": "editor.action.peekLocations",
+      "title":"Open file",
+      "arguments": [this.uri, position, []]
+    };
+    // this.resourceUri = this.uri;
+    // this.iconPath = 
+  }
+
+  async onExpanded(){
+    
+    console.log("expanded");
+  }
+
+
 }
