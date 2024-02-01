@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { TreeDetailsDataProvider, TreeItem } from './TreeDataProvider';
+
 import { ConfigAgent } from './configuration';
 import { Cscope, CscopeAgent } from './cscope';
 import { DebugLog } from './debugLog';
@@ -20,7 +20,7 @@ import { Edk2CallHierarchyProvider } from './callHiearchy';
 import { checkCompileCommandsConfig, getCurrentDocument, gotoFile, showVirtualFile } from './utils';
 import { ParserFactory } from './edkParser/parserFactory';
 import { SettingsPanel } from './settings/settingsPanel';
-
+import { TreeDetailsDataProvider, TreeItem } from './TreeDataProvider';
 
 // Global variables
 // export var gEdkDatabase: EdkDatabase;

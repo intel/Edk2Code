@@ -1,6 +1,13 @@
 import path = require('path');
 import * as vscode from 'vscode';
-import { gWorkspacePath } from './extension';
+import { edkLensTreeDetailProvider, gEdkWorkspaces, gPathFind, gWorkspacePath } from './extension';
+import { InfParser } from './edkParser/infParser';
+import { getParser } from './edkParser/parserFactory';
+import { Edk2SymbolType } from './symbols/symbolsType';
+import { EdkSymbolInfLibrary } from './symbols/infSymbols';
+
+
+
 
 
 
@@ -100,7 +107,7 @@ export class FileTreeItem extends TreeItem{
 export class FileTreeItemLibraryTree extends TreeItem{
   uri:vscode.Uri;
   moduleNode:FileTreeItemLibraryTree|null;
-
+  loaded = false;
   constructor(uri:vscode.Uri, position:vscode.Position, moduleNode:FileTreeItemLibraryTree|null){
     super(uri, vscode.TreeItemCollapsibleState.Expanded);
     this.moduleNode = moduleNode;
@@ -121,9 +128,43 @@ export class FileTreeItemLibraryTree extends TreeItem{
   }
 
   async onExpanded(){
+    if(this.moduleNode && this.loaded === false){
+      await openLibraryNode(this.uri,this);
+      this.loaded = true;
+    }
     
     console.log("expanded");
   }
+}
+
+export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibraryTree){
+  
+  let parser = await getParser(fileUri);
+  if(parser ){//&& (parser instanceof InfParser) ){
+      let wps = await gEdkWorkspaces.getWorkspace(fileUri);
+      let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
+      if(libraries.length === 0){return;} // This INF has no libraries
+      for (const wp of wps) {
+          // let dscDeclarations = await wp.getDscDeclaration(fileUri);
+          // const sectionRange = libraries[0].parent?.range.start;
+          // if(sectionRange===undefined){continue;}
+
+          for (const library of libraries) {
+              let libDefinitions = await wp.getLibDeclarationModule(node.moduleNode?.uri!, library.name);
+              for (const libDefinition of libDefinitions) {
+                  let filePaths = await gPathFind.findPath(libDefinition.path);
+                  for (const path of filePaths) {
+                      
+                      let pos = new vscode.Position(0,0);
 
 
+                      let libNode = new FileTreeItemLibraryTree(path.uri, pos,node.moduleNode);
+                      node.addChildren(libNode);
+                  }
+              }
+          }
+          
+      }
+  }
+  edkLensTreeDetailProvider.refresh();
 }

@@ -346,32 +346,7 @@ import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
         throw new Error("Method not implemented.");
     }
 
-    export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibraryTree){
-        await vscode.commands.executeCommand("edk2code.gotoFile", fileUri);
-        let parser = await getParser(fileUri);
-        if(parser && (parser instanceof InfParser) ){
-            let wps = await gEdkWorkspaces.getWorkspace(fileUri);
-            let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
-            for (const wp of wps) {
-                // let dscDeclarations = await wp.getDscDeclaration(fileUri);
-                const sectionRange = libraries[0].parent?.range.start;
-                if(sectionRange===undefined){continue;}
 
-                for (const library of libraries) {
-                    let libDefinitions = await wp.getLibDeclarationModule(node.moduleNode?.uri!, library.name);
-                    for (const libDefinition of libDefinitions) {
-                        let filePaths = await gPathFind.findPath(libDefinition.path);
-                        for (const path of filePaths) {
-                            let libNode = new FileTreeItemLibraryTree(path.uri, new vscode.Position(0,0),node.moduleNode);
-                            node.addChildren(libNode);
-                        }
-                    }
-                }
-                
-            }
-        }
-        edkLensTreeDetailProvider.refresh();
-    }
 
     export async function showLibraryTree(fileUri:vscode.Uri) {
         edkLensTreeDetailProvider.clear();

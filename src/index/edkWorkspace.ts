@@ -1130,6 +1130,7 @@ export class EdkWorkspace {
                     console.log("equal");
                     locationFound = true;
                     locations.push(library);
+                    break;
                 }
             }
             if(locationFound){continue;}
@@ -1139,6 +1140,7 @@ export class EdkWorkspace {
                 if(library.compareArchStr("common") && library.compareModuleType(module)){
                     locationFound = true;
                     locations.push(library);
+                    break;
                 }
             }
             if(locationFound){continue;}
@@ -1148,6 +1150,7 @@ export class EdkWorkspace {
                 if(library.compareArch(module)){
                     locationFound = true;
                     locations.push(library);
+                    break;
                 }
             }
             if(locationFound){continue;}
@@ -1157,15 +1160,11 @@ export class EdkWorkspace {
                 if(library.compareArchStr("common")){
                     locationFound = true;
                     locations.push(library);
+                    break;
                 }
             }
             if(locationFound){continue;}
-
-            
         }
-
-
-
         return locations;
 
 
