@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import path = require('path');
 import * as vscode from 'vscode';
-import { gCscope, gDebugLog, gEdkWorkspaces } from './extension';
+import { gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces } from './extension';
 import { exec, execWindow, getEdkCodeFolderFilePath, getEdkCodeFolderPath, getStaticPath, normalizePath, readLines, toPosix } from './utils';
 import { execSync } from 'child_process';
 import * as edkStatusBar from './statusBar';
@@ -68,15 +68,21 @@ export class Cscope {
     cscopeInstalled = false;
 
     public constructor() {
+        let cscopeOverwritePath = gConfigAgent.getCscopeOverwritePath();
 
-        if (process.platform === 'win32'){
-            this.cscopePath = getStaticPath("cscope.exe");
+        if(cscopeOverwritePath === ""){
+            if (process.platform === 'win32'){
+                this.cscopePath = getStaticPath("cscope.exe");
+            }else{
+                this.cscopePath = "cscope";
+            }
         }else{
-            this.cscopePath = "cscope";
+            this.cscopePath = cscopeOverwritePath;
         }
 
+
         var command = `${this.cscopePath} -V`;
-        
+
         try {
             let result = execSync(command);
             gDebugLog.info(result.toString());

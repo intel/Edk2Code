@@ -2,7 +2,7 @@
   "name": "edk2code",
   "displayName": "Edk2code",
   "description": "EDK2 code support",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "icon": "assets/icon.png",
   "publisher": "intel-corporation",
   "homepage": "https://github.com/intel/Edk2Code/wiki",
@@ -137,8 +137,14 @@
           "edk2code.useEdkCallHierarchy": {
             "order": 2,
             "type": "boolean",
-            "markdownDescription": "Set this to use EDK2 call hiearchy instead of vscode native one. (Need reload of vscode)",
+            "markdownDescription": "Set this to use EDK2 call hiearchy (cscope) instead of vscode native one. `(reload of vscode after setup)`",
             "default": true
+          },
+          "edk2code.cscopeOverwritePath": {
+            "order": 2,
+            "type": "string",
+            "markdownDescription": "Overwrites the calls to cscope executable path. `(reload of vscode after setup)`",
+            "default": ""
           },
           "edk2code.extraIgnorePatterns": {
             "order": 2,
@@ -153,12 +159,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "edk2code.generateGuidXref": {
-            "order": 2,
-            "type": "boolean",
-            "markdownDescription": "Generate `Guid.csv` file based on Guid.xref files on workspace. File location: `${workspaceFolder}//.Edk2Code`",
-            "default": true
           }
         }
       }

@@ -250,6 +250,10 @@ export class ConfigAgent {
         return <string[]>this.get("extraIgnorePatterns");
     }
 
+    getCscopeOverwritePath() {
+        return (<string>this.get("cscopeOverwritePath")).trim();
+    }
+
     getIsGenGuidXrefFile() {
         return <boolean>this.get("generateGuidXref");
     }
