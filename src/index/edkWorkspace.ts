@@ -10,6 +10,11 @@ import path = require('path');
 import { ParserFactory, getParser } from '../edkParser/parserFactory';
 import { Edk2SymbolType } from '../symbols/symbolsType';
 import { EdkSymbolInfLibrary } from '../symbols/infSymbols';
+import { DiagnosticManager, EdkDiagnosticCodes } from '../diagnostics';
+import { PathFind } from '../pathfind';
+
+
+const dscSectionTypes = ['defines','packages','buildoptions','skuids','libraryclasses','components','userextensions','defaultstores','pcdsfeatureflag','pcdsfixedatbuild','pcdspatchableinmodule','pcdsdynamicdefault','pcdsdynamichii','pcdsdynamicvpd','pcdsdynamicexdefault','pcdsdynamicexhii','pcdsdynamicexvpd'];
 
 interface Pcd {
     name:string;
@@ -55,6 +60,7 @@ export class InfDsc{
                 this.properties.push(property);
             }
         }
+        
     }
 
     toString(): string {
@@ -328,6 +334,7 @@ export class EdkWorkspace {
         this.filesModules = [];
         this.filesDsc = [];
 
+        DiagnosticManager.clearProblems();
 
         this.parsedDocuments = new Map();
         let mainDscDocument = await vscode.workspace.openTextDocument(this.mainDsc);
@@ -422,7 +429,7 @@ export class EdkWorkspace {
         let text = document.getText().split(/\r?\n/);
         let lineIndex = -1;
 
-        let isInUnuseRange = false;
+        let isRangeActive = false;
         let unuseRangeStart = 0;
 
         for (let line of text) {
@@ -459,18 +466,21 @@ export class EdkWorkspace {
 
             line = this.replacePcds(line);
 
-            this.processConditional(line);
+            let conditinalResult = this.processConditional(line);
+            if(conditinalResult !==undefined){
+                DiagnosticManager.reportProblem(document.uri, lineIndex, conditinalResult,vscode.DiagnosticSeverity.Error);
+            }
 
             if (!this.isInActiveCode()) {
-                if (!isInUnuseRange) {
-                    isInUnuseRange = true;
+                if (!isRangeActive) {
+                    isRangeActive = true;
                     unuseRangeStart = lineIndex;
                 }
                 continue;
             }
 
-            if (isInUnuseRange === true) {
-                isInUnuseRange = false;
+            if (isRangeActive === true) {
+                isRangeActive = false;
                 let arr = this.parsedDocuments.get(document.uri.fsPath);
                 if (arr) {
                     let lineIndexEnd = lineIndex-1;
@@ -488,6 +498,10 @@ export class EdkWorkspace {
 
             let match = line.match(REGEX_DSC_SECTION);
             if (match) {
+                const sectionType = match[0].split(".")[0];
+                if(!dscSectionTypes.includes(sectionType.toLowerCase())){
+                    DiagnosticManager.warning(document.uri,lineIndex,EdkDiagnosticCodes.unknownSectionType, sectionType);
+                }
                 this.sectionsStack = [match[0]];
                 continue;
             }
@@ -526,6 +540,11 @@ export class EdkWorkspace {
             if (match) {
                 // get matched string 
                 let filePath = match[0].trim();
+                console.log("Checking");
+                let results = await gPathFind.findPath(filePath);
+                if(results.length === 0){
+                    DiagnosticManager.error(document.uri,lineIndex,EdkDiagnosticCodes.missingPath, filePath);
+                }
                 let inf = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[this.sectionsStack.length - 1], line);
                 this.filesLibraries.push(inf);
                 continue;
@@ -543,6 +562,7 @@ export class EdkWorkspace {
                 this.filesModules.push(inf);
                 continue;
             }
+            
         }
 
     }
@@ -798,8 +818,11 @@ export class EdkWorkspace {
 
             line = this.replacePcds(line);
 
-            this.processConditional(line);
-
+            let conditinalResult = this.processConditional(line);
+            if(conditinalResult !==undefined){
+                DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.syntaxStatement, conditinalResult);
+            }
+            
             if (!this.isInActiveCode()) {
                 if (!isInUnuseRange) {
                     isInUnuseRange = true;
@@ -866,7 +889,7 @@ export class EdkWorkspace {
     }
 
 
-    private processConditional(text: string) {
+    private processConditional(text: string):string|undefined {
         text = text.replaceAll(REGEX_VAR_USAGE, `"${UNDEFINED_VARIABLE}"`);
         // text = text.replaceAll(UNDEFINED_VARIABLE, '"???"');
 
@@ -879,47 +902,47 @@ export class EdkWorkspace {
         }
         tokens = tokens.filter(x => { return x.length > 0; });
         if (tokens.length === 0) {
-            return false;
+            return;
         }
         if (tokens[0].toLowerCase() === "!if") {
             this.pushConditional(this.evaluateConditional(text));
-            return true;
+            return;
         } else if (tokens[0].toLowerCase() === "!elseif") {
             let v = this.popConditional();
             this.pushConditional(this.evaluateConditional(text));
-            return true;
+            return;
         }
         else if (tokens[0].toLowerCase() === "!ifdef") {
             if (tokens.length !== 2) {
-                throw new Error("!ifdef conditionals need to be formatted correctly (spaces between each token)");
+               return "!ifdef conditionals need to be formatted correctly (!ifdef [definition])";
             }
             this.pushConditional((tokens[1] !== UNDEFINED_VARIABLE));
-            return true;
+            return;
         }
         else if (tokens[0].toLowerCase() === "!ifndef") {
             if (tokens.length !== 2) {
-                throw new Error("!ifndef conditionals need to be formatted correctly (spaces between each token)");
+               return "!ifndef conditionals need to be formatted correctly (!ifndef [definition])";
             }
             this.pushConditional((tokens[1] === UNDEFINED_VARIABLE));
-            return true;
+            return;
         }
         else if (tokens[0].toLowerCase() === "!else") {
             if (tokens.length !== 1) {
-                throw new Error("!ifdef conditionals need to be formatted correctly (spaces between each token)");
+               return "!else conditional has additional tokens";
             }
             let v = this.popConditional();
             this.pushConditional(!v);
-            return true;
+            return;
         }
 
         else if (tokens[0].toLowerCase() === "!endif") {
             if (tokens.length !== 1) {
-                throw new Error("!ifdef conditionals need to be formatted correctly (spaces between each token)");
+               return "!endif conditional has additional tokens";
             }
             this.popConditional();
-            return true;
+            return;
         }
-        return false;
+        return;
     }
 
 
