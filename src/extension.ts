@@ -21,6 +21,7 @@ import { checkCompileCommandsConfig, getCurrentDocument, gotoFile, showVirtualFi
 import { ParserFactory } from './edkParser/parserFactory';
 import { SettingsPanel } from './settings/settingsPanel';
 import { TreeDetailsDataProvider, TreeItem } from './TreeDataProvider';
+import { DiagnosticManager } from './diagnostics';
 
 // Global variables
 // export var gEdkDatabase: EdkDatabase;
@@ -39,6 +40,7 @@ export var gFileUseWarning: FileUseWarning;
 export var gGrayOutController: GrayoutController;
 export var gModuleReport: ModuleReport;
 export var gGuidProvider:GuidProvider;
+export var gDiagnosticManager:DiagnosticManager;
 
 export var edkLensTreeDetailProvider: TreeDetailsDataProvider;
 export var edkLensTreeDetailView: vscode.TreeView<vscode.TreeItem>;
@@ -62,7 +64,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	gConfigAgent = new ConfigAgent();
 	
 	gDebugLog.info("Start EDK2 Extension");
-
+	gDiagnosticManager = DiagnosticManager.getInstance();
 	// By default start Context stage with offline commands
 
 
