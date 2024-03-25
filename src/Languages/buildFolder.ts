@@ -105,7 +105,7 @@ export class BuildFolder {
         }
         let filteredCscope = "";
         for (const value of cscopeMap.values()) {
-            filteredCscope += `${value.replaceAll("\/","\\").replace(/\n$/, "")}\n`;
+            filteredCscope += `${path.resolve(value.replaceAll("\/","\\").replace(/\n$/, ""))}\n`;
         }
         writeEdkCodeFolderFile("cscope.files", filteredCscope);
         writeEdkCodeFolderFile("module_report.json", JSON.stringify(moduleReport, null, 2));
