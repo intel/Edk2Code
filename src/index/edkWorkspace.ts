@@ -914,21 +914,22 @@ export class EdkWorkspace {
         }
         else if (tokens[0].toLowerCase() === "!ifdef") {
             if (tokens.length !== 2) {
-               return "!ifdef conditionals need to be formatted correctly (!ifdef [definition])";
+                
+               return `!ifdef conditionals need to be formatted correctly (!ifdef [definition]): ${text}`;
             }
             this.pushConditional((tokens[1] !== UNDEFINED_VARIABLE));
             return;
         }
         else if (tokens[0].toLowerCase() === "!ifndef") {
             if (tokens.length !== 2) {
-               return "!ifndef conditionals need to be formatted correctly (!ifndef [definition])";
+               return `!ifndef conditionals need to be formatted correctly (!ifndef [definition]): ${text}`;
             }
             this.pushConditional((tokens[1] === UNDEFINED_VARIABLE));
             return;
         }
         else if (tokens[0].toLowerCase() === "!else") {
             if (tokens.length !== 1) {
-               return "!else conditional has additional tokens";
+               return `!else conditional has additional tokens: ${text}`;
             }
             let v = this.popConditional();
             this.pushConditional(!v);
@@ -937,7 +938,7 @@ export class EdkWorkspace {
 
         else if (tokens[0].toLowerCase() === "!endif") {
             if (tokens.length !== 1) {
-               return "!endif conditional has additional tokens";
+               return `!endif conditional has additional tokens: ${text}`;
             }
             this.popConditional();
             return;
