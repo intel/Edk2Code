@@ -617,7 +617,7 @@ import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
                 let filesMap = new Set();
                 let extensions = new Set();
                 for (const progFile of progFiles) {
-                    let progFileUpper = progFile.toUpperCase();
+                    let progFileUpper = path.resolve(progFile.toUpperCase());
                     filesMap.add(toPosix(progFileUpper));
                     extensions.add(path.extname(progFileUpper));
                 }
