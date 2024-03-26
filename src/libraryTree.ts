@@ -53,7 +53,7 @@ export async function showLibraryTree(){
       void vscode.window.showErrorMessage("Module information was not generated during compilation.", "Help").then(async selection => {
         if (selection === "Help"){
             await vscode.env.openExternal(vscode.Uri.parse(
-                'https://github.com/intel/Edk2Code/wiki/Index-source-code#1-enable-compile-information-in-your-build'));
+                'https://github.com/intel/Edk2Code/wiki/Index-source-code#enable-compile-information'));
         }
       });
       return;
