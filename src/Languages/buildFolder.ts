@@ -1,7 +1,7 @@
 import path = require("path");
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { gDebugLog, gWorkspacePath } from "../extension";
+import { gCscope, gDebugLog, gWorkspacePath } from "../extension";
 import { getRealPath, getRealPathRelative, normalizePath, readLines, writeEdkCodeFolderFile, split, toPosix, readEdkCodeFolderFile } from "../utils";
 import glob = require("fast-glob");
 
@@ -103,11 +103,17 @@ export class BuildFolder {
                 moduleReport.push(mod);
             }
         }
-        let filteredCscope = "";
+        let filteredCscope = [];
         for (const value of cscopeMap.values()) {
-            filteredCscope += `${path.resolve(value.replaceAll("\/","\\").replace(/\n$/, ""))}\n`;
+            try {
+                filteredCscope.push(value.replace(/\n$/, ""));     
+            } catch (error) {
+                
+            }
+
         }
-        writeEdkCodeFolderFile("cscope.files", filteredCscope);
+        
+        gCscope.writeCscopeFile(filteredCscope);
         writeEdkCodeFolderFile("module_report.json", JSON.stringify(moduleReport, null, 2));
         writeEdkCodeFolderFile("compile_commands.json", JSON.stringify(compileCommands, null, 2));
         if(compileCommands.length === 0){

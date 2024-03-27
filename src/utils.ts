@@ -398,10 +398,13 @@ export async function itsPcdSelected(document: vscode.TextDocument, position: vs
 
 export async function checkCompileCommandsConfig(){
     let cCppPropertiesPath = path.join(gWorkspacePath, ".vscode", "c_cpp_properties.json");
-    const expectedPath = "${workspaceFolder}\\.edkCode\\compile_commands.json";
+    
+    const expectedPath = path.join("${workspaceFolder}", ".edkCode", "compile_commands.json");
     if (fs.existsSync(cCppPropertiesPath)) {
         let cProperties = JSON.parse(fs.readFileSync(cCppPropertiesPath).toString());
         const commandsPath = cProperties["configurations"][0]["compileCommands"];
+        gDebugLog.debug(`cCppPropertiesPath: ${commandsPath}`);
+        gDebugLog.debug(`expectedPath: ${expectedPath}`);
         if(commandsPath !== expectedPath){
             let update = await updateCompilesCommandCpp();
             if(update){

@@ -64,6 +64,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	gConfigAgent = new ConfigAgent();
 	
 	gDebugLog.info("Start EDK2 Extension");
+	gDebugLog.info("Workspace path: "+gWorkspacePath);
 	gDiagnosticManager = DiagnosticManager.getInstance();
 	// By default start Context stage with offline commands
 
