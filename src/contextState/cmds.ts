@@ -17,6 +17,7 @@ import { infoMissingCompileInfo } from "../ui/messages";
 import { SettingsPanel } from "../settings/settingsPanel";
 import { InfParser } from "../edkParser/infParser";
 import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
+import { debuglog } from "util";
 
     export async function rebuildIndexDatabase() {
 
@@ -587,7 +588,7 @@ import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
             progress.report({message:"Running Cscope"});
             await delay(200); // Delay to update GUI
             filesList = filesList.concat(decList).concat(hFiles);
-            writeEdkCodeFolderFile("cscope.files", filesList.join("\n"));
+            gCscope.writeCscopeFile(filesList);
             await gCscope.reload();
             edkStatusBar.clearWorking();
             edkStatusBar.popText();
@@ -613,35 +614,44 @@ import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
         }, async (progress, reject) => {
 
             return new Promise<void>((resolve, token) => {
-                let progFiles = readLines(getEdkCodeFolderFilePath("cscope.files"));
-                let filesMap = new Set();
-                let extensions = new Set();
-                for (const progFile of progFiles) {
-                    let progFileUpper = path.resolve(progFile.toUpperCase());
-                    filesMap.add(toPosix(progFileUpper));
-                    extensions.add(path.extname(progFileUpper));
+                gDebugLog.info("Generationg .ignore file");
+                let cscopeFilesList = gCscope.readCscopeFile();
+                let filesSet = new Set();
+                let filesExtensions = new Set();
+                for (const cscopeFile of cscopeFilesList) {
+                    let progFileUpper = cscopeFile.toUpperCase();
+                    filesSet.add(progFileUpper);
+                    filesExtensions.add(path.extname(progFileUpper));
                 }
 
+                // Glob library needs posix path
                 let lookPath = toPosix(path.join(gWorkspacePath, "**"));
-                let fileList = glob.sync(lookPath);
-                let ignoreList = "";
+                let globFilesList = glob.sync(lookPath);
+                let ignoreList = [];
 
+                // Add extra ignore patterns
                 let extraIgnores = gConfigAgent.getExtraIgnorePatterns();
                 for (const extraIgnore of extraIgnores) {
-                    ignoreList += `${extraIgnore.trim()}\n`;
+                    ignoreList.push(extraIgnore.trim());
                 }
-
+                
                 let posixWorkspacePath = toPosix(gWorkspacePath);
-                for (const f of fileList) {
+                gDebugLog.debug(Array.from(filesSet).toString());
+                gDebugLog.debug("####################");
+                gDebugLog.debug(Array.from(globFilesList).toString());
+                
+
+                for (const globFile of globFilesList) {
                     // Just ignore EDK files
-                    let fUpper = f.toUpperCase();
-                    let extension = path.extname(fUpper);
-                    if (extensions.has(extension) && !filesMap.has(fUpper)) {
-                        progress.report({ message: f });
-                        ignoreList += `${f.replace(posixWorkspacePath, "")}\n`;
+                    let globFileUpperCase = path.resolve(globFile.toUpperCase());
+                    let extension = path.extname(globFileUpperCase);
+                    if (filesExtensions.has(extension) && !filesSet.has(globFileUpperCase)) {
+                        progress.report({ message: globFile });
+                        
+                        ignoreList.push(toPosix(path.relative(posixWorkspacePath, globFile)));
                     }
                 }
-                fs.writeFileSync(path.join(gWorkspacePath, ".ignore"), ignoreList);
+                fs.writeFileSync(path.join(gWorkspacePath, ".ignore"), ignoreList.join("\n"));
                 resolve();
             });
 

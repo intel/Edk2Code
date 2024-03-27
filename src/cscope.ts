@@ -129,16 +129,24 @@ export class Cscope {
         return fs.existsSync(cscopeFilesPath);
     }
 
-    async writeCscopeFile(fileList:string[]){
+    writeCscopeFile(fileList:string[]){
         if(fileList.length === 0){
             return;
         }
         let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
-        
-        let cscopeFiles = fileList.map((x)=>{return x.replaceAll("/",path.sep);}).join("\n");
+        // Cscope.files uses forwardslash format for path
+        // Append " to the path to avoid issues with spaces
+        // Resolve all paths to OS format
+        let cscopeFiles = fileList.map((x)=>{return '"' + path.resolve(x.replaceAll("/",path.sep)) + '"';}).join("\n");
         fs.writeFileSync(cscopeFilesPath,cscopeFiles);
     }
 
+    readCscopeFile():string[]{
+        let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
+        let lines = readLines(cscopeFilesPath);
+        // Format line to match OS path
+        return lines.map((x)=>{return path.resolve(x.replaceAll('"',''));});
+    }
 
     removeFiles() {
         let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
@@ -149,10 +157,7 @@ export class Cscope {
         
     }
     
-    readCscopeFile():string[]{
-        let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
-        return readLines(cscopeFilesPath);
-    }
+
 
 
     async reload(progressWindow=false){
