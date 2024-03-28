@@ -1,6 +1,14 @@
 # Change Log
 
+
 All notable changes to the "edk2code" extension will be documented in this file.
+## [1.0.7]
+
+Improvements in error handling, diagnostics, and configuration management, alongside minor updates and bug fixes.
+  
+### Introduction of diagnostics.ts:
+DiagnosticManager class and an enumeration for EDK diagnostic codes. This class manages diagnostic messages (warnings and errors) related to the EDK2 codebase.
+
 ## [1.0.1]
 - Fixed continues request to re-scan for index changes
 
