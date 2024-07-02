@@ -87,7 +87,7 @@ export class SettingsPanel {
                     localResourceRoots: [Uri.joinPath(extensionUri, "out")],
                 }
             );
-            
+
             SettingsPanel.currentPanel = new SettingsPanel(panel, extensionUri);
             SettingsPanel.currentPanel.configAgent = configAgent;
             SettingsPanel.currentPanel.configValuesChanged(() => configAgent.saveConfigurationUI());
@@ -165,7 +165,7 @@ export class SettingsPanel {
 
 
     }
-    
+
     initilizePanel() {
         SettingsPanel.currentPanel!.updateWebview(this.configAgent!.getWorkspaceConfig(), this.configAgent!.getWorkspaceErrors());
     }
@@ -195,7 +195,7 @@ export class SettingsPanel {
 
     /**
      * Sets up an event listener to listen for messages passed from the webview context and
-     * executes code based on the message that is recieved.
+     * executes code based on the message that is received.
      *
      * @param webview A reference to the extension webview
      */

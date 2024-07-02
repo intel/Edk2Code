@@ -62,7 +62,7 @@ import { debuglog } from "util";
                 buildInfoFolders = buildInfoFolders.map((x) => {
                     return path.parse(String(x)).dir;
                 });
-                
+
                 // Show options for builds
                 var options: vscode.QuickPickItem[] = [];
                 for (const foundPath of buildInfoFolders) {
@@ -101,7 +101,7 @@ import { debuglog } from "util";
                     await gConfigAgent.setBuildDscPaths(buildData.dscFiles);
                     buildFolder.copyFilesToRoot();
 
-                
+
                     // If cscope.file is not generated, then calculate files based on dsc parsing
                     if(existsEdkCodeFolderFile(".missing")){
                         infoMissingCompileInfo();
@@ -109,7 +109,7 @@ import { debuglog } from "util";
 
 
                     }else{
-                        
+
                         await checkCompileCommandsConfig();
                         await gCscope.reload();
                     }
@@ -123,7 +123,7 @@ import { debuglog } from "util";
 
                     await gEdkWorkspaces.loadConfig();
 
-                    
+
                 }
 
             } else {
@@ -132,7 +132,7 @@ import { debuglog } from "util";
             }
         }
     }
-    
+
     export async function rescanIndex() {
         gConfigAgent.reloadConfigFile();
         await reloadSymbols();
@@ -151,7 +151,7 @@ import { debuglog } from "util";
                     itemsOption.push({
                         label: `$(file) ${path.basename(s)}`,
                         description: s
-                    }); 
+                    });
                 }
             }
         }
@@ -162,7 +162,7 @@ import { debuglog } from "util";
                 if(path.length){
                     await vscode.commands.executeCommand("edk2code.gotoFile", path[0].uri);
                 }
-                
+
             }
         });
     }
@@ -177,7 +177,7 @@ import { debuglog } from "util";
                         itemsOption.push({
                             label: `$(file) ${path.basename(s.path)}`,
                             description: filePath[0].uri.fsPath
-                        }); 
+                        });
                     }
                 }
             }
@@ -185,7 +185,7 @@ import { debuglog } from "util";
         await vscode.window.showQuickPick(itemsOption, { title: "Libraries on workspaces", matchOnDescription: true, matchOnDetail: true }).then(async option => {
             if (option !== undefined) {
                 await vscode.commands.executeCommand("edk2code.gotoFile", vscode.Uri.file(option.description!)).then(() => {
-    
+
                 }
                 );
             }
@@ -202,7 +202,7 @@ import { debuglog } from "util";
                         itemsOption.push({
                             label: `$(file) ${path.basename(s.path)}`,
                             description: filePath[0].uri.fsPath
-                        }); 
+                        });
                     }
 
                 }
@@ -211,7 +211,7 @@ import { debuglog } from "util";
         await vscode.window.showQuickPick(itemsOption, { title: "Modules on workspaces", matchOnDescription: true, matchOnDetail: true }).then(async option => {
             if (option !== undefined) {
                 await vscode.commands.executeCommand("edk2code.gotoFile", vscode.Uri.file(option.description!)).then(() => {
-    
+
                 }
                 );
             }
@@ -220,24 +220,24 @@ import { debuglog } from "util";
     export async function gotoDefinitionCscope(fileUri:vscode.Uri) {
         let currentWord = getCurrentWord();
         if(currentWord !== undefined){
-        
+
             // Filter results to only show files used in compilation
             let filteredLocations:vscode.Location[] = [];
-    
+
             // First look using Cscope
             filteredLocations = await gCscope.getDefinitionPositions(currentWord.word);
-    
+
             if(filteredLocations.length === 0){
                 let allLocations:vscode.Location[] = await vscode.commands.executeCommand('vscode.executeDefinitionProvider', currentWord.uri, currentWord.range.end);
                 for (const loc of allLocations) {
-                    
+
                     let isFileUsed = await gEdkWorkspaces.isFileInUse(loc.uri);
                     if(isFileUsed){
                         filteredLocations.push(loc);
                     }
                 }
             }
-    
+
             await vscode.commands.executeCommand('editor.action.goToLocations', currentWord.uri, currentWord.range.end, filteredLocations, "gotoAndPeek", "Not found");
 
         }
@@ -261,7 +261,7 @@ import { debuglog } from "util";
             // Skip if source hasn't been indexed. Just make a search query
             let fileName = path.basename(fileUri.fsPath);
             let folderPath = path.dirname(fileUri.fsPath);
-            
+
             let tempLocations = await rgSearch(`\\b${fileName}\\b`, ["*.inf"],[],true);
             for (const l of tempLocations) {
                 // Check the INF file is relative to the source file
@@ -293,7 +293,7 @@ import { debuglog } from "util";
                     dscDeclarations = dscDeclarations.concat(await wp.getDscDeclaration(fileUri));
                 }
                 locations = dscDeclarations.map((x) => {return x.location;});
-                
+
 
             }else{
                 locations = await rgSearch(`-i --regexp ".*?\\b${fileName}\\b"`, ["*.dsc","*.dsc.inc"]);
@@ -364,7 +364,7 @@ import { debuglog } from "util";
             edkLensTreeDetailProvider.refresh();
             edkLensTreeDetailView.title = "EDK2 Library Tree";
             edkLensTreeDetailView.description = path.basename(fileUri.fsPath);
-            
+
 
             let wps = await gEdkWorkspaces.getWorkspace(fileUri);
             let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
@@ -385,12 +385,12 @@ import { debuglog } from "util";
                         }
                     }
                 }
-                
+
             }
         }
 
         await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
-            
+
     }
 
 
@@ -403,7 +403,7 @@ import { debuglog } from "util";
             let document = await openTextDocument(fileUri);
             return await updateInclussionTree(document);
         });
-        
+
     }
 
 
@@ -435,7 +435,7 @@ import { debuglog } from "util";
                             infReferences = [new vscode.Location(document.uri, document.positionAt(0))];
                             targetNode = rootNode;
                         }
-                        
+
                         for (const infRef  of infReferences) {
                             let infNode = new FileTreeItem(infRef.uri, infRef.range.start);
                             targetNode.addChildren(infNode);
@@ -452,7 +452,7 @@ import { debuglog } from "util";
 
                         dscReferences = [new vscode.Location(document.uri, document.positionAt(0))];
 
-    
+
                         for (const dscRef of dscReferences) {
                             let refNode = new FileTreeItem(dscRef.uri, dscRef.range.start);
                             _maxDscRec = 10;
@@ -465,19 +465,19 @@ import { debuglog } from "util";
                 }
             }
         }
-        
+
         edkLensTreeDetailProvider.refresh();
         edkLensTreeDetailView.title = "EDK2 References";
         edkLensTreeDetailView.description = path.basename(document.uri.fsPath);
         await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
     }
 
-    
+
     export async function  _dscIncRefs(referenceNode:FileTreeItem, wp:EdkWorkspace, targetNode:TreeItem){
         if(_maxDscRec === 0){return;}
         _maxDscRec --;
 
-        
+
         let dscInclude = await wp.getIncludeReference(referenceNode.uri);
         if(dscInclude.length === 0){
             referenceNode.collapsibleState = vscode.TreeItemCollapsibleState.None;
@@ -502,7 +502,7 @@ import { debuglog } from "util";
             let filesList:string[] = [];
             let decList:string[] = [];
             let hFiles:string[] = [];
-            
+
             edkStatusBar.pushText("Index source files...");
             edkStatusBar.setWorking();
             proccesedInfFiles = new Set();
@@ -524,7 +524,7 @@ import { debuglog } from "util";
             for (const lib of wpInfFiles) {
                 progress.report({message:"Parsing INF files",increment:increment});
                 if(reject.isCancellationRequested){break;}
-                // get all sources 
+                // get all sources
                 try {
                     let p = await gPathFind.findPath(lib.path);
                     if(p.length){
@@ -573,9 +573,9 @@ import { debuglog } from "util";
                                         }
                                     }
                                 }
-                                
+
                                 // For each new DEC file, check its "Include" section and add h files
-                                
+
                             }
                         }
                     }
@@ -583,7 +583,7 @@ import { debuglog } from "util";
                     gDebugLog.error(String(error));
                 }
             }
-            
+
 
             progress.report({message:"Running Cscope"});
             await delay(200); // Delay to update GUI
@@ -601,9 +601,9 @@ import { debuglog } from "util";
     }
 
     /**
-     * Creates .ignore file. this will check for this.getFilesInUse() and will ignore all the 
+     * Creates .ignore file. this will check for this.getFilesInUse() and will ignore all the
      * files that are not used
-     * @returns 
+     * @returns
      */
     async function genIgnoreFile() {
 
@@ -614,7 +614,7 @@ import { debuglog } from "util";
         }, async (progress, reject) => {
 
             return new Promise<void>((resolve, token) => {
-                gDebugLog.info("Generationg .ignore file");
+                gDebugLog.info("Generating .ignore file");
                 let cscopeFilesList = gCscope.readCscopeFile();
                 let filesSet = new Set();
                 let filesExtensions = new Set();
@@ -634,12 +634,12 @@ import { debuglog } from "util";
                 for (const extraIgnore of extraIgnores) {
                     ignoreList.push(extraIgnore.trim());
                 }
-                
+
                 let posixWorkspacePath = toPosix(gWorkspacePath);
                 gDebugLog.debug(Array.from(filesSet).toString());
                 gDebugLog.debug("####################");
                 gDebugLog.debug(Array.from(globFilesList).toString());
-                
+
 
                 for (const globFile of globFilesList) {
                     // Just ignore EDK files
@@ -647,7 +647,7 @@ import { debuglog } from "util";
                     let extension = path.extname(globFileUpperCase);
                     if (filesExtensions.has(extension) && !filesSet.has(globFileUpperCase)) {
                         progress.report({ message: globFile });
-                        
+
                         ignoreList.push(toPosix(path.relative(posixWorkspacePath, globFile)));
                     }
                 }
@@ -661,7 +661,7 @@ import { debuglog } from "util";
     }
 
 export async function openWpConfigGui() {
-	SettingsPanel.render(gExtensionContext.extensionUri, gConfigAgent);
+    SettingsPanel.render(gExtensionContext.extensionUri, gConfigAgent);
 }
 export async function openWpConfigJson() {
     await gotoFile(gConfigAgent.getConfigFileUri());

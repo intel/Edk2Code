@@ -55,7 +55,7 @@ export class ConfigAgent {
         let settingsPath = getEdkCodeFolderFilePath(this.settingsFileName);
         gDebugLog.verbose(`Loading configuration from ${settingsPath}`);
         if(existsEdkCodeFolderFile(this.settingsFileName)){
-            
+
             try {
                 return JSON.parse(readFile(settingsPath));
             } catch (error) {
@@ -63,7 +63,7 @@ export class ConfigAgent {
                 vscode.window.showErrorMessage(`${settingsPath} is corrupted: ${error}`);
                 return this.getCleanWpConfig();
             }
-            
+
         }else{
             return this.getCleanWpConfig();
         }
@@ -78,13 +78,13 @@ export class ConfigAgent {
         writeEdkCodeFolderFile(this.settingsFileName,data);
         this.workspaceConfig = config;
     }
-    
+
     clearWpConfiguration(){
         this.workspaceConfig = this.getCleanWpConfig();
     }
 
     initConfigWatcher(){
-        
+
         this.configFileWatcher = vscode.workspace.createFileSystemWatcher(getEdkCodeFolderFilePath(this.settingsFileName));
 
         // this.configFileWatcher.onDidCreate((uri) => {
@@ -169,7 +169,7 @@ export class ConfigAgent {
     }
 
     async setBuildDefines(defines: Map<string, string>) {
-        
+
         let toSave: string[] = [];
         for (const [key, value] of defines.entries()) {
             toSave.push(`${key.trim()}=${value.trim()}`);
@@ -204,7 +204,7 @@ export class ConfigAgent {
                 buildDefinesObj.set(values[0].trim(), values[1].trim());
             } else {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                vscode.window.showErrorMessage(`Malformed define in seeting: "${def}"`);
+                vscode.window.showErrorMessage(`Malformed define in setting: "${def}"`);
             }
         }
         return buildDefinesObj;
@@ -219,7 +219,7 @@ export class ConfigAgent {
         return retPaths;
     }
 
-    
+
     pushBuildPackagePaths(path:string) {
         if(this.workspaceConfig.packagePaths.includes(path)){
             return;
@@ -231,7 +231,7 @@ export class ConfigAgent {
     async setBuildDscPaths(dscFiles: string[]) {
         this.workspaceConfig.dscPaths = dscFiles;
         this.writeWorkspaceConfig(this.workspaceConfig);
-        
+
     }
 
     getBuildDscPaths() {
@@ -298,6 +298,6 @@ export class ConfigAgent {
         }
     }
 
-    
+
 
 }
