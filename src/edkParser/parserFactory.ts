@@ -19,7 +19,7 @@ export async function getParser(uri:vscode.Uri){
 }
 
 export class ParserFactory {
-    
+
     getParser(document: vscode.TextDocument) {
         let languageId = document.languageId;
         switch (languageId) {
@@ -44,7 +44,7 @@ export class ParserFactory {
             case "edk2_uni":
                 break;
             default:
-                gDebugLog.error(`Document parser not supportd: ${document.fileName}`);
+                gDebugLog.error(`Document parser not supported: ${document.fileName}`);
                 return undefined;
         }
     }
