@@ -171,7 +171,7 @@ export function getRealPath(inputPath: string) {
 
 
 /*
-This solves the problem where some inconsitencies in the make file are found:
+This solves the problem where some inconsistencies in the make file are found:
 signs like /, \, .. or upper/lower case paths.
 Use this before doing something with a path
 */
@@ -297,13 +297,13 @@ export function split(text: string, sepparator: string, limit: number, defaultVa
     if (sText.length === limit) { return sText; }
 
     if (sText.length > limit) {
-        // limit length    
+        // limit length
         let a = sText.slice(limit - 1).join(sepparator);
         let x = [...sText.slice(0, limit - 1), ...[a]];
         return x;
     }
 
-    // Extend length 
+    // Extend length
     let pending = limit - sText.length;
     let arr = new Array(pending).fill(defaultValue);
     return [...sText, ...arr];
@@ -398,7 +398,7 @@ export async function itsPcdSelected(document: vscode.TextDocument, position: vs
 
 export async function checkCompileCommandsConfig(){
     let cCppPropertiesPath = path.join(gWorkspacePath, ".vscode", "c_cpp_properties.json");
-    
+
     const expectedPath = path.join("${workspaceFolder}", ".edkCode", "compile_commands.json");
     if (fs.existsSync(cCppPropertiesPath)) {
         let cProperties = JSON.parse(fs.readFileSync(cCppPropertiesPath).toString());
@@ -430,7 +430,7 @@ export function createEdkCodeFolder() {
 export function writeEdkCodeFolderFile(filename: string, text: string) {
     createEdkCodeFolder();
     if(!existsEdkCodeFolderFile(filename)){
-        
+
     }
     fs.writeFileSync(path.join(gWorkspacePath, ".edkCode", filename), text);
 }
@@ -523,7 +523,7 @@ export async function listFiles(dir: string): Promise<string[]> {
 
 /**
  * Recursively list all files in a directory.
- * 
+ *
  * @param {string} dir - The directory to start listing files from.
  * @returns {Promise<string[]>} - An array of file paths.
  */
