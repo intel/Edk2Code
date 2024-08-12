@@ -22,6 +22,23 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
     this.data = [];
   }
 
+  getHierarchy(item: TreeItem, level: number = 0): string {
+    let description = item.description ? `*${item.description}*` : '';
+    let result = '  '.repeat(level) +`- ${item.label} ${description}\n`;// Indentation based on level
+    for (const child of item.children) {
+      result += this.getHierarchy(child, level + 1); // Recurse for each child, increasing the level
+    }
+    return result;
+  }
+
+  toString(){
+    let result = '';
+    for (const item of this.data) {
+      result += this.getHierarchy(item);
+    }
+    return result;
+  }
+
   getLastChildren(){
     return this.lastChildren;
   }

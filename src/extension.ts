@@ -112,6 +112,14 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 			await showVirtualFile(doc.fileName,content);
 		}),
+
+		vscode.commands.registerCommand('edk2code.copyTreeData', () => {
+			// Your export logic here
+			let strTree = edkLensTreeDetailProvider.toString();
+			void vscode.env.clipboard.writeText(strTree);
+			void vscode.window.showInformationMessage('Details copied to clipboard.');
+		
+		  }),
 	];
 
 	context.subscriptions.concat(commands);

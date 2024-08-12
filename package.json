@@ -108,6 +108,11 @@
       {
         "command": "edk2code.viewWarnings",
         "title": "EDK2: Check for warnings"
+      },
+      {
+        "command": "edk2code.copyTreeData",
+        "title": "EDK2: Copy tree data",
+        "icon": "$(copy)"
       }
     ],
     "configuration": [
@@ -240,11 +245,22 @@
         {
           "command": "edk2code.viewWarnings",
           "when": "edk2code.parseComplete && (editorLangId == edk2_inf || editorLangId == edk2_dsc)"
+        },
+        {
+          "command": "edk2code.copyTreeData",
+          "when": "false"
         }
+
+        
       ],
       "editor/title": [],
-      "view/title": [],
-      "view/item/context": [],
+      "view/title": [
+        {
+          "command": "edk2code.copyTreeData",
+          "when": "view == detailsView",
+          "group": "navigation"
+      }
+      ],
       "editor/context": [
         {
           "command": "edk2code.gotoDefinition",
