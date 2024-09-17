@@ -22,7 +22,7 @@ export function infoMissingCompileInfo(){
 }
 
 export function infoMissingCompilesCommandCpp(){
-    void vscode.window.showInformationMessage("Build contains compile_commands.json but C++ is not configured","Fix", "Help").then(async selection => {
+    void vscode.window.showInformationMessage("Build contains compile_commands.json but C++ is not configured", "Help").then(async selection => {
         if (selection === "Help"){
             await vscode.env.openExternal(vscode.Uri.parse("https://github.com/intel/Edk2Code/wiki/Index-source-code#compile_commandsjson"));
         }
