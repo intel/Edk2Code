@@ -3,7 +3,7 @@ import { gDebugLog } from "../extension";
 import * as vscode from 'vscode';
 import path = require("path");
 import { SymbolFactory } from "../symbols/symbolFactory";
-import { EdkSymbol } from "../symbols/edkSymbol";
+import { EdkSymbol } from "../symbols/edkSymbols";
 import { Edk2SymbolType } from '../symbols/symbolsType';
 import { WorkspaceDefinitions } from "../index/definitions";
 

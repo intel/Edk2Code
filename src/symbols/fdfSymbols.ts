@@ -1,5 +1,5 @@
 import { gEdkWorkspaces, gPathFind } from "../extension";
-import {  EdkSymbol } from "./edkSymbol";
+import {  EdkSymbol } from "./edkSymbols";
 import * as vscode from 'vscode';
 import { Edk2SymbolType } from "./symbolsType";
 import { WorkspaceDefinitions } from "../index/definitions";

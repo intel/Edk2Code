@@ -1,4 +1,4 @@
-import {  EdkSymbol } from "./edkSymbol";
+import {  EdkSymbol } from "./edkSymbols";
 import { Edk2SymbolType } from '../symbols/symbolsType';
 import * as vscode from 'vscode';
 

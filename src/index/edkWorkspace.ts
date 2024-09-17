@@ -521,7 +521,7 @@ export class EdkWorkspace {
             if (line.match(REGEX_INCLUDE)) {
 
                 let value = line.replace(/!include/gi, "").trim();
-                let location = await gPathFind.findPath(value);
+                let location = await gPathFind.findPath(value, document.uri.fsPath);
 
                 if(location.length > 0){
                     let includedDocument = await openTextDocument(location[0].uri);
@@ -540,8 +540,7 @@ export class EdkWorkspace {
             if (match) {
                 // get matched string 
                 let filePath = match[0].trim();
-                console.log("Checking");
-                let results = await gPathFind.findPath(filePath);
+                let results = await gPathFind.findPath(filePath, document.uri.fsPath);
                 if(results.length === 0){
                     DiagnosticManager.error(document.uri,lineIndex,EdkDiagnosticCodes.missingPath, filePath);
                 }

@@ -1,6 +1,6 @@
 import { gConfigAgent, gCscope, gEdkWorkspaces, gPathFind, gWorkspacePath } from "../extension";
 import path = require('path');
-import {  EdkSymbol } from "./edkSymbol";
+import {  EdkSymbol } from "./edkSymbols";
 import * as vscode from 'vscode';
 import { rgSearch, rgSearchText } from "../rg";
 import { Edk2SymbolType } from "./symbolsType";

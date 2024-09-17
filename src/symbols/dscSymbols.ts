@@ -1,11 +1,14 @@
 import { SymbolKind, Location, SymbolTag, Range, DocumentSymbol } from "vscode";
 import { Edk2SymbolType } from '../symbols/symbolsType';
 import * as vscode from 'vscode';
-import { gEdkWorkspaces, gPathFind } from "../extension";
+import { gDebugLog, gEdkWorkspaces, gPathFind } from "../extension";
 import { split, trimSpaces } from "../utils";
 import { WorkspaceDefinitions } from "../index/definitions";
 import { DocumentParser } from "../edkParser/languageParser";
-import { EdkSymbol } from "./edkSymbol";
+import { EdkSymbol } from "./edkSymbols";
+import { REGEX_LIBRARY_PATH } from "../edkParser/commonParser";
+import { DebugLog } from "../debugLog";
+
 
 export class EdkSymbolDscSection extends EdkSymbol {
     type = Edk2SymbolType.dscSection;
@@ -49,8 +52,8 @@ export class EdkSymbolDscLibraryDefinition extends EdkSymbol{
     onCompletion: undefined;
     onDefinition = async (parser:DocumentParser)=>{
         let path = this.textLine.replace(/.*?\|\s*/gi, "");
-        path = await gEdkWorkspaces.replaceDefines(this.location.uri, path);
-        return await gPathFind.findPath(path);
+            path = await gEdkWorkspaces.replaceDefines(this.location.uri, path);
+            return await gPathFind.findPath(path);
     };
     onHover: undefined;
     onDeclaration: undefined;
@@ -73,7 +76,7 @@ export class EdkSymbolDscInclude extends EdkSymbol{
     onCompletion: undefined;
     onDefinition = async (parser:DocumentParser)=>{
         let path = await this.getValue();
-        return await gPathFind.findPath(path);
+        return await gPathFind.findPath(path, parser.document.uri.fsPath);
     };
     onHover: undefined;
     onDeclaration: undefined;

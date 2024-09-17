@@ -41,9 +41,8 @@ export class PathFind{
 
     private missingFiles: string[] = [];
 
-    async findPath(pathArg: string, realtivePath: string = "") {
+    async findPath(pathArg: string, relativePath: string|undefined = "") {
         pathArg = pathArg.replaceAll(/(\\+|\/+)/gi, path.sep);
-        pathArg = path.join(realtivePath, pathArg);
         let ws = gWorkspacePath;
         gDebugLog.verbose(`Looking for: ${pathArg}`);
         
@@ -73,8 +72,11 @@ export class PathFind{
             return [];
         }
 
-        if (realtivePath.length) {
-            let p = path.join(realtivePath, pathArg);
+        if (relativePath) {
+            if (fs.existsSync(relativePath) && fs.statSync(relativePath).isFile()) {
+                relativePath = path.dirname(relativePath);
+            }
+            let p = path.join(relativePath, pathArg);
             if (fs.existsSync(p)) {
                 return this.produceLocation(p);
             }
@@ -112,7 +114,7 @@ export class PathFind{
 
         if(retPath.length === 0){
             gDebugLog.warning(`Missing file: ${pathArg}`);
-            this.missingFiles.push(path.join(realtivePath, pathArg));
+            this.missingFiles.push(path.join(relativePath, pathArg));
         }
 
         return retPath;

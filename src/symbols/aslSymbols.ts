@@ -5,7 +5,7 @@ import { gEdkWorkspaces, gPathFind } from "../extension";
 import { split, trimSpaces } from "../utils";
 import { WorkspaceDefinitions } from "../index/definitions";
 import { DocumentParser } from "../edkParser/languageParser";
-import { EdkSymbol } from "./edkSymbol";
+import { EdkSymbol } from "./edkSymbols";
 
 export class EdkSymbolAslDefinitionBlock extends EdkSymbol {
 
