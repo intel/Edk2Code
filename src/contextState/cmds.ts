@@ -9,7 +9,7 @@ import { distance, closest } from 'fastest-levenshtein';
 import { glob } from "fast-glob";
 import { BuildFolder } from "../Languages/buildFolder";
 import { EdkWorkspace, InfDsc } from "../index/edkWorkspace";
-import { FileTreeItem, FileTreeItemLibraryTree, openLibraryNode, TreeItem } from "../TreeDataProvider";
+import { FileTreeItem, FileTreeItemLibraryTree, openLibraryNode, SectionTreeItem, TreeItem } from "../TreeDataProvider";
 import { ParserFactory, getParser } from "../edkParser/parserFactory";
 import { Edk2SymbolType } from "../symbols/symbolsType";
 import * as edkStatusBar from '../statusBar';
@@ -368,15 +368,16 @@ import { debuglog } from "util";
 
             let wps = await gEdkWorkspaces.getWorkspace(fileUri);
             let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
+            
             for (const wp of wps) {
                 // let dscDeclarations = await wp.getDscDeclaration(fileUri);
                 const sectionRange = libraries[0].parent?.range.start;
                 if(sectionRange===undefined){continue;}
-                let moduleNode = new FileTreeItemLibraryTree(fileUri, sectionRange);
+                let moduleNode = new FileTreeItemLibraryTree(fileUri, sectionRange, wp);
                 moduleNode.description = wp.platformName;
                 edkLensTreeDetailProvider.addChildren(moduleNode);
-                await openLibraryNode(fileUri, moduleNode);
-
+                moduleNode.loaded = true;
+                await openLibraryNode(fileUri, moduleNode,wp);
             }
         }
 
@@ -416,7 +417,7 @@ import { debuglog } from "util";
 
                 switch (currentDocument.languageId) {
                     case "c":
-                        cNode = new FileTreeItem(document.uri, new vscode.Position(0,0));
+                        cNode = new FileTreeItem(document.uri, new vscode.Position(0,0),wp);
                         rootNode.addChildren(cNode);
                         infReferences = await wp.getInfReference(document.uri);
                         // intentional with no break
@@ -428,12 +429,12 @@ import { debuglog } from "util";
                         }
 
                         for (const infRef  of infReferences) {
-                            let infNode = new FileTreeItem(infRef.uri, infRef.range.start);
+                            let infNode = new FileTreeItem(infRef.uri, infRef.range.start,wp);
                             targetNode.addChildren(infNode);
                             dscReferences = (await wp.getDscDeclaration(infRef.uri)).map(x=>{return x.location;});
                             for (const dscRef of dscReferences) {
                                 _maxDscRec = 10;
-                                let targetNode = new FileTreeItem(dscRef.uri, dscRef.range.start);
+                                let targetNode = new FileTreeItem(dscRef.uri, dscRef.range.start,wp);
                                 await _dscIncRefs(targetNode,wp, infNode);
                             }
                         }
@@ -445,7 +446,7 @@ import { debuglog } from "util";
 
 
                         for (const dscRef of dscReferences) {
-                            let refNode = new FileTreeItem(dscRef.uri, dscRef.range.start);
+                            let refNode = new FileTreeItem(dscRef.uri, dscRef.range.start,wp);
                             _maxDscRec = 10;
                             await _dscIncRefs(refNode,wp,rootNode);
                         }
@@ -475,7 +476,7 @@ import { debuglog } from "util";
         }
         targetNode.addChildren(referenceNode);
         for (const i of dscInclude) {
-            let newNode = new FileTreeItem(i.uri, i.range.start);
+            let newNode = new FileTreeItem(i.uri, i.range.start,wp);
             await _dscIncRefs(newNode, wp, referenceNode);
         }
     }

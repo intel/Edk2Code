@@ -149,6 +149,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	edkLensTreeDetailProvider = new TreeDetailsDataProvider();
 	edkLensTreeDetailView = vscode.window.createTreeView('detailsView', { treeDataProvider: edkLensTreeDetailProvider, showCollapseAll:true });
+	
 	edkLensTreeDetailProvider.refresh();
 	edkLensTreeDetailView.onDidExpandElement(async event => {
 		let node = event.element as TreeItem;

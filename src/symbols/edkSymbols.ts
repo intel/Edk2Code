@@ -65,7 +65,6 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
         this._textLine = textLine;
         this.parser = parser;
         this.name = textLine.replaceAll(/\s+/gi," ");
-        console.log(`SYMBOL: ${textLine}`);
         gDebugLog.verbose(`Symbol Created: ${location.range.start.line}: ${this.toString()}`);
     }
 

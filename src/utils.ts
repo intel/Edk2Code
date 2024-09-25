@@ -310,6 +310,25 @@ export function split(text: string, sepparator: string, limit: number, defaultVa
 
 }
 
+/**
+ * Fetches all symbols from a given file.
+ *
+ * @param fileUri - The URI of the file from which to retrieve symbols.
+ * @returns A promise that resolves to an array of DocumentSymbol objects representing the symbols in the file.
+ * @throws An error if the document cannot be opened or symbols cannot be fetched.
+ */
+export async function getAllSymbols(fileUri: vscode.Uri) {
+    const document = await vscode.workspace.openTextDocument(fileUri);
+    if (document) {
+        const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
+            'vscode.executeDocumentSymbolProvider',
+            fileUri
+        );
+        return symbols || [];
+    }
+    return [];
+}
+
 export async function readLinesAsync(filePath: string) {
     return new Promise<string[]>((resolve, token) => {
         gDebugLog.debug(`readLines: ${filePath}`);

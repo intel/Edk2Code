@@ -130,6 +130,16 @@ export class InfDsc{
         }
         return false;
     }
+
+    /**
+     * Retrieves a comma-separated string of module types from the properties.
+     *
+     * @returns {string} A comma-separated string of module types.
+     *
+     */
+    getModuleTypeStr(){
+        return this.properties.map(x=>x.moduleType).join(",");
+    }
 }
 
 
@@ -416,7 +426,7 @@ export class EdkWorkspace {
 
     private async _proccessDsc(document: vscode.TextDocument) {
         gDebugLog.verbose(`findDefines: ${document.fileName}`);
-
+        let libraryTypeTrack = new Map<string,InfDsc>();
         // Add document to inactiveLines
         if (this.isDocumentInIndex(document)) {
             gDebugLog.warning(`findDefines: ${document.fileName} already in inactiveLines`);
@@ -548,6 +558,15 @@ export class EdkWorkspace {
                     DiagnosticManager.error(document.uri,lineIndex,EdkDiagnosticCodes.missingPath, filePath);
                 }
                 let inf = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[this.sectionsStack.length - 1], line);
+                const libName = inf.text.split("|")[0].trim();
+                const libNameTag = libName +" - "+inf.getModuleTypeStr();
+                
+                if(libraryTypeTrack.has(libNameTag)){
+                    let diagnosticDuplicatedInf = DiagnosticManager.warning(document.uri, lineIndex, EdkDiagnosticCodes.duplicateStatement, libName);
+                    diagnosticDuplicatedInf.relatedInformation = [new vscode.DiagnosticRelatedInformation(libraryTypeTrack.get(libNameTag)!.location, "Original definition")];
+                }else{
+                    libraryTypeTrack.set(libNameTag,inf);
+                }
                 this.filesLibraries.push(inf);
                 continue;
             }
@@ -1111,7 +1130,7 @@ export class EdkWorkspace {
 
 
     /**
-     * Retrieves the library declaration module for a given file and library name.
+     * Retrieves the DSC files and positions where the given library is declared.
      * 
      * This function performs the following steps:
      * 1. Checks if the library is overwritten in the module definition.

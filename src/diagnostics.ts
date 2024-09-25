@@ -70,14 +70,14 @@ export class DiagnosticManager {
         if(!edkErrorDescriptions.has(edkDiagCode)){
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
-        DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Warning);
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Warning);
     }
 
     public static error(documentUri: vscode.Uri, line: number,  edkDiagCode: EdkDiagnosticCodes, detail:string){
         if(!edkErrorDescriptions.has(edkDiagCode)){
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
-        DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Error);
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Error);
     }
 
     public static reportProblem(documentUri: vscode.Uri, line: number, message: string, severity: vscode.DiagnosticSeverity, source?: string, code?: string | number) {
@@ -93,6 +93,7 @@ export class DiagnosticManager {
         }
         this.diagnostics.push(diagnostic);
         DiagnosticManager.diagnosticsCollection.set(documentUri, this.diagnostics);
+        return diagnostic;
     }
 
     public static clearProblems() {
