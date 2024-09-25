@@ -1110,7 +1110,22 @@ export class EdkWorkspace {
     }
 
 
-
+    /**
+     * Retrieves the library declaration module for a given file and library name.
+     * 
+     * This function performs the following steps:
+     * 1. Checks if the library is overwritten in the module definition.
+     * 2. Retrieves the MODULE_TYPE from the original INF file.
+     * 3. Gets properties from the module URI.
+     * 4. Checks all module declarations to match library classes with module properties.
+     * 
+     * @param fileUri - The URI of the INF where the library is being used.
+     * @param libName - The name of the library to be found.
+     * 
+     * @returns A promise that resolves to an array of `InfDsc` objects representing the libraries that match the module properties.
+     * 
+     * @throws Will throw an error if the file cannot be read or if there are issues processing the library declarations.
+     */
     async getLibDeclarationModule(fileUri:vscode.Uri,libName:string, ) {
     
         let dscLibDeclarations: InfDsc[] = await this.getLibDeclaration(libName);

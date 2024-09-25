@@ -9,7 +9,7 @@ import { distance, closest } from 'fastest-levenshtein';
 import { glob } from "fast-glob";
 import { BuildFolder } from "../Languages/buildFolder";
 import { EdkWorkspace, InfDsc } from "../index/edkWorkspace";
-import { FileTreeItem, FileTreeItemLibraryTree, TreeItem } from "../TreeDataProvider";
+import { FileTreeItem, FileTreeItemLibraryTree, openLibraryNode, TreeItem } from "../TreeDataProvider";
 import { ParserFactory, getParser } from "../edkParser/parserFactory";
 import { Edk2SymbolType } from "../symbols/symbolsType";
 import * as edkStatusBar from '../statusBar';
@@ -372,19 +372,10 @@ import { debuglog } from "util";
                 // let dscDeclarations = await wp.getDscDeclaration(fileUri);
                 const sectionRange = libraries[0].parent?.range.start;
                 if(sectionRange===undefined){continue;}
-                let moduleNode = new FileTreeItemLibraryTree(fileUri, sectionRange,null);
+                let moduleNode = new FileTreeItemLibraryTree(fileUri, sectionRange);
                 moduleNode.description = wp.platformName;
                 edkLensTreeDetailProvider.addChildren(moduleNode);
-                for (const library of libraries) {
-                    let libDefinitions = await wp.getLibDeclarationModule(fileUri, library.name);
-                    for (const libDefinition of libDefinitions) {
-                        let filePaths = await gPathFind.findPath(libDefinition.path);
-                        for (const path of filePaths) {
-                            let libNode = new FileTreeItemLibraryTree(path.uri, libDefinition.location.range.start,moduleNode);
-                            moduleNode.addChildren(libNode);
-                        }
-                    }
-                }
+                await openLibraryNode(fileUri, moduleNode);
 
             }
         }

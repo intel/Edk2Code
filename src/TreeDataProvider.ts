@@ -123,11 +123,10 @@ export class FileTreeItem extends TreeItem{
 
 export class FileTreeItemLibraryTree extends TreeItem{
   uri:vscode.Uri;
-  moduleNode:FileTreeItemLibraryTree|null;
   loaded = false;
-  constructor(uri:vscode.Uri, position:vscode.Position, moduleNode:FileTreeItemLibraryTree|null){
+  constructor(uri:vscode.Uri, position:vscode.Position){
     super(uri, vscode.TreeItemCollapsibleState.Expanded);
-    this.moduleNode = moduleNode;
+
     this.uri = uri;
     let name = vscode.workspace.asRelativePath(uri);
     this.description = name;
@@ -145,7 +144,7 @@ export class FileTreeItemLibraryTree extends TreeItem{
   }
 
   async onExpanded(){
-    if(this.moduleNode && this.loaded === false){
+    if(this.loaded === false){
       await openLibraryNode(this.uri,this);
       this.loaded = true;
     }
@@ -154,6 +153,20 @@ export class FileTreeItemLibraryTree extends TreeItem{
   }
 }
 
+
+/**
+ * Populates a node with all the libraries found in fileUri.
+ *
+ * @param fileUri - The URI of the file to be parsed.
+ * @param node - The library tree item node to which child nodes will be added.
+ *
+ * @returns A promise that resolves when the operation is complete.
+ *
+ * @throws Will throw an error if the parser cannot be obtained.
+ * @throws Will throw an error if workspace information cannot be retrieved.
+ * @throws Will throw an error if library declarations cannot be fetched.
+ * @throws Will throw an error if path information cannot be found.
+ */
 export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibraryTree){
   
   let parser = await getParser(fileUri);
@@ -162,20 +175,13 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
       let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
       if(libraries.length === 0){return;} // This INF has no libraries
       for (const wp of wps) {
-          // let dscDeclarations = await wp.getDscDeclaration(fileUri);
-          // const sectionRange = libraries[0].parent?.range.start;
-          // if(sectionRange===undefined){continue;}
-
           for (const library of libraries) {
-              let libDefinitions = await wp.getLibDeclarationModule(node.moduleNode?.uri!, library.name);
+              let libDefinitions = await wp.getLibDeclarationModule(fileUri, library.name);
               for (const libDefinition of libDefinitions) {
                   let filePaths = await gPathFind.findPath(libDefinition.path);
                   for (const path of filePaths) {
-                      
                       let pos = new vscode.Position(0,0);
-
-
-                      let libNode = new FileTreeItemLibraryTree(path.uri, pos,node.moduleNode);
+                      let libNode = new FileTreeItemLibraryTree(path.uri, pos);
                       node.addChildren(libNode);
                   }
               }
