@@ -581,11 +581,19 @@ export class EdkWorkspace {
                 const libNameTag = libName +" - "+inf.getModuleTypeStr();
                 
                 if(libraryTypeTrack.has(libNameTag)){
-                    let diagnosticDuplicatedInf = DiagnosticManager.warning(document.uri, lineIndex, EdkDiagnosticCodes.duplicateStatement, libName);
-                    diagnosticDuplicatedInf.relatedInformation = [new vscode.DiagnosticRelatedInformation(libraryTypeTrack.get(libNameTag)!.location, "Original definition")];
-                }else{
-                    libraryTypeTrack.set(libNameTag,inf);
+                    let originalLibrary = libraryTypeTrack.get(libNameTag)!;
+                    let diagnosticDuplicatedInf = DiagnosticManager.warning(originalLibrary.location.uri, originalLibrary.location.range.start.line, EdkDiagnosticCodes.duplicateStatement, `Library overwritten: ${libName}`);
+                    diagnosticDuplicatedInf.relatedInformation = [new vscode.DiagnosticRelatedInformation(inf.location, "New definition")];
+                    
+                    // Find and remove originalLibrary from this.filesLibraries
+                    const index = this.filesLibraries.indexOf(originalLibrary);
+                    if (index > -1) {
+                        this.filesLibraries.splice(index, 1);
+                    }
                 }
+
+                libraryTypeTrack.set(libNameTag,inf);
+                
                 this.filesLibraries.push(inf);
                 continue;
             }
