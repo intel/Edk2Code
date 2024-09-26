@@ -16,6 +16,11 @@ import { PathFind } from '../pathfind';
 
 const dscSectionTypes = ['defines','packages','buildoptions','skuids','libraryclasses','components','userextensions','defaultstores','pcdsfeatureflag','pcdsfixedatbuild','pcdspatchableinmodule','pcdsdynamicdefault','pcdsdynamichii','pcdsdynamicvpd','pcdsdynamicexdefault','pcdsdynamicexhii','pcdsdynamicexvpd'];
 
+type ConditionBlock = {
+    active: boolean;      // Whether the block is active or not
+    satisfied: boolean;   // Whether the condition has been satisfied
+  };
+
 interface Pcd {
     name:string;
     value:string
@@ -262,6 +267,8 @@ export class EdkWorkspace {
     platformName: string | undefined = undefined;
     flashDefinitionDocument: vscode.TextDocument | undefined = undefined;
 
+
+
     private workInProgress: boolean = false;
     private processComplete: boolean = false;
 
@@ -424,6 +431,11 @@ export class EdkWorkspace {
         return this.pcdDefinitions.get(namespace);
     }
 
+
+
+    conditionStack: ConditionBlock[] = [];
+    result: boolean[] = [];
+
     private async _proccessDsc(document: vscode.TextDocument) {
         gDebugLog.verbose(`findDefines: ${document.fileName}`);
         let libraryTypeTrack = new Map<string,InfDsc>();
@@ -442,18 +454,21 @@ export class EdkWorkspace {
         let isRangeActive = false;
         let unuseRangeStart = 0;
 
+        this.conditionStack = [];
+        this.result = [];
+
         gDebugLog.verbose(`# Parsing DSC Document: ${document.uri.fsPath}`);
         for (let line of text) {
             
             lineIndex++;
+            const originalLine = line;
             gDebugLog.verbose(`\t\t${lineIndex}: ${line}`);
+
             line = line.trim();
             // Skip comments
             if(line.startsWith("#")){continue;}
 
-            let rawLine = line;
-            // replace definitions
-            line = this.defines.replaceDefines(line);
+
 
             // Check PCDS
             // find PCDS variables
@@ -474,17 +489,14 @@ export class EdkWorkspace {
                         value:pcdValue, 
                         position: new vscode.Location(document.uri, new vscode.Position(lineIndex, 0))}
                     );
-                continue;
             }
 
+            // replace definitions
+            line = this.defines.replaceDefines(line);
             line = this.replacePcds(line);
 
-            let conditinalResult = this.processConditional(line);
-            if(conditinalResult !==undefined){
-                DiagnosticManager.reportProblem(document.uri, lineIndex, conditinalResult,vscode.DiagnosticSeverity.Error);
-            }
-
-            if (!this.isInActiveCode()) {
+            let isInActiveCode = this.processConditional(line);
+            if (!isInActiveCode) {
                 if (!isRangeActive) {
                     isRangeActive = true;
                     unuseRangeStart = lineIndex;
@@ -492,17 +504,15 @@ export class EdkWorkspace {
                 continue;
             }
 
+
+
+
+
             if (isRangeActive === true) {
                 isRangeActive = false;
                 let arr = this.parsedDocuments.get(document.uri.fsPath);
                 if (arr) {
                     let lineIndexEnd = lineIndex-1;
-                    
-                    // check if as special condition to match false blocks until it the !endif label.
-                    if(line === "!endif" && this.lastConditionalPop === false){
-                        lineIndexEnd = lineIndex;
-                    }
-
                     arr.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
                 } else {
                     gDebugLog.error(`findDefines: ${document.fileName} has no range for unuseRange`);
@@ -840,9 +850,9 @@ export class EdkWorkspace {
             line = this.replacePcds(line);
 
             let conditinalResult = this.processConditional(line);
-            if(conditinalResult !==undefined){
-                DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.syntaxStatement, conditinalResult);
-            }
+            // if(conditinalResult !==undefined){
+            //     DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.syntaxStatement, conditinalResult);
+            // }
             
             if (!this.isInActiveCode()) {
                 if (!isInUnuseRange) {
@@ -910,84 +920,132 @@ export class EdkWorkspace {
     }
 
 
-    private processConditional(text: string):string|undefined {
-        let originalText = text;
-        text = text.replaceAll(REGEX_VAR_USAGE, `"${UNDEFINED_VARIABLE}"`);
+    private processConditional(inputText: string):boolean {
+        let conditionStr = inputText.replaceAll(REGEX_VAR_USAGE, `"${UNDEFINED_VARIABLE}"`);
+        
         // text = text.replaceAll(UNDEFINED_VARIABLE, '"???"');
 
         let tokens = [];
-        if (text.includes('"')) {
-            tokens = text.split('"');
+        if (conditionStr.includes('"')) {
+            tokens = conditionStr.split('"');
             if(tokens.length%2 !== 1){ // check if there is an open string
                 return `Open string: ${originalText}`;
             }
             tokens = [...tokens[0].trim().split(" "), ...[tokens[1].trim()], ...tokens[2].trim().split(" ")];
         } else {
-            tokens = text.trim().split(" ");
+            tokens = conditionStr.trim().split(" ");
         }
         tokens = tokens.filter(x => { return x.length > 0; });
         if (tokens.length === 0) {
-            return;
+            return this.result[this.result.length - 1];
         }
-        if (tokens[0].toLowerCase() === "!if") {
-            this.pushConditional(this.evaluateConditional(text));
-            return;
-        } else if (tokens[0].toLowerCase() === "!elseif") {
-            let v = this.popConditional();
-            this.pushConditional(this.evaluateConditional(text));
-            return;
-        }
-        else if (tokens[0].toLowerCase() === "!ifdef") {
-            if (tokens.length !== 2) {
+
+        let conditionValue;
+        let parentActive;
+        let block;
+        switch (tokens[0].toLowerCase()) {
+            case "!if":
+            case "!ifdef":
+            case "!ifndef":
+                switch(tokens[0].toLowerCase()){
+                    case "!if":
+                        conditionValue = this.evaluateConditional(conditionStr);
+                        break;
+                    case "!ifdef":
+                        conditionValue = this.pushConditional((tokens[1] !== UNDEFINED_VARIABLE));
+                        break;
+                    case "!ifndef":
+                        conditionValue = this.pushConditional((tokens[1] === UNDEFINED_VARIABLE));
+                        break;
+                }
                 
-               return `!ifdef conditionals need to be formatted correctly (!ifdef [definition]): ${text}`;
-            }
-            this.pushConditional((tokens[1] !== UNDEFINED_VARIABLE));
-            return;
-        }
-        else if (tokens[0].toLowerCase() === "!ifndef") {
-            if (tokens.length !== 2) {
-               return `!ifndef conditionals need to be formatted correctly (!ifndef [definition]): ${text}`;
-            }
-            this.pushConditional((tokens[1] === UNDEFINED_VARIABLE));
-            return;
-        }
-        else if (tokens[0].toLowerCase() === "!else") {
-            if (tokens.length !== 1) {
-               return `!else conditional has additional tokens: ${text}`;
-            }
-            let v = this.popConditional();
-            this.pushConditional(!v);
-            return;
+                // Determine if this block is active
+                parentActive = this.conditionStack.length === 0 || this.conditionStack[this.conditionStack.length - 1].active;
+                const active = parentActive && conditionValue;
+
+                // Push new condition block
+                this.conditionStack.push({ active: active, satisfied: conditionValue });
+                this.result.push(active); // This line is a control statement
+                break;
+            case "!elseif":
+                // Pop the last condition block
+                if (this.conditionStack.length === 0) {
+                    //throw new Error('!elseif without !if');
+                    console.log("ERROR HERE!!!!!!!!!!!!!");
+                    return true;
+                }
+                
+                conditionValue = this.evaluateConditional(conditionStr);
+                parentActive = this.conditionStack.length <= 1 || this.conditionStack[this.conditionStack.length - 2].active;
+
+                // Update the top of the stack
+                block = this.conditionStack[this.conditionStack.length - 1];
+                if (block.satisfied) {
+                    // If already satisfied, this block is inactive
+                    block.active = false;
+                } else {
+                    // If not satisfied yet, check this condition
+                    block.active = parentActive && conditionValue;
+                    block.satisfied = conditionValue || block.satisfied;
+                }
+                this.result.push(block.active); // This line is a control statement
+                break;
+            case "!else":
+                if (this.conditionStack.length === 0) {
+                    //throw new Error('!else without !if');
+                    console.log("ERROR HERE!!!!!!!!!!!!!");
+                    return true;
+                  }
+                  parentActive = this.conditionStack.length <= 1 || this.conditionStack[this.conditionStack.length - 2].active;
+            
+                  block = this.conditionStack[this.conditionStack.length - 1];
+                  if (block.satisfied) {
+                    // If already satisfied, this block is inactive
+                    block.active = false;
+                  } else {
+                    // Else block is active if parent is active and no previous condition satisfied
+                    block.active = parentActive && !block.satisfied;
+                    block.satisfied = true;
+                  }
+                  this.result.push(block.active); // This line is a control statement
+                break;
+            case "!endif":
+                if (this.conditionStack.length === 0) {
+                    //throw new Error('!endif without !if');
+                    console.log("ERROR HERE!!!!!!!!!!!!!");
+                    return true;
+                  }
+
+                  parentActive = this.conditionStack.length <= 1 || this.conditionStack[this.conditionStack.length - 2].active;
+                  block = this.conditionStack[this.conditionStack.length - 1];
+                  
+                  if (!parentActive) {
+                    // If already satisfied, this block is inactive
+                    this.result.push(false);
+                  } else {
+                    // Else block is active if parent is active and no previous condition satisfied
+                    block.active = parentActive && !block.satisfied;
+                    if(parentActive && block.satisfied){
+                        this.result.push(true);
+                    }else{
+                        this.result.push(false);
+                    }
+                  }
+                  this.conditionStack.pop();
+                break;
+            default:
+                const isActive = this.conditionStack.every(block => block.active);
+                this.result.push(isActive);
         }
 
-        else if (tokens[0].toLowerCase() === "!endif") {
-            if (tokens.length !== 1) {
-               return `!endif conditional has additional tokens: ${text}`;
-            }
-            this.popConditional();
-            return;
-        }
-        return;
+        return this.result[this.result.length - 1];
+
+
     }
-
-
 
     private pushConditional(v: boolean) {
         this.conditionalStack.push(v);
     }
-
-    private popConditional() {
-        if (this.conditionalStack.length > 0) {
-            this.lastConditionalPop = this.conditionalStack[this.conditionalStack.length -1];
-            return this.conditionalStack.pop();
-        }
-    }
-
-    private getLastConditional(){
-        return this.conditionalStack[this.conditionalStack.length -1];
-    }
-
 
     private evaluateConditional(text: string): any {
 
