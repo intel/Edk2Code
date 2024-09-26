@@ -373,7 +373,7 @@ import { debuglog } from "util";
                 // let dscDeclarations = await wp.getDscDeclaration(fileUri);
                 const sectionRange = libraries[0].parent?.range.start;
                 if(sectionRange===undefined){continue;}
-                let moduleNode = new FileTreeItemLibraryTree(fileUri, sectionRange, wp);
+                let moduleNode = new FileTreeItemLibraryTree(fileUri, sectionRange, wp, libraries[0].parent!);
                 moduleNode.description = wp.platformName;
                 edkLensTreeDetailProvider.addChildren(moduleNode);
                 moduleNode.loaded = true;
@@ -398,65 +398,60 @@ import { debuglog } from "util";
 
     }
 
-
-
-
-
     let _maxDscRec = 10;
     export async function updateInclussionTree(document: vscode.TextDocument){
         edkLensTreeDetailProvider.clear();
         let wps = await gEdkWorkspaces.getWorkspace(document.uri);
-        if(wps.length){
-            for (const wp of wps) {
-                let currentDocument = document;
-                let infReferences:vscode.Location[] = [];
-                var dscReferences:vscode.Location[] = [];
-                let rootNode = new TreeItem(`[${wp.platformName}]` || "Undefined Platform");
-                let cNode = new TreeItem("");
-                edkLensTreeDetailProvider.addChildren(rootNode);
+        for (const wp of wps) {
+            let currentDocument = document;
+            let infReferences:vscode.Location[] = [];
+            var dscReferences:vscode.Location[] = [];
+            let rootNode = new TreeItem(`[${wp.platformName}]` || "Undefined Platform");
+            let cNode = new TreeItem("");
+            edkLensTreeDetailProvider.addChildren(rootNode);
 
-                switch (currentDocument.languageId) {
-                    case "c":
-                        cNode = new FileTreeItem(document.uri, new vscode.Position(0,0),wp);
-                        rootNode.addChildren(cNode);
-                        infReferences = await wp.getInfReference(document.uri);
-                        // intentional with no break
-                    case "edk2_inf":
-                        let targetNode = cNode;
-                        if(infReferences.length===0){
-                            infReferences = [new vscode.Location(document.uri, document.positionAt(0))];
-                            targetNode = rootNode;
-                        }
+            switch (currentDocument.languageId) {
+                case "c":
+                    cNode = new FileTreeItem(document.uri, new vscode.Position(0,0),wp);
+                    rootNode.addChildren(cNode);
+                    infReferences = await wp.getInfReference(document.uri);
+                    // intentional with no break
+                case "edk2_inf":
+                    let targetNode = cNode;
+                    if(infReferences.length===0){
+                        infReferences = [new vscode.Location(document.uri, document.positionAt(0))];
+                        targetNode = rootNode;
+                    }
 
-                        for (const infRef  of infReferences) {
-                            let infNode = new FileTreeItem(infRef.uri, infRef.range.start,wp);
-                            targetNode.addChildren(infNode);
-                            dscReferences = (await wp.getDscDeclaration(infRef.uri)).map(x=>{return x.location;});
-                            for (const dscRef of dscReferences) {
-                                _maxDscRec = 10;
-                                let targetNode = new FileTreeItem(dscRef.uri, dscRef.range.start,wp);
-                                await _dscIncRefs(targetNode,wp, infNode);
-                            }
-                        }
-                        break;
-                    case "edk2_fdf":
-                    case "edk2_dsc" :
-
-                        dscReferences = [new vscode.Location(document.uri, document.positionAt(0))];
-
-
+                    for (const infRef  of infReferences) {
+                        let infNode = new FileTreeItem(infRef.uri, infRef.range.start,wp);
+                        targetNode.addChildren(infNode);
+                        dscReferences = (await wp.getDscDeclaration(infRef.uri)).map(x=>{return x.location;});
                         for (const dscRef of dscReferences) {
-                            let refNode = new FileTreeItem(dscRef.uri, dscRef.range.start,wp);
                             _maxDscRec = 10;
-                            await _dscIncRefs(refNode,wp,rootNode);
+                            let targetNode = new FileTreeItem(dscRef.uri, dscRef.range.start,wp);
+                            await _dscIncRefs(targetNode,wp, infNode);
                         }
-                        break;
-                    default:
-                        edkLensTreeDetailProvider.clear();
+                    }
+                    break;
+                case "edk2_fdf":
+                case "edk2_dsc" :
 
-                }
+                    dscReferences = [new vscode.Location(document.uri, document.positionAt(0))];
+
+
+                    for (const dscRef of dscReferences) {
+                        let refNode = new FileTreeItem(dscRef.uri, dscRef.range.start,wp);
+                        _maxDscRec = 10;
+                        await _dscIncRefs(refNode,wp,rootNode);
+                    }
+                    break;
+                default:
+                    edkLensTreeDetailProvider.clear();
+
             }
         }
+    
 
         edkLensTreeDetailProvider.refresh();
         edkLensTreeDetailView.title = "EDK2 References";

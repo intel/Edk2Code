@@ -5,8 +5,9 @@ import { InfParser } from './edkParser/infParser';
 import { getParser } from './edkParser/parserFactory';
 import { Edk2SymbolType } from './symbols/symbolsType';
 import { EdkSymbolInfLibrary, EdkSymbolInfSource } from './symbols/infSymbols';
-import { getAllSymbols } from './utils';
+import { getAllSymbols, getMapFile } from './utils';
 import { EdkWorkspace } from './index/edkWorkspace';
+import { EdkSymbol } from './symbols/edkSymbols';
 
 
 
@@ -109,8 +110,10 @@ class Edk2TreeItem extends TreeItem{
   uri:vscode.Uri;
   loaded = false;
   wp:EdkWorkspace;
-  constructor(uri:vscode.Uri, position:vscode.Position, wp:EdkWorkspace){
+  edkObject:EdkSymbol;
+  constructor(uri:vscode.Uri, position:vscode.Position, wp:EdkWorkspace, edkObject:EdkSymbol){
     super(uri, vscode.TreeItemCollapsibleState.Collapsed);
+    this.edkObject = edkObject;
     this.wp = wp;
     this.uri = uri;
     this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
@@ -121,10 +124,10 @@ class Edk2TreeItem extends TreeItem{
     };
   }
 
-  addChildren(node: Edk2TreeItem) {
+  addChildren(node: Edk2TreeItem|TreeItem) {
     node.parent = this;
     this.loaded = true;
-    this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+    this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
     this.children.push(node);
   }
 
@@ -137,14 +140,15 @@ class Edk2TreeItem extends TreeItem{
   }
 }
 
-export class FileTreeItem extends Edk2TreeItem{
-
+export class FileTreeItem extends TreeItem{
+  uri:vscode.Uri;
   constructor(uri:vscode.Uri, position:vscode.Position,wp:EdkWorkspace){
-    super(uri, position,wp);
+    super(path.basename(uri.fsPath));
     let name = uri.fsPath.slice(gWorkspacePath.length + 1);
     this.description = name;
     this.label = path.basename(uri.fsPath);
     this.iconPath = new vscode.ThemeIcon("file");
+    this.uri = uri;
   }
 }
 
@@ -210,8 +214,8 @@ function getIconForSymbolKind(kind: vscode.SymbolKind): string {
 
 export class SourceSymbolTreeItem extends Edk2TreeItem{
 
-  constructor(uri:vscode.Uri, symbol:vscode.DocumentSymbol, wp:EdkWorkspace){
-    super(uri,symbol.range.start,wp);
+  constructor(uri:vscode.Uri, symbol:vscode.DocumentSymbol, wp:EdkWorkspace, edkObject:EdkSymbol){
+    super(uri,symbol.range.start,wp, edkObject);
 
     this.label = symbol.name;
     this.description = vscode.SymbolKind[symbol.kind];
@@ -221,11 +225,10 @@ export class SourceSymbolTreeItem extends Edk2TreeItem{
 
 }
 
-export class SectionTreeItem extends Edk2TreeItem{
+export class SectionTreeItem extends TreeItem{
 
   constructor(uri:vscode.Uri, position:vscode.Position, sectionName:string, wp:EdkWorkspace){
-    super(uri, position,wp);
-
+    super(sectionName);
     this.label = sectionName;
     this.iconPath = new vscode.ThemeIcon("array");
 
@@ -237,8 +240,8 @@ export class SectionTreeItem extends Edk2TreeItem{
 
 export class FileTreeItemLibraryTree extends Edk2TreeItem{
 
-  constructor(uri:vscode.Uri, position:vscode.Position, wp:EdkWorkspace){
-    super(uri, position, wp);
+  constructor(uri:vscode.Uri, position:vscode.Position, wp:EdkWorkspace, edkObject:EdkSymbol){
+    super(uri, position, wp, edkObject);
 
 
     let name = vscode.workspace.asRelativePath(uri);
@@ -270,7 +273,7 @@ export class FileTreeItemLibraryTree extends Edk2TreeItem{
  */
 export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibraryTree, wp:EdkWorkspace){
   
-  let parser = await getParser(fileUri);
+  let parser = await getParser(fileUri) as InfParser;
   if(parser){//&& (parser instanceof InfParser) ){
       // Add librarires
       let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
@@ -283,7 +286,7 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
               let filePaths = await gPathFind.findPath(libDefinition.path);
               for (const path of filePaths) {
                   let pos = new vscode.Position(0,0);
-                  let libNode = new FileTreeItemLibraryTree(path.uri, pos, wp);
+                  let libNode = new FileTreeItemLibraryTree(path.uri, pos, wp, library);
                   sectionLib.addChildren(libNode);
               }
             }
@@ -292,22 +295,29 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
 
       // Add sources
       let sources = parser.getSymbolsType(Edk2SymbolType.infSource) as EdkSymbolInfSource[];
+      const isModule = !parser.isLibrary();
       if(sources.length > 0){
-        let sectionSource = new SectionTreeItem(fileUri,sources[0].parent!.range.start, "Sources", wp);
+        let sectionSource = new SectionTreeItem(fileUri,sources[0].parent!.range.start, "Sources", wp, );
         node.addChildren(sectionSource);
         for (const source of sources) {
+              if(isModule){
+                const sourcePath = await source.getValue();
+
+                  const mapFilePath = getMapFile(sourcePath, parser.document.fileName);
+                  if(mapFilePath){
+                    console.log(mapFilePath);
+                  }
+              }
               let filePath = await source.getValue();
               let pos = new vscode.Position(0,0);
               let fileUri = vscode.Uri.file(filePath);
-              let sourceNode = new FileTreeItemLibraryTree(fileUri, pos, wp);
+              let sourceNode = new FileTreeItemLibraryTree(fileUri, pos, wp, source);
               sectionSource.addChildren(sourceNode);
               const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(fileUri);
               for (const symbol of sourceSymbols) {
-                const symbolNode = new SourceSymbolTreeItem(fileUri, symbol, wp);
+                const symbolNode = new SourceSymbolTreeItem(fileUri, symbol, wp, source);
                 sourceNode.addChildren(symbolNode);
               }
-
-
         }
       }
   }

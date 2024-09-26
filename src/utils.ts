@@ -601,3 +601,20 @@ async function _walk(dir: string, baseDir: string, filelist: string[] = []) {
     return filelist;
 }
 
+export function getMapFile(filePath:string, moduleInf:string){
+    // Load compile_commands
+    const compileCommandsPath = path.join(gWorkspacePath, ".edkCode", "compile_commands.json");
+    if(fs.existsSync(compileCommandsPath)){
+         const compileCommandsData = JSON.parse(fs.readFileSync(compileCommandsPath).toString());
+         for (const command of compileCommandsData) {
+            if(pathCompare(filePath, command["file"])){
+                const moduleName = path.basename(moduleInf).split(".")[0];
+                const mapPath = path.join(command["directory"], "OUTPUT", moduleName + ".map");
+                if(fs.existsSync(mapPath)){
+                    return mapPath;
+                }
+            }
+         }
+    }
+    return undefined;
+}
