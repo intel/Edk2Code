@@ -1249,7 +1249,7 @@ export class EdkWorkspace {
         //Get properties from moduleUri
         let modulesDeclarations = await this.getDscDeclaration(fileUri);
         let currentAccuracy = 0;
-        let locations:InfDsc[] = [];
+        let locations = new Map<string,InfDsc>();
 
         // Check all module declarations.
         for (const module of modulesDeclarations) {
@@ -1268,7 +1268,8 @@ export class EdkWorkspace {
                 if(library.compareArch(module) && library.compareModuleType(module)){
                     console.log("equal");
                     locationFound = true;
-                    locations.push(library);
+                    locations.set(library.path, library);
+                    
                     break;
                 }
             }
@@ -1278,7 +1279,7 @@ export class EdkWorkspace {
                 // 4. [LibraryClasses.common.$(MODULE_TYPE)]
                 if(library.compareArchStr("common") && library.compareModuleType(module)){
                     locationFound = true;
-                    locations.push(library);
+                    locations.set(library.path, library);
                     break;
                 }
             }
@@ -1288,7 +1289,8 @@ export class EdkWorkspace {
                 // 5. [LibraryClasses.$(Arch)]
                 if(library.compareArch(module)){
                     locationFound = true;
-                    locations.push(library);
+                    locations.set(library.path, library);
+
                     break;
                 }
             }
@@ -1298,15 +1300,13 @@ export class EdkWorkspace {
                 // 6. [LibraryClasses.common] or [LibraryClasses]
                 if(library.compareArchStr("common")){
                     locationFound = true;
-                    locations.push(library);
+                    locations.set(library.path, library);
                     break;
                 }
             }
             if(locationFound){continue;}
         }
-        return locations;
-
-
+        return Array.from(locations.values());
     }
 
 
