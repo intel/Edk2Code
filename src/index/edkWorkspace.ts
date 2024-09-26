@@ -461,7 +461,6 @@ export class EdkWorkspace {
         for (let line of text) {
             
             lineIndex++;
-            const originalLine = line;
             gDebugLog.verbose(`\t\t${lineIndex}: ${line}`);
 
             line = line.trim();
@@ -810,8 +809,11 @@ export class EdkWorkspace {
         let lineIndex = -1;
 
 
-        let isInUnuseRange = false;
+        let isRangeActive = false;
         let unuseRangeStart = 0;
+
+        this.conditionStack = [];
+        this.result = [];
 
         for (let line of text) {
             lineIndex++;
@@ -819,12 +821,6 @@ export class EdkWorkspace {
             line = line.trim();
             if(line.startsWith("#")){continue;}
 
-            // replace definitions
-            let originalLine = line;
-            line = this.definesFdf.replaceDefines(line);
-            if(line.includes(UNDEFINED_VARIABLE)){
-                line = this.defines.replaceDefines(originalLine);
-            }
 
             // find PCDS variables
             if(line.match(REGEX_PCD_LINE)){
@@ -844,29 +840,30 @@ export class EdkWorkspace {
                         value:pcdValue, 
                         position: new vscode.Location(document.uri, new vscode.Position(lineIndex, 0))}
                     );
-                continue;
+
             }
 
+            // replace definitions
+            line = this.defines.replaceDefines(line);
             line = this.replacePcds(line);
 
-            let conditinalResult = this.processConditional(line);
-            // if(conditinalResult !==undefined){
-            //     DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.syntaxStatement, conditinalResult);
-            // }
-            
-            if (!this.isInActiveCode()) {
-                if (!isInUnuseRange) {
-                    isInUnuseRange = true;
+            let isInActiveCode = this.processConditional(line);
+
+
+            if (!isInActiveCode) {
+                if (!isRangeActive) {
+                    isRangeActive = true;
                     unuseRangeStart = lineIndex;
                 }
                 continue;
             }
 
-            if (isInUnuseRange === true) {
-                isInUnuseRange = false;
+            if (isRangeActive === true) {
+                isRangeActive = false;
                 let arr = this.parsedDocuments.get(document.uri.fsPath);
                 if (arr) {
-                    arr.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndex, 0)));
+                    let lineIndexEnd = lineIndex-1;
+                    arr.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
                 } else {
                     gDebugLog.error(`findDefines: ${document.fileName} has no range for unuseRange`);
                 }
