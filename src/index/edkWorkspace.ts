@@ -21,6 +21,11 @@ type ConditionBlock = {
     satisfied: boolean;   // Whether the condition has been satisfied
   };
 
+type ConditonOpenBlock = {
+    uri:vscode.Uri;
+    lineNo:number;
+};
+
 interface Pcd {
     name:string;
     value:string
@@ -268,12 +273,15 @@ export class EdkWorkspace {
     flashDefinitionDocument: vscode.TextDocument | undefined = undefined;
 
 
+    conditionStack: ConditionBlock[] = [];
+    result: boolean[] = [];
+    conditionOpen:ConditonOpenBlock[] = [];
+
 
     private workInProgress: boolean = false;
     private processComplete: boolean = false;
 
     private conditionalStack: boolean[] = [];
-    private lastConditionalPop = true;
     private sectionsStack: string[] = [];
     private parsedDocuments: Map<string, vscode.Range[]> = new Map();
 
@@ -334,6 +342,7 @@ export class EdkWorkspace {
     }
 
 
+    
 
     async proccessWorkspace() {
         if (this.workInProgress) {
@@ -351,11 +360,19 @@ export class EdkWorkspace {
         this.filesModules = [];
         this.filesDsc = [];
 
+        
+        this.conditionStack = [];
+        this.result = [];
+        this.conditionOpen = [];
+
         DiagnosticManager.clearProblems();
 
         this.parsedDocuments = new Map();
         let mainDscDocument = await vscode.workspace.openTextDocument(this.mainDsc);
         await this._proccessDsc(mainDscDocument);
+        for (const conditionOpen of this.conditionOpen) {
+            DiagnosticManager.error(conditionOpen.uri,conditionOpen.lineNo,EdkDiagnosticCodes.conditionalMissform, "Condition block not closed");
+        }
         this.workInProgress = false;
         gDebugLog.verbose("Finding done.");
 
@@ -431,11 +448,6 @@ export class EdkWorkspace {
         return this.pcdDefinitions.get(namespace);
     }
 
-
-
-    conditionStack: ConditionBlock[] = [];
-    result: boolean[] = [];
-
     private async _proccessDsc(document: vscode.TextDocument) {
         gDebugLog.verbose(`findDefines: ${document.fileName}`);
         let libraryTypeTrack = new Map<string,InfDsc>();
@@ -454,8 +466,6 @@ export class EdkWorkspace {
         let isRangeActive = false;
         let unuseRangeStart = 0;
 
-        this.conditionStack = [];
-        this.result = [];
 
         gDebugLog.verbose(`# Parsing DSC Document: ${document.uri.fsPath}`);
         for (let line of text) {
@@ -494,7 +504,7 @@ export class EdkWorkspace {
             line = this.defines.replaceDefines(line);
             line = this.replacePcds(line);
 
-            let isInActiveCode = this.processConditional(line);
+            let isInActiveCode = this.processConditional(line, lineIndex, document.uri);
             if (!isInActiveCode) {
                 if (!isRangeActive) {
                     isRangeActive = true;
@@ -812,9 +822,6 @@ export class EdkWorkspace {
         let isRangeActive = false;
         let unuseRangeStart = 0;
 
-        this.conditionStack = [];
-        this.result = [];
-
         for (let line of text) {
             lineIndex++;
             // Skip comments
@@ -847,7 +854,7 @@ export class EdkWorkspace {
             line = this.defines.replaceDefines(line);
             line = this.replacePcds(line);
 
-            let isInActiveCode = this.processConditional(line);
+            let isInActiveCode = this.processConditional(line, lineIndex, document.uri);
 
 
             if (!isInActiveCode) {
@@ -917,7 +924,7 @@ export class EdkWorkspace {
     }
 
 
-    private processConditional(inputText: string):boolean {
+    private processConditional(inputText: string, lineIndex:number, documentUri:vscode.Uri):boolean {
         let conditionStr = inputText.replaceAll(REGEX_VAR_USAGE, `"${UNDEFINED_VARIABLE}"`);
         
         // text = text.replaceAll(UNDEFINED_VARIABLE, '"???"');
@@ -944,6 +951,8 @@ export class EdkWorkspace {
             case "!if":
             case "!ifdef":
             case "!ifndef":
+                this.conditionOpen.push({uri:documentUri, lineNo:lineIndex});
+
                 switch(tokens[0].toLowerCase()){
                     case "!if":
                         conditionValue = this.evaluateConditional(conditionStr);
@@ -968,7 +977,7 @@ export class EdkWorkspace {
                 // Pop the last condition block
                 if (this.conditionStack.length === 0) {
                     //throw new Error('!elseif without !if');
-                    console.log("ERROR HERE!!!!!!!!!!!!!");
+                    DiagnosticManager.error(documentUri, lineIndex, EdkDiagnosticCodes.conditionalMissform, "!elseif without !if");
                     return true;
                 }
                 
@@ -990,7 +999,7 @@ export class EdkWorkspace {
             case "!else":
                 if (this.conditionStack.length === 0) {
                     //throw new Error('!else without !if');
-                    console.log("ERROR HERE!!!!!!!!!!!!!");
+                    DiagnosticManager.error(documentUri, lineIndex, EdkDiagnosticCodes.conditionalMissform, "!else without !if");
                     return true;
                   }
                   parentActive = this.conditionStack.length <= 1 || this.conditionStack[this.conditionStack.length - 2].active;
@@ -1007,9 +1016,12 @@ export class EdkWorkspace {
                   this.result.push(block.active); // This line is a control statement
                 break;
             case "!endif":
+                
+                this.conditionOpen.pop();
+  
                 if (this.conditionStack.length === 0) {
                     //throw new Error('!endif without !if');
-                    console.log("ERROR HERE!!!!!!!!!!!!!");
+                    DiagnosticManager.error(documentUri, lineIndex, EdkDiagnosticCodes.conditionalMissform, "!endif without !if");
                     return true;
                   }
 

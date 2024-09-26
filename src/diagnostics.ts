@@ -22,6 +22,7 @@ relativePath,
 syntaxPath,
 duplicateIncludeFile,
 missingPath,
+conditionalMissform
 }
 
 export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
@@ -44,7 +45,8 @@ export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
     [EdkDiagnosticCodes.relativePath, "Relative path not allowed"],
     [EdkDiagnosticCodes.syntaxPath, "Syntax error in path"],
     [EdkDiagnosticCodes.duplicateIncludeFile, "Duplicate include file"],
-    [EdkDiagnosticCodes.missingPath, "Missing path"]
+    [EdkDiagnosticCodes.missingPath, "Missing path"],
+    [EdkDiagnosticCodes.conditionalMissform, "Conditional block missform"]
   ]);
 
 export class DiagnosticManager {
