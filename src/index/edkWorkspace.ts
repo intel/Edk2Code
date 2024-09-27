@@ -366,7 +366,7 @@ export class EdkWorkspace {
         this.result = [];
         this.conditionOpen = [];
 
-        DiagnosticManager.clearProblems();
+        
 
         this.parsedDocuments = new Map();
         let mainDscDocument = await vscode.workspace.openTextDocument(this.mainDsc);
@@ -450,6 +450,7 @@ export class EdkWorkspace {
     }
 
     private async _proccessDsc(document: vscode.TextDocument) {
+        DiagnosticManager.clearProblems(document.uri);
         gDebugLog.verbose(`findDefines: ${document.fileName}`);
         let libraryTypeTrack = new Map<string,InfDsc>();
         // Add document to inactiveLines
@@ -583,7 +584,7 @@ export class EdkWorkspace {
                 
                 if(libraryTypeTrack.has(libNameTag)){
                     let originalLibrary = libraryTypeTrack.get(libNameTag)!;
-                    let diagnosticDuplicatedInf = DiagnosticManager.warning(originalLibrary.location.uri, originalLibrary.location.range.start.line, EdkDiagnosticCodes.duplicateStatement, `Library overwritten: ${libName}`);
+                    let diagnosticDuplicatedInf = DiagnosticManager.warning(originalLibrary.location.uri, originalLibrary.location.range.start.line, EdkDiagnosticCodes.duplicateStatement, `Library overwritten: ${libName}`, [vscode.DiagnosticTag.Unnecessary]);
                     diagnosticDuplicatedInf.relatedInformation = [new vscode.DiagnosticRelatedInformation(inf.location, "New definition")];
                     
                     // Find and remove originalLibrary from this.filesLibraries

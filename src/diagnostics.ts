@@ -54,7 +54,8 @@ export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
 export class DiagnosticManager {
     private static instance: DiagnosticManager;
     private static diagnosticsCollection: vscode.DiagnosticCollection;
-    private static diagnostics:vscode.Diagnostic[] = [];
+    private static diagnostics:Map<string, vscode.Diagnostic[]> = new Map();
+    private static xxxdiagnostics:vscode.Diagnostic[] = [];
 
     private constructor() {
         // Prevent reinitialization of the diagnosticsCollection
@@ -70,24 +71,56 @@ export class DiagnosticManager {
         return DiagnosticManager.instance;
     }
 
-    public static warning(documentUri: vscode.Uri, line: number, edkDiagCode: EdkDiagnosticCodes, detail:string){
+    public static warning(documentUri: vscode.Uri, line: number | vscode.Range, edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = []) {
         if(!edkErrorDescriptions.has(edkDiagCode)){
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
-        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Warning);
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Warning,"","", tags);
     }
 
-    public static error(documentUri: vscode.Uri, line: number,  edkDiagCode: EdkDiagnosticCodes, detail:string){
+    public static error(documentUri: vscode.Uri, line: number | vscode.Range,  edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = []){
         if(!edkErrorDescriptions.has(edkDiagCode)){
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
-        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Error);
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Error,"","", tags);
     }
 
-    public static reportProblem(documentUri: vscode.Uri, line: number, message: string, severity: vscode.DiagnosticSeverity, source?: string, code?: string | number) {
+    private static addDiagnostic(documentUri: vscode.Uri, diagnostic: vscode.Diagnostic) {
+        if (!DiagnosticManager.diagnostics.has(documentUri.fsPath)) {
+            DiagnosticManager.diagnostics.set(documentUri.fsPath, []);
+        }
+        DiagnosticManager.diagnostics.get(documentUri.fsPath)!.push(diagnostic);
+    }
+
+    private static getDiagnostic(documentUri: vscode.Uri): vscode.Diagnostic[] {
+        return DiagnosticManager.diagnostics.get(documentUri.fsPath) || [];
+    }
+
+    private static clearDiagnostic(documentUri: vscode.Uri) {
+        DiagnosticManager.diagnostics.delete(documentUri.fsPath);
+    }
+
+    private static clearAllDiagnostics() {
+        DiagnosticManager.diagnostics.clear();
+    }
+
+    public static reportProblem(documentUri: vscode.Uri, 
+                                line: number|vscode.Range,
+                                message: string,
+                                severity: vscode.DiagnosticSeverity,
+                                source?: string,
+                                code?: string | number,
+                                tags: vscode.DiagnosticTag[]= []) 
+        {
         console.log(`REPORT problem ${documentUri.fsPath} ${line} ${message} ${severity}`);
         // Create a range that covers the entire line
-        const range = new vscode.Range(line, 0, line, Number.MAX_VALUE);
+        let range:vscode.Range;
+        if (line instanceof vscode.Range) {
+            range = line;
+        }else{
+            range = new vscode.Range(line as number, 0, line as number, Number.MAX_VALUE);
+        }
+        
 
         const diagnostic = new vscode.Diagnostic(range, message, severity);
         if (source) {
@@ -96,13 +129,20 @@ export class DiagnosticManager {
         if (code) {
             diagnostic.code = code;
         }
-        this.diagnostics.push(diagnostic);
-        DiagnosticManager.diagnosticsCollection.set(documentUri, this.diagnostics);
+        diagnostic.tags = tags;
+        
+        DiagnosticManager.addDiagnostic(documentUri, diagnostic);
+        DiagnosticManager.diagnosticsCollection.set(documentUri, DiagnosticManager.getDiagnostic(documentUri));
         return diagnostic;
     }
 
-    public static clearProblems() {
-        this.diagnostics = [];
+    public static clearAllProblems() {
+        DiagnosticManager.clearAllDiagnostics();
         DiagnosticManager.diagnosticsCollection.clear();
+    }
+
+    public static clearProblems(documentUri: vscode.Uri) {
+        DiagnosticManager.clearDiagnostic(documentUri);
+        DiagnosticManager.diagnosticsCollection.delete(documentUri);
     }
 }

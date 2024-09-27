@@ -145,12 +145,17 @@ class Edk2TreeItem extends TreeItem{
 export class FileTreeItem extends TreeItem{
   uri:vscode.Uri;
   constructor(uri:vscode.Uri, position:vscode.Position,wp:EdkWorkspace){
-    super(path.basename(uri.fsPath));
+    super(uri);
     let name = uri.fsPath.slice(gWorkspacePath.length + 1);
     this.description = name;
     this.label = path.basename(uri.fsPath);
     this.iconPath = new vscode.ThemeIcon("file");
     this.uri = uri;
+    this.command = {
+      "command": "editor.action.peekLocations",
+      "title":"Open file",
+      "arguments": [this.uri, position, []]
+    };
   }
 }
 
@@ -274,7 +279,7 @@ export class FileTreeItemLibraryTree extends Edk2TreeItem{
  * @throws Will throw an error if path information cannot be found.
  */
 export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibraryTree, wp:EdkWorkspace){
-
+  DiagnosticManager.clearProblems(fileUri);
   let parser = await getParser(fileUri) as InfParser;
   if(parser){//&& (parser instanceof InfParser) ){
       // Add librarires
@@ -297,7 +302,6 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
 
       // Add sources
       let sources = parser.getSymbolsType(Edk2SymbolType.infSource) as EdkSymbolInfSource[];
-      const isModule = !parser.isLibrary();
       if(sources.length > 0){
         let sectionSource = new SectionTreeItem(fileUri,sources[0].parent!.range.start, "Sources", wp, );
         node.addChildren(sectionSource);
@@ -314,11 +318,12 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
                 const symbolNode = new SourceSymbolTreeItem(fileUri, symbol, wp, source);
                 if(symbol.kind === vscode.SymbolKind.Function){
                   if(!gMapFileManager.isSymbolUsed(symbol.name)){
-                    DiagnosticManager.error(fileUri,symbol.range.start.line,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`);
+                    DiagnosticManager.warning(fileUri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
 
                     let label:string = symbolNode.label as string;
-                    symbolNode.description = label;
-                    symbolNode.label = "*";
+                    symbolNode.label = {label:label, highlights:[[0,label.length]]};
+                    symbolNode.tooltip = "Unused function";
+                    
                   }
                 }
                 sourceNode.addChildren(symbolNode);
