@@ -1,10 +1,10 @@
 import { Uri } from "vscode";
 import * as vscode from 'vscode';
 import { rgSearch } from "../rg";
-import { checkCompileCommandsConfig, delay, deleteEdkCodeFolder, existsEdkCodeFolderFile, getCurrentDocumentFilePath, getCurrentWord, getEdkCodeFolderFilePath, gotoFile, isWorkspacePath, listFilesRecursive, openTextDocument, profileEnd, profileStart, readLines, toPosix, writeEdkCodeFolderFile } from "../utils";
+import { checkCompileCommandsConfig, delay, getCurrentWord, gotoFile, isWorkspacePath, listFilesRecursive, openTextDocument, profileEnd, profileStart, readLines, toPosix } from "../utils";
 import path = require("path");
 import * as fs from 'fs';
-import { edkLensTreeDetailProvider, edkLensTreeDetailView, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gPathFind, gWorkspacePath } from "../extension";
+import { edkLensTreeDetailProvider, edkLensTreeDetailView, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gMapFileManager, gPathFind, gWorkspacePath } from "../extension";
 import { distance, closest } from 'fastest-levenshtein';
 import { glob } from "fast-glob";
 import { BuildFolder } from "../Languages/buildFolder";
@@ -18,6 +18,7 @@ import { SettingsPanel } from "../settings/settingsPanel";
 import { InfParser } from "../edkParser/infParser";
 import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
 import { debuglog } from "util";
+import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder";
 
     export async function rebuildIndexDatabase() {
 
@@ -101,15 +102,11 @@ import { debuglog } from "util";
                     await gConfigAgent.setBuildDscPaths(buildData.dscFiles);
                     buildFolder.copyFilesToRoot();
 
-
                     // If cscope.file is not generated, then calculate files based on dsc parsing
                     if(existsEdkCodeFolderFile(".missing")){
                         infoMissingCompileInfo();
                         await reloadSymbols();
-
-
                     }else{
-
                         await checkCompileCommandsConfig();
                         await gCscope.reload();
                     }
@@ -119,11 +116,12 @@ import { debuglog } from "util";
                         await genIgnoreFile();
                     }
 
+                    await buildFolder.copyMapFilesList();
+                    gMapFileManager.load();
+
                     void vscode.window.showInformationMessage("Build data loaded");
 
                     await gEdkWorkspaces.loadConfig();
-
-
                 }
 
             } else {

@@ -217,16 +217,24 @@ export class EdkWorkspaces {
 
 
 
-    async getWorkspace(uri:vscode.Uri){
-        let wps = [];
-        for (const workspace of this.workspaces) {
-            let result = await workspace.isFileInUse(uri);
-            if(result === true){
-                wps.push(workspace);
-            }
+/**
+ * Asynchronously retrieves a list of workspaces that are using the specified file.
+ *
+ * @param uri - The URI of the file to check for usage within the workspaces.
+ * @returns A promise that resolves to an array of workspaces that are using the specified file.
+ *
+ */
+async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
+    let wps = [];
+    for (const workspace of this.workspaces) {
+        let result = await workspace.isFileInUse(uri);
+        if (result === true) {
+            wps.push(workspace);
         }
-        return wps;
     }
+    return wps;
+}
+
 
     async isFileInUse(uri: vscode.Uri) {
         let isUndefined = true;
@@ -262,21 +270,14 @@ export class EdkWorkspaces {
 
 export class EdkWorkspace {
 
-
-
-
-
-
     id:number = 0;
     mainDsc: vscode.Uri;
     platformName: string | undefined = undefined;
     flashDefinitionDocument: vscode.TextDocument | undefined = undefined;
 
-
     conditionStack: ConditionBlock[] = [];
     result: boolean[] = [];
     conditionOpen:ConditonOpenBlock[] = [];
-
 
     private workInProgress: boolean = false;
     private processComplete: boolean = false;

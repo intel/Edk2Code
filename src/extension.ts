@@ -22,6 +22,7 @@ import { ParserFactory } from './edkParser/parserFactory';
 import { SettingsPanel } from './settings/settingsPanel';
 import { TreeDetailsDataProvider, TreeItem } from './TreeDataProvider';
 import { DiagnosticManager } from './diagnostics';
+import { MapFilesManager } from './mapParser';
 
 // Global variables
 // export var gEdkDatabase: EdkDatabase;
@@ -45,6 +46,7 @@ export var gDiagnosticManager:DiagnosticManager;
 export var edkLensTreeDetailProvider: TreeDetailsDataProvider;
 export var edkLensTreeDetailView: vscode.TreeView<vscode.TreeItem>;
 
+export var gMapFileManager: MapFilesManager;
 
 
 // this method is called when your extension is activated
@@ -133,6 +135,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	initLanguages();
 	await gEdkWorkspaces.loadConfig();
 	gFileUseWarning = new FileUseWarning();
+
+	gMapFileManager = new MapFilesManager();
+	gMapFileManager.load();
 
 	gCscope = new Cscope();
 	gCscopeAgent = new CscopeAgent();

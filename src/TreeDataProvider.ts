@@ -1,6 +1,6 @@
 import path = require('path');
 import * as vscode from 'vscode';
-import { edkLensTreeDetailProvider, gEdkWorkspaces, gPathFind, gWorkspacePath } from './extension';
+import { edkLensTreeDetailProvider, gEdkWorkspaces, gMapFileManager, gPathFind, gWorkspacePath } from './extension';
 import { InfParser } from './edkParser/infParser';
 import { getParser } from './edkParser/parserFactory';
 import { Edk2SymbolType } from './symbols/symbolsType';
@@ -8,6 +8,8 @@ import { EdkSymbolInfLibrary, EdkSymbolInfSource } from './symbols/infSymbols';
 import { getAllSymbols, getMapFile } from './utils';
 import { EdkWorkspace } from './index/edkWorkspace';
 import { EdkSymbol } from './symbols/edkSymbols';
+import { MapFileData } from './mapParser';
+import { DiagnosticManager, EdkDiagnosticCodes } from './diagnostics';
 
 
 
@@ -272,7 +274,7 @@ export class FileTreeItemLibraryTree extends Edk2TreeItem{
  * @throws Will throw an error if path information cannot be found.
  */
 export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibraryTree, wp:EdkWorkspace){
-  
+
   let parser = await getParser(fileUri) as InfParser;
   if(parser){//&& (parser instanceof InfParser) ){
       // Add librarires
@@ -300,14 +302,7 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
         let sectionSource = new SectionTreeItem(fileUri,sources[0].parent!.range.start, "Sources", wp, );
         node.addChildren(sectionSource);
         for (const source of sources) {
-              if(isModule){
-                const sourcePath = await source.getValue();
 
-                  const mapFilePath = getMapFile(sourcePath, parser.document.fileName);
-                  if(mapFilePath){
-                    console.log(mapFilePath);
-                  }
-              }
               let filePath = await source.getValue();
               let pos = new vscode.Position(0,0);
               let fileUri = vscode.Uri.file(filePath);
@@ -315,7 +310,17 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
               sectionSource.addChildren(sourceNode);
               const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(fileUri);
               for (const symbol of sourceSymbols) {
+                
                 const symbolNode = new SourceSymbolTreeItem(fileUri, symbol, wp, source);
+                if(symbol.kind === vscode.SymbolKind.Function){
+                  if(!gMapFileManager.isSymbolUsed(symbol.name)){
+                    DiagnosticManager.error(fileUri,symbol.range.start.line,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`);
+
+                    let label:string = symbolNode.label as string;
+                    symbolNode.description = label;
+                    symbolNode.label = "*";
+                  }
+                }
                 sourceNode.addChildren(symbolNode);
               }
         }

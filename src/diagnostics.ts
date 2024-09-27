@@ -22,7 +22,8 @@ relativePath,
 syntaxPath,
 duplicateIncludeFile,
 missingPath,
-conditionalMissform
+conditionalMissform,
+unusedSymbol,
 }
 
 export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
@@ -46,7 +47,8 @@ export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
     [EdkDiagnosticCodes.syntaxPath, "Syntax error in path"],
     [EdkDiagnosticCodes.duplicateIncludeFile, "Duplicate include file"],
     [EdkDiagnosticCodes.missingPath, "Missing path"],
-    [EdkDiagnosticCodes.conditionalMissform, "Conditional block missform"]
+    [EdkDiagnosticCodes.conditionalMissform, "Conditional block missform"],
+    [EdkDiagnosticCodes.unusedSymbol, "Unused symbol"],
   ]);
 
 export class DiagnosticManager {
@@ -83,6 +85,7 @@ export class DiagnosticManager {
     }
 
     public static reportProblem(documentUri: vscode.Uri, line: number, message: string, severity: vscode.DiagnosticSeverity, source?: string, code?: string | number) {
+        console.log(`REPORT problem ${documentUri.fsPath} ${line} ${message} ${severity}`);
         // Create a range that covers the entire line
         const range = new vscode.Range(line, 0, line, Number.MAX_VALUE);
 

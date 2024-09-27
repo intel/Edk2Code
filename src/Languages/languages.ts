@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode';
 import { DictHoverProvider, DictHoverProviderDb, EdkSymbolProvider, HelpHoverProvider, JsonCompletionItemLabel, JsonCompletionProvider } from './symbolProvider';
-import { getEdkCodeFolderFilePath, getStaticPath } from '../utils';
+import { getStaticPath } from '../utils';
 import * as fs from 'fs';
 import { EdkDefinitionProvider } from './definitionProvider';
 import { EdkDeclarationProvider } from './declarationProvider';

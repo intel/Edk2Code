@@ -1,11 +1,12 @@
 
 import * as vscode from 'vscode';
-import { getEdkCodeFolderFilePath, readLines, split, toPosix, writeEdkCodeFolderFile } from '../utils';
+import { readLines, split, toPosix } from '../utils';
 import { DictHoverProvider } from './symbolProvider';
 import * as fs from 'fs';
 import { gWorkspacePath } from '../extension';
 import path = require('path');
 import { glob } from 'fast-glob';
+import { writeEdkCodeFolderFile, getEdkCodeFolderFilePath } from '../edk2CodeFolder';
 
 export class GuidProvider{
     guidProvider: vscode.Disposable|undefined = undefined;

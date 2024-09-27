@@ -2,8 +2,9 @@ import path = require("path");
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { gCscope, gDebugLog, gWorkspacePath } from "../extension";
-import { getRealPath, getRealPathRelative, normalizePath, readLines, writeEdkCodeFolderFile, split, toPosix, readEdkCodeFolderFile } from "../utils";
+import { getRealPath, getRealPathRelative, normalizePath, readLines, split, toPosix } from "../utils";
 import glob = require("fast-glob");
+import { writeEdkCodeFolderFile } from "../edk2CodeFolder";
 
 export class BuildFolder {
     buildFolderPaths: string[]=[];
@@ -58,19 +59,17 @@ export class BuildFolder {
             vscode.window.showErrorMessage(String(error));
             throw new Error(String(error));
         }
-
-
     }
 
-    async loadMapFiles(){
-        let maplist = "";
+    async copyMapFilesList(){
+        let maplist = [];
         for (const buildPaths of this.buildFolderPaths) {
-            let mapPaths = await glob.sync(toPosix(path.join(buildPaths, "**","*.map")));
+            let mapPaths = glob.sync(toPosix(path.join(buildPaths,"*.map")));
             for (const m of mapPaths) {
-                maplist += `${m}\n`;    
+                maplist.push(m);    
             }
         }
-        writeEdkCodeFolderFile("mapFiles.txt",maplist);
+        writeEdkCodeFolderFile("mapFiles.json",JSON.stringify(maplist, null, 2));
     }
 
     copyFilesToRoot() {

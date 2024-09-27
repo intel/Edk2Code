@@ -2,10 +2,8 @@ import path = require("path");
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import glob = require("fast-glob");
-import { existsEdkCodeFolderFile, getRealPathRelative, readEdkCodeFolderFile, toPosix, writeEdkCodeFolderFile } from "./utils";
+import { getRealPathRelative } from "./utils";
 import { gConfigAgent, gDebugLog, gWorkspacePath } from "./extension";
-
-import { distance, closest } from 'fastest-levenshtein';
 import { REGEX_VAR_USAGE } from "./edkParser/commonParser";
 
 export class PathFind{

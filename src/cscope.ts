@@ -2,9 +2,10 @@ import * as fs from 'fs';
 import path = require('path');
 import * as vscode from 'vscode';
 import { gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces } from './extension';
-import { exec, execWindow, getEdkCodeFolderFilePath, getEdkCodeFolderPath, getStaticPath, normalizePath, readLines, toPosix } from './utils';
+import { exec, execWindow, getStaticPath, normalizePath, readLines, toPosix } from './utils';
 import { execSync } from 'child_process';
 import * as edkStatusBar from './statusBar';
+import { getEdkCodeFolderFilePath, getEdkCodeFolderPath } from './edk2CodeFolder';
 
 /*
 cscope -R -L -2 ".*" | awk -F ' ' '{print $2 "#" $1}' | sort | uniq

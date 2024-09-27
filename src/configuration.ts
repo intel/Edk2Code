@@ -4,8 +4,9 @@ import { gDebugLog, gWorkspacePath } from './extension';
 import * as fs from 'fs';
 import { LogLevel } from './debugLog';
 import { askReloadFiles } from './ui/messages';
-import { existsEdkCodeFolderFile, getEdkCodeFolderFilePath, getEdkCodeFolderPath, readFile, writeEdkCodeFolderFile } from './utils';
+import { readFile } from './utils';
 import { SettingsPanel } from './settings/settingsPanel';
+import { getEdkCodeFolderFilePath, existsEdkCodeFolderFile, writeEdkCodeFolderFile } from './edk2CodeFolder';
 
 
 export interface WorkspaceConfig {
