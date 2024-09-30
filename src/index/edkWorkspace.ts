@@ -1266,9 +1266,7 @@ export class EdkWorkspace {
             for (const library of dscLibDeclarations) {
                 // 2. [LibraryClasses.$(Arch).$(MODULE_TYPE), LibraryClasses.$(Arch).$(MODULE_TYPE)]
                 // 3. [LibraryClasses.$(Arch).$(MODULE_TYPE)]
-                console.log(`${library.toString()} === ${module.toString()}`);
                 if(library.compareArch(module) && library.compareModuleType(module)){
-                    console.log("equal");
                     locationFound = true;
                     locations.set(library.path, library);
                     

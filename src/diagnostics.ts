@@ -24,6 +24,8 @@ duplicateIncludeFile,
 missingPath,
 conditionalMissform,
 unusedSymbol,
+emptyFile,
+circularDependency,
 }
 
 export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
@@ -49,13 +51,14 @@ export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
     [EdkDiagnosticCodes.missingPath, "Missing path"],
     [EdkDiagnosticCodes.conditionalMissform, "Conditional block missform"],
     [EdkDiagnosticCodes.unusedSymbol, "Unused symbol"],
+    [EdkDiagnosticCodes.emptyFile, "Empty file"],
+    [EdkDiagnosticCodes.circularDependency, "Circular dependency"],
   ]);
 
 export class DiagnosticManager {
     private static instance: DiagnosticManager;
     private static diagnosticsCollection: vscode.DiagnosticCollection;
     private static diagnostics:Map<string, vscode.Diagnostic[]> = new Map();
-    private static xxxdiagnostics:vscode.Diagnostic[] = [];
 
     private constructor() {
         // Prevent reinitialization of the diagnosticsCollection
@@ -112,7 +115,6 @@ export class DiagnosticManager {
                                 code?: string | number,
                                 tags: vscode.DiagnosticTag[]= []) 
         {
-        console.log(`REPORT problem ${documentUri.fsPath} ${line} ${message} ${severity}`);
         // Create a range that covers the entire line
         let range:vscode.Range;
         if (line instanceof vscode.Range) {

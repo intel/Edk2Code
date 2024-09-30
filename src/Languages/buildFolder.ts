@@ -64,7 +64,7 @@ export class BuildFolder {
     async copyMapFilesList(){
         let maplist = [];
         for (const buildPaths of this.buildFolderPaths) {
-            let mapPaths = glob.sync(toPosix(path.join(buildPaths,"*.map")));
+            let mapPaths = glob.sync(toPosix(path.join(buildPaths,"**","OUTPUT","*.map")));
             for (const m of mapPaths) {
                 maplist.push(m);    
             }

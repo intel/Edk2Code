@@ -122,6 +122,11 @@ export async function activate(context: vscode.ExtensionContext) {
 			void vscode.window.showInformationMessage('Details copied to clipboard.');
 		
 		  }),
+
+		  vscode.commands.registerCommand('edk2code.expandAllTree', () => {
+			// Your export logic here
+			let strTree = edkLensTreeDetailProvider.expandAll(edkLensTreeDetailView);
+		  }),
 	];
 
 	context.subscriptions.concat(commands);

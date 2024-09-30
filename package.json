@@ -113,7 +113,13 @@
         "command": "edk2code.copyTreeData",
         "title": "EDK2: Copy tree data",
         "icon": "$(copy)"
+      },
+      {
+        "command": "edk2code.expandAllTree",
+        "title": "EDK2: Expand all",
+        "icon": "$(expand-all)"
       }
+
     ],
     "configuration": [
       {
@@ -249,6 +255,10 @@
         {
           "command": "edk2code.copyTreeData",
           "when": "false"
+        },
+        {
+          "command": "edk2code.expandAllTree",
+          "when": "false"
         }
 
         
@@ -259,7 +269,12 @@
           "command": "edk2code.copyTreeData",
           "when": "view == detailsView",
           "group": "navigation"
-      }
+        },
+        {
+          "command": "edk2code.expandAllTree",
+          "when": "view == detailsView",
+          "group": "navigation"
+        }
       ],
       "editor/context": [
         {

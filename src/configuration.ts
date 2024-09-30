@@ -110,7 +110,7 @@ export class ConfigAgent {
     }
 
     saveConfigurationUI(){
-        console.log("saving config");
+
     }
 
     handleConfigurationChange() {

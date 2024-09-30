@@ -10,10 +10,12 @@ import { EdkWorkspace } from './index/edkWorkspace';
 import { EdkSymbol } from './symbols/edkSymbols';
 import { MapFileData } from './mapParser';
 import { DiagnosticManager, EdkDiagnosticCodes } from './diagnostics';
+import { kMaxLength } from 'buffer';
 
 
 
-
+let recursion = 0;
+let treeSegmentsMap = new Map<string, FileTreeItem>();
 
 
 export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem> {
@@ -25,6 +27,46 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
 
   constructor() {
     this.data = [];
+  }
+
+  async expandAll(view:vscode.TreeView<vscode.TreeItem>){
+
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: "Expanding Tree nodes...",
+      cancellable: true
+    }, async (progress, reject) => {
+      recursion = 0;
+      for (const item of this.data) {
+        await this.expandAllNode(item, view, reject);
+      }
+    });
+
+    
+  }
+
+  async expandAllNode(node:TreeItem, view:vscode.TreeView<vscode.TreeItem>, reject:vscode.CancellationToken){
+    console.log(`Expanding node: ${node.label}, ${recursion}`, );
+    if(reject.isCancellationRequested){
+      return;
+    }
+    
+    if(node instanceof Edk2TreeItem){
+      if((node as Edk2TreeItem).circularDependency === true){
+        return;
+      }
+    }
+    
+    recursion+=1;
+    await node.onExpanded();
+    node.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+    
+    
+    for (const child of node.children) {
+      await this.expandAllNode(child, view, reject);
+    }
+    await view.reveal(node);
+    recursion-=1;
   }
 
   getHierarchy(item: TreeItem, level: number = 0): string {
@@ -113,6 +155,7 @@ class Edk2TreeItem extends TreeItem{
   loaded = false;
   wp:EdkWorkspace;
   edkObject:EdkSymbol;
+  circularDependency = false;
   constructor(uri:vscode.Uri, position:vscode.Position, wp:EdkWorkspace, edkObject:EdkSymbol){
     super(uri, vscode.TreeItemCollapsibleState.Collapsed);
     this.edkObject = edkObject;
@@ -131,6 +174,7 @@ class Edk2TreeItem extends TreeItem{
     this.loaded = true;
     this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
     this.children.push(node);
+
   }
 
   async onExpanded(){
@@ -138,7 +182,11 @@ class Edk2TreeItem extends TreeItem{
       await openLibraryNode(this.uri,this,this.wp);
       this.loaded = true;
     }
-    console.log("expanded");
+
+    // If no children, set collapsible state to none to hide the expand arrow
+    if(this.children.length === 0){
+      this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+    }
   }
 }
 
@@ -279,6 +327,12 @@ export class FileTreeItemLibraryTree extends Edk2TreeItem{
  * @throws Will throw an error if path information cannot be found.
  */
 export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibraryTree, wp:EdkWorkspace){
+  if(node.circularDependency){
+    return;
+  }
+
+
+
   DiagnosticManager.clearProblems(fileUri);
   let parser = await getParser(fileUri) as InfParser;
   if(parser){//&& (parser instanceof InfParser) ){
@@ -293,13 +347,21 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
               let filePaths = await gPathFind.findPath(libDefinition.path);
               for (const path of filePaths) {
                   let pos = new vscode.Position(0,0);
+                  
                   let libNode = new FileTreeItemLibraryTree(path.uri, pos, wp, library);
+
                   sectionLib.addChildren(libNode);
+                  treeSegmentsMap.set(libNode.uri.fsPath, libNode);
+                  // Check for circular dependencies
+                  if(isCircularDependencies(libNode)){
+                    libNode.circularDependency = true;
+                  }
               }
             }
           }
       }
 
+      return;
       // Add sources
       let sources = parser.getSymbolsType(Edk2SymbolType.infSource) as EdkSymbolInfSource[];
       if(sources.length > 0){
@@ -313,13 +375,17 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
               let sourceNode = new FileTreeItemLibraryTree(fileUri, pos, wp, source);
               sectionSource.addChildren(sourceNode);
               const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(fileUri);
-              for (const symbol of sourceSymbols) {
+ 
+              // if(sourceSymbols.length === 0){
+              //   DiagnosticManager.error(fileUri,source.range,EdkDiagnosticCodes.emptyFile, `No symbols found in source file: ${source.name}`, [vscode.DiagnosticTag.Unnecessary]);
+              // }
                 
+              // Check if the symbol is used
+              for (const symbol of sourceSymbols) {
                 const symbolNode = new SourceSymbolTreeItem(fileUri, symbol, wp, source);
                 if(symbol.kind === vscode.SymbolKind.Function){
                   if(!gMapFileManager.isSymbolUsed(symbol.name)){
                     DiagnosticManager.warning(fileUri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
-
                     let label:string = symbolNode.label as string;
                     symbolNode.label = {label:label, highlights:[[0,label.length]]};
                     symbolNode.tooltip = "Unused function";
@@ -332,4 +398,23 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
       }
   }
   edkLensTreeDetailProvider.refresh();
+}
+
+
+function isCircularDependencies(libNode: FileTreeItemLibraryTree) {
+  let tempNode = libNode.parent;
+  while (tempNode) {
+      if (tempNode.label === libNode.label) {
+          DiagnosticManager.warning(
+              libNode.uri, 0, EdkDiagnosticCodes.circularDependency,
+              `Library circular dependency detected`, [vscode.DiagnosticTag.Unnecessary]
+          );
+          libNode.collapsibleState = vscode.TreeItemCollapsibleState.None;
+          const labelString = libNode.label as string;
+          libNode.label = { label: labelString as string, highlights: [[0, labelString.length]] };
+          return true;
+      }
+      tempNode = tempNode.parent;
+  }
+  return false;
 }
