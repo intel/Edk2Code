@@ -351,7 +351,6 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
                   let libNode = new FileTreeItemLibraryTree(path.uri, pos, wp, library);
 
                   sectionLib.addChildren(libNode);
-                  treeSegmentsMap.set(libNode.uri.fsPath, libNode);
                   // Check for circular dependencies
                   if(isCircularDependencies(libNode)){
                     libNode.circularDependency = true;
@@ -361,7 +360,7 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
           }
       }
 
-      return;
+
       // Add sources
       let sources = parser.getSymbolsType(Edk2SymbolType.infSource) as EdkSymbolInfSource[];
       if(sources.length > 0){
