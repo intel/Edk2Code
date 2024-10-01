@@ -1,22 +1,19 @@
 import path = require('path');
 import * as vscode from 'vscode';
+import { TreeItemLabel } from 'vscode';
 import { edkLensTreeDetailProvider, gEdkWorkspaces, gMapFileManager, gPathFind, gWorkspacePath } from './extension';
 import { InfParser } from './edkParser/infParser';
 import { getParser } from './edkParser/parserFactory';
 import { Edk2SymbolType } from './symbols/symbolsType';
 import { EdkSymbolInfLibrary, EdkSymbolInfSource } from './symbols/infSymbols';
-import { getAllSymbols, getMapFile } from './utils';
+import { getAllSymbols } from './utils';
 import { EdkWorkspace } from './index/edkWorkspace';
 import { EdkSymbol } from './symbols/edkSymbols';
-import { MapFileData } from './mapParser';
 import { DiagnosticManager, EdkDiagnosticCodes } from './diagnostics';
-import { kMaxLength } from 'buffer';
 
 
 
 let recursion = 0;
-let treeSegmentsMap = new Map<string, FileTreeItem>();
-
 
 export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<undefined | void> = new vscode.EventEmitter<undefined | void>();
@@ -46,7 +43,7 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
   }
 
   async expandAllNode(node:TreeItem, view:vscode.TreeView<vscode.TreeItem>, reject:vscode.CancellationToken){
-    console.log(`Expanding node: ${node.label}, ${recursion}`, );
+    console.log(`Expanding node: ${node.toString()}, ${recursion}`, );
     if(reject.isCancellationRequested){
       return;
     }
@@ -70,8 +67,7 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
   }
 
   getHierarchy(item: TreeItem, level: number = 0): string {
-    let description = item.description ? `*${item.description}*` : '';
-    let result = '  '.repeat(level) +`- ${item.label} ${description}\n`;// Indentation based on level
+    let result = '  '.repeat(level) +`- ${item.toString()}\n`;// Indentation based on level
     for (const child of item.children) {
       result += this.getHierarchy(child, level + 1); // Recurse for each child, increasing the level
     }
@@ -147,6 +143,20 @@ export class TreeItem extends vscode.TreeItem {
 
   }
 
+
+  toString(){
+    let result = "";
+    if(typeof this.label === 'string'){
+      result = this.label;
+    }
+    if(typeof this.label === 'object' && 'label' in this.label){
+      result = this.label.label;
+    }
+
+    result += this.description ? ` *${this.description}*` : '';
+    return result;
+  }
+
 }
 
 
@@ -162,6 +172,7 @@ class Edk2TreeItem extends TreeItem{
     this.wp = wp;
     this.uri = uri;
     this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+    
     this.command = {
       "command": "editor.action.peekLocations",
       "title":"Open file",
@@ -178,6 +189,9 @@ class Edk2TreeItem extends TreeItem{
   }
 
   async onExpanded(){
+    
+    
+    edkLensTreeDetailProvider.refresh();
     if(this.loaded === false){
       await openLibraryNode(this.uri,this,this.wp);
       this.loaded = true;
@@ -187,6 +201,8 @@ class Edk2TreeItem extends TreeItem{
     if(this.children.length === 0){
       this.collapsibleState = vscode.TreeItemCollapsibleState.None;
     }
+
+    
   }
 }
 
@@ -271,11 +287,10 @@ export class SourceSymbolTreeItem extends Edk2TreeItem{
 
   constructor(uri:vscode.Uri, symbol:vscode.DocumentSymbol, wp:EdkWorkspace, edkObject:EdkSymbol){
     super(uri,symbol.range.start,wp, edkObject);
-
     this.label = symbol.name;
     this.description = vscode.SymbolKind[symbol.kind];
     this.iconPath = new vscode.ThemeIcon(getIconForSymbolKind(symbol.kind));
-
+    this.collapsibleState = vscode.TreeItemCollapsibleState.None;
   }
 
 }
@@ -286,8 +301,6 @@ export class SectionTreeItem extends TreeItem{
     super(sectionName);
     this.label = sectionName;
     this.iconPath = new vscode.ThemeIcon("array");
-
-
   }
 
 
@@ -330,12 +343,15 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
   if(node.circularDependency){
     return;
   }
-
+  const tempIcon = node.iconPath;
+  node.iconPath = new vscode.ThemeIcon("loading~spin");
+  edkLensTreeDetailProvider.refresh();
 
 
   DiagnosticManager.clearProblems(fileUri);
   let parser = await getParser(fileUri) as InfParser;
   if(parser){//&& (parser instanceof InfParser) ){
+    
       // Add librarires
       let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
       if(libraries.length > 0){
@@ -365,6 +381,7 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
       let sources = parser.getSymbolsType(Edk2SymbolType.infSource) as EdkSymbolInfSource[];
       if(sources.length > 0){
         let sectionSource = new SectionTreeItem(fileUri,sources[0].parent!.range.start, "Sources", wp, );
+        
         node.addChildren(sectionSource);
         for (const source of sources) {
 
@@ -378,6 +395,7 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
               // if(sourceSymbols.length === 0){
               //   DiagnosticManager.error(fileUri,source.range,EdkDiagnosticCodes.emptyFile, `No symbols found in source file: ${source.name}`, [vscode.DiagnosticTag.Unnecessary]);
               // }
+
                 
               // Check if the symbol is used
               for (const symbol of sourceSymbols) {
@@ -390,12 +408,17 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
                     symbolNode.tooltip = "Unused function";
                     
                   }
+                  sourceNode.addChildren(symbolNode);
                 }
-                sourceNode.addChildren(symbolNode);
+                
               }
+
+
         }
       }
   }
+
+  node.iconPath = tempIcon;
   edkLensTreeDetailProvider.refresh();
 }
 

@@ -255,6 +255,8 @@ async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
     async loadConfig() {
         this.workspaces = [];
         gDebugLog.verbose("Loading Configuration");
+        // TODO: enable to get more commands available
+        //await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', false);
         let dscPaths = gConfigAgent.getBuildDscPaths();
         gDebugLog.verbose(`dscPaths = ${dscPaths}`);
         for (const dscPath of dscPaths) {
@@ -264,6 +266,7 @@ async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
             this.workspaces.push(edkWorkspace);
             gDebugLog.info(`Workspace loaded: ${dscDocument.fileName}`);
         }
+        //await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', true);
     }
 }
 
@@ -365,6 +368,9 @@ export class EdkWorkspace {
         this.conditionStack = [];
         this.result = [];
         this.conditionOpen = [];
+
+        
+
 
         
 

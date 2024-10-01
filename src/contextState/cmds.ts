@@ -338,9 +338,11 @@ import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder"
 
 
     }
-    export function showLibUsage(): void {
+    export async function showLibUsage(fileUri:vscode.Uri) {
         throw new Error("Method not implemented.");
     }
+
+
     export function showReferences(): void {
         throw new Error("Method not implemented.");
     }

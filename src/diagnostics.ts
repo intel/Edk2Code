@@ -26,6 +26,7 @@ conditionalMissform,
 unusedSymbol,
 emptyFile,
 circularDependency,
+inactiveCode,
 }
 
 export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
@@ -53,6 +54,7 @@ export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
     [EdkDiagnosticCodes.unusedSymbol, "Unused symbol"],
     [EdkDiagnosticCodes.emptyFile, "Empty file"],
     [EdkDiagnosticCodes.circularDependency, "Circular dependency"],
+    [EdkDiagnosticCodes.inactiveCode, "Inactive code"],
   ]);
 
 export class DiagnosticManager {
@@ -79,6 +81,13 @@ export class DiagnosticManager {
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
         return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Warning,"","", tags);
+    }
+
+    public static info(documentUri: vscode.Uri, line: number | vscode.Range, edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = []) {
+        if(!edkErrorDescriptions.has(edkDiagCode)){
+            throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
+        }
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Information,"","", tags);
     }
 
     public static error(documentUri: vscode.Uri, line: number | vscode.Range,  edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = []){

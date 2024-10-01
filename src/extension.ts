@@ -92,10 +92,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('edk2code.dscInclusion', async (fileUri)=>{await cmds.gotoDscInclusion(fileUri);}),
 		vscode.commands.registerCommand('edk2code.references', async (fileUri)=>{await cmds.showReferenceStack(fileUri);}),
 		
-		vscode.commands.registerCommand('edk2code.libUsage', ()=>{cmds.showLibUsage();}),
+		vscode.commands.registerCommand('edk2code.libUsage', async (editor)=>{await cmds.showLibUsage(editor.document.uri);}),
 		vscode.commands.registerCommand('edk2code.showReferences', ()=>{cmds.showReferences();}),
 		vscode.commands.registerTextEditorCommand('edk2code.showLibraryTree', async (editor)=>{await cmds.showLibraryTree(editor.document.uri);}),
-
+		
 		// Internal
 		vscode.commands.registerCommand('edk2code.searchDefinition', ()=>{}),
 		vscode.commands.registerCommand("edk2code.gotoFile", async (fileUri, selRange)=>{await gotoFile(fileUri,selRange);}),

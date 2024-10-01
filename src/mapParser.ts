@@ -36,7 +36,7 @@ export class MapFileData {
         const content = fs.readFileSync(filePath, 'utf-8');
         const lines = content.split('\n');
 
-        const moduleName = lines[0].trim();
+        this.moduleName = lines[0].trim();
         let isParseSymbols = false;
 
         for (let line of lines) {
@@ -53,7 +53,7 @@ export class MapFileData {
             
 
             // Parse symbols
-            let symbolMatch = /([a-f\d]+)\:([a-f\d]+)\s+_(.*?)\s+([a-f\d]+)\s+(.*)/gmi.exec(line);
+            let symbolMatch = /([a-f\d]+)\:([a-f\d]+)\s+(.*?)\s+([a-f\d]+)\s+(.*)/gmi.exec(line);
             if(symbolMatch){
                 const symbol: SymbolValue = {
                     segment: parseInt(symbolMatch[1].trim(),16),

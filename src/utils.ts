@@ -255,7 +255,7 @@ export async function openTextDocument(uri: vscode.Uri) {
 
 
 function _copyTreeProviderToClipboardRecursive(item: TreeItem, deep: number, result: any) {
-    result["content"] += `${" ".repeat(deep)}${item.label}: ${item.description}\n`;
+    result["content"] += `${" ".repeat(deep)}${item.toString()}\n`;
     for (const nextItem of item.children) {
         _copyTreeProviderToClipboardRecursive(nextItem, deep + 1, result);
     }
