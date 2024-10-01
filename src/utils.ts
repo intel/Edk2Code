@@ -44,6 +44,21 @@ export async function exec(cmd: string, cwdIn: string) {
 
 }
 
+export async function documentGetText(uri:vscode.Uri,range:vscode.Range){
+    let document = await openTextDocument(uri);
+    return document.getText(range);
+}
+
+export function documentGetTextSync(uri: vscode.Uri, range: vscode.Range): string {
+    const documentPath = uri.fsPath;
+    const documentContent = fs.readFileSync(documentPath, 'utf-8');
+
+    const start = documentContent.split('\n').slice(0, range.start.line).join('\n').length + range.start.character;
+    const end = documentContent.split('\n').slice(0, range.end.line).join('\n').length + range.end.character;
+
+    return documentContent.substring(start, end);
+}
+
 export function getCurrentWord(): { word: string, range: vscode.Range, uri: vscode.Uri | undefined } {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {

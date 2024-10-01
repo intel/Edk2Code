@@ -6,7 +6,7 @@ import { InfParser } from './edkParser/infParser';
 import { getParser } from './edkParser/parserFactory';
 import { Edk2SymbolType } from './symbols/symbolsType';
 import { EdkSymbolInfLibrary, EdkSymbolInfSource } from './symbols/infSymbols';
-import { getAllSymbols, openTextDocument } from './utils';
+import { documentGetText, documentGetTextSync, getAllSymbols, openTextDocument } from './utils';
 import { EdkWorkspace } from './index/edkWorkspace';
 import { EdkSymbol } from './symbols/edkSymbols';
 import { DiagnosticManager, EdkDiagnosticCodes } from './diagnostics';
@@ -284,14 +284,33 @@ function getIconForSymbolKind(kind: vscode.SymbolKind): string {
   }
 }
 
-export class SourceSymbolTreeItem extends Edk2TreeItem{
-
-  constructor(uri:vscode.Uri, symbol:vscode.DocumentSymbol, wp:EdkWorkspace, edkObject:EdkSymbol){
-    super(uri,symbol.range.start,wp, edkObject);
+export class SourceSymbolTreeItem extends TreeItem{
+  uri:vscode.Uri;
+  constructor(uri:vscode.Uri, symbol:vscode.DocumentSymbol){
+    super(uri, vscode.TreeItemCollapsibleState.Collapsed);
     this.label = symbol.name;
-    this.description = vscode.SymbolKind[symbol.kind];
+    this.description = symbol.detail.length?symbol.detail:vscode.SymbolKind[symbol.kind];
     this.iconPath = new vscode.ThemeIcon(getIconForSymbolKind(symbol.kind));
     this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+
+    this.uri = uri;
+    this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+    
+    if(symbol.kind === vscode.SymbolKind.Interface){
+      let text = documentGetTextSync(this.uri, symbol.range);
+      let clearText = text.replace(symbol.detail,"").replace(/\s+/g, ' ').replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '').replaceAll("\n"," ").replaceAll("\r","").trim();
+      if(!clearText.match(/(struct|enum|union)/)){
+        this.label = clearText;
+      }
+    }
+
+    
+    this.command = {
+      "command": "editor.action.peekLocations",
+      "title":"Open file",
+      "arguments": [this.uri, symbol.range.start, []]
+    };
+
   }
 
 }
@@ -354,21 +373,33 @@ export class HeaderFileTreeItemLibraryTree extends TreeItem{
 
   async onExpanded(){
     const includeHeaders = await findHeaderIncludes(this.uri, this.systemIncludes);
-    if(includeHeaders.length === 0){
-      this.collapsibleState = vscode.TreeItemCollapsibleState.None;
-      return;
-    }
+
     for (const includeHeader of includeHeaders) {
       this.addChildren(includeHeader);
     }
 
-    // // add symbols
+    // add symbols
     
-    // const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(this.uri);
-    // for (const symbol of sourceSymbols) {
-    //   const symbolNode = new SourceSymbolTreeItem(this.uri, symbol, this.wp, this);
-    //   this.addChildren(symbolNode);
-    // }
+    const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(this.uri);
+    for (const symbol of sourceSymbols) {
+      
+      if(symbol.name.startsWith("__unnamed")){continue;}
+      const symbolNode = new SourceSymbolTreeItem(this.uri, symbol);
+
+
+
+      for (const children of symbol.children) {
+        let childSymbol = new SourceSymbolTreeItem(this.uri, children);
+        symbolNode.addChildren(childSymbol);
+      }
+      
+      
+      this.addChildren(symbolNode);
+    }
+
+    if(this.children.length === 0){
+      this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+    }
 
   }
 
@@ -501,7 +532,7 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
         // Check if the symbol is used
         const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(fileUri);
         for (const symbol of sourceSymbols) {
-          const symbolNode = new SourceSymbolTreeItem(fileUri, symbol, wp, source);
+          const symbolNode = new SourceSymbolTreeItem(fileUri, symbol);
           if(symbol.kind === vscode.SymbolKind.Function){
             if(!gMapFileManager.isSymbolUsed(symbol.name)){
               DiagnosticManager.warning(fileUri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
