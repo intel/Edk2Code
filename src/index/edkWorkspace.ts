@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import { gConfigAgent, gDebugLog, gPathFind, gWorkspacePath } from '../extension';
+import { gCompileCommands, gConfigAgent, gDebugLog, gMapFileManager, gPathFind, gWorkspacePath } from '../extension';
 import { GrayoutController } from '../grayout';
 import { createRange, openTextDocument, split } from '../utils';
 import { REGEX_DEFINE as REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_INCLUDE as REGEX_INCLUDE, REGEX_LIBRARY_PATH, REGEX_MODULE_PATH, REGEX_PCD_LINE, REGEX_VAR_USAGE } from "../edkParser/commonParser";
@@ -266,6 +266,8 @@ async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
             this.workspaces.push(edkWorkspace);
             gDebugLog.info(`Workspace loaded: ${dscDocument.fileName}`);
         }
+        gMapFileManager.load();
+        gCompileCommands.load();
         //await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', true);
     }
 }

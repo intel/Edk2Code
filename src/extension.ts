@@ -23,11 +23,16 @@ import { SettingsPanel } from './settings/settingsPanel';
 import { TreeDetailsDataProvider, TreeItem } from './TreeDataProvider';
 import { DiagnosticManager } from './diagnostics';
 import { MapFilesManager } from './mapParser';
+import { CompileCommands } from './compileCommands';
+
+
+
 
 // Global variables
 // export var gEdkDatabase: EdkDatabase;
 export var gPathFind = new PathFind();
 export var gEdkWorkspaces = new EdkWorkspaces();
+export var gCompileCommands:CompileCommands;
 
 export var gExtensionContext: vscode.ExtensionContext;
 export var gWorkspacePath: string;
@@ -138,11 +143,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
 	initLanguages();
+	gMapFileManager = new MapFilesManager();
+	gCompileCommands = new CompileCommands();
+
 	await gEdkWorkspaces.loadConfig();
 	gFileUseWarning = new FileUseWarning();
 
-	gMapFileManager = new MapFilesManager();
-	gMapFileManager.load();
+
+	
 
 	gCscope = new Cscope();
 	gCscopeAgent = new CscopeAgent();

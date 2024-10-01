@@ -1,15 +1,16 @@
 import path = require('path');
 import * as vscode from 'vscode';
 import { TreeItemLabel } from 'vscode';
-import { edkLensTreeDetailProvider, gEdkWorkspaces, gMapFileManager, gPathFind, gWorkspacePath } from './extension';
+import { edkLensTreeDetailProvider, gCompileCommands, gEdkWorkspaces, gMapFileManager, gPathFind, gWorkspacePath } from './extension';
 import { InfParser } from './edkParser/infParser';
 import { getParser } from './edkParser/parserFactory';
 import { Edk2SymbolType } from './symbols/symbolsType';
 import { EdkSymbolInfLibrary, EdkSymbolInfSource } from './symbols/infSymbols';
-import { getAllSymbols } from './utils';
+import { getAllSymbols, openTextDocument } from './utils';
 import { EdkWorkspace } from './index/edkWorkspace';
 import { EdkSymbol } from './symbols/edkSymbols';
 import { DiagnosticManager, EdkDiagnosticCodes } from './diagnostics';
+import { CompileCommandsEntry } from './compileCommands';
 
 
 
@@ -317,6 +318,57 @@ export class FileTreeItemLibraryTree extends Edk2TreeItem{
     this.label = path.basename(uri.fsPath);
     this.iconPath = new vscode.ThemeIcon("file");
 
+    this.command = {
+      "command": "vscode.open",
+      "title":"Open file",
+      "arguments": [this.uri]
+    };
+
+  }
+
+}
+
+export class HeaderFileTreeItemLibraryTree extends TreeItem{
+  systemIncludes:string[]= [];
+  uri:vscode.Uri;
+  constructor(uri:vscode.Uri, systemIncludes:string[] = []){
+    super(uri, vscode.TreeItemCollapsibleState.Collapsed);
+    this.uri = uri;
+    this.systemIncludes = systemIncludes;
+
+    let name = vscode.workspace.asRelativePath(uri);
+    this.description = name;
+    this.label = path.basename(uri.fsPath);
+    this.iconPath = new vscode.ThemeIcon("file");
+
+    this.command = {
+      "command": "vscode.open",
+      "title":"Open file",
+      "arguments": [this.uri]
+    };
+  }
+
+  async loadIncludes(){
+
+  }
+
+  async onExpanded(){
+    const includeHeaders = await findHeaderIncludes(this.uri, this.systemIncludes);
+    if(includeHeaders.length === 0){
+      this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+      return;
+    }
+    for (const includeHeader of includeHeaders) {
+      this.addChildren(includeHeader);
+    }
+
+    // // add symbols
+    
+    // const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(this.uri);
+    // for (const symbol of sourceSymbols) {
+    //   const symbolNode = new SourceSymbolTreeItem(this.uri, symbol, this.wp, this);
+    //   this.addChildren(symbolNode);
+    // }
 
   }
 
@@ -325,6 +377,48 @@ export class FileTreeItemLibraryTree extends Edk2TreeItem{
 
 
 
+export async function findHeaderIncludes(fileUri:vscode.Uri, systemIncludes:string[]){
+  let sourceDocument = await openTextDocument(fileUri);
+  let sourceText = sourceDocument.getText();
+  let lineNo = 0;
+  let includeNodes:HeaderFileTreeItemLibraryTree[] = [];
+  for (const line of sourceText.split('\n')) {
+    let match = /#include\s+(["<])([^">]+)[">]/.exec(line);
+    if(match){
+      let isRelative = false;
+
+      if(match[1] === '"'){
+        isRelative = true;
+      }
+      let includePath = match[2];
+
+      let includeUri:vscode.Uri = fileUri;
+      
+      if(isRelative){
+        // Relative includes
+        const locations = await gPathFind.findRelativePath(includePath, path.dirname(fileUri.fsPath));
+        if(locations){
+          includeUri = locations.uri;  
+        }
+      }else{
+        // System includes
+        for (const compiledIncludePath of systemIncludes) {
+          const location = await gPathFind.findRelativePath(includePath, compiledIncludePath);
+          if(location){
+            includeUri = location.uri;
+            break;
+          }
+        }
+      }
+
+      let includeNode = new HeaderFileTreeItemLibraryTree(includeUri, systemIncludes);
+      includeNodes.push(includeNode);
+      lineNo++;
+
+    }
+  }  
+  return includeNodes;
+}
 
 /**
  * Populates a node with all the libraries found in fileUri.
@@ -340,9 +434,9 @@ export class FileTreeItemLibraryTree extends Edk2TreeItem{
  * @throws Will throw an error if path information cannot be found.
  */
 export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibraryTree, wp:EdkWorkspace){
-  if(node.circularDependency){
-    return;
-  }
+
+  if(node.circularDependency){return;} // Dont process duplicated elements
+
   const tempIcon = node.iconPath;
   node.iconPath = new vscode.ThemeIcon("loading~spin");
   edkLensTreeDetailProvider.refresh();
@@ -350,72 +444,76 @@ export async function openLibraryNode(fileUri:vscode.Uri, node:FileTreeItemLibra
 
   DiagnosticManager.clearProblems(fileUri);
   let parser = await getParser(fileUri) as InfParser;
-  if(parser){//&& (parser instanceof InfParser) ){
-    
-      // Add librarires
-      let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
-      if(libraries.length > 0){
-        let sectionLib = new SectionTreeItem(fileUri,libraries[0].parent!.range.start, "Libraries", wp);
-        node.addChildren(sectionLib);
-          for (const library of libraries) {
-            let libDefinitions = await wp.getLibDeclarationModule(fileUri, library.name);
-            for (const libDefinition of libDefinitions) {
-              let filePaths = await gPathFind.findPath(libDefinition.path);
-              for (const path of filePaths) {
-                  let pos = new vscode.Position(0,0);
-                  
-                  let libNode = new FileTreeItemLibraryTree(path.uri, pos, wp, library);
+  if(parser){
+    // Add librarires
+    let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
+    if(libraries.length > 0){
+      let sectionLib = new SectionTreeItem(fileUri,libraries[0].parent!.range.start, "Libraries", wp);
+      node.addChildren(sectionLib);
+      for (const library of libraries) {
+        let libDefinitions = await wp.getLibDeclarationModule(fileUri, library.name);
+        for (const libDefinition of libDefinitions) {
+          let filePaths = await gPathFind.findPath(libDefinition.path);
+          for (const path of filePaths) {
+            let pos = new vscode.Position(0,0);
+            
+            let libNode = new FileTreeItemLibraryTree(path.uri, pos, wp, library);
 
-                  sectionLib.addChildren(libNode);
-                  // Check for circular dependencies
-                  if(isCircularDependencies(libNode)){
-                    libNode.circularDependency = true;
-                  }
-              }
+            sectionLib.addChildren(libNode);
+            // Check for circular dependencies
+            if(isCircularDependencies(libNode)){
+              libNode.circularDependency = true;
             }
           }
-      }
-
-
-      // Add sources
-      let sources = parser.getSymbolsType(Edk2SymbolType.infSource) as EdkSymbolInfSource[];
-      if(sources.length > 0){
-        let sectionSource = new SectionTreeItem(fileUri,sources[0].parent!.range.start, "Sources", wp, );
-        
-        node.addChildren(sectionSource);
-        for (const source of sources) {
-
-              let filePath = await source.getValue();
-              let pos = new vscode.Position(0,0);
-              let fileUri = vscode.Uri.file(filePath);
-              let sourceNode = new FileTreeItemLibraryTree(fileUri, pos, wp, source);
-              sectionSource.addChildren(sourceNode);
-              const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(fileUri);
- 
-              // if(sourceSymbols.length === 0){
-              //   DiagnosticManager.error(fileUri,source.range,EdkDiagnosticCodes.emptyFile, `No symbols found in source file: ${source.name}`, [vscode.DiagnosticTag.Unnecessary]);
-              // }
-
-                
-              // Check if the symbol is used
-              for (const symbol of sourceSymbols) {
-                const symbolNode = new SourceSymbolTreeItem(fileUri, symbol, wp, source);
-                if(symbol.kind === vscode.SymbolKind.Function){
-                  if(!gMapFileManager.isSymbolUsed(symbol.name)){
-                    DiagnosticManager.warning(fileUri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
-                    let label:string = symbolNode.label as string;
-                    symbolNode.label = {label:label, highlights:[[0,label.length]]};
-                    symbolNode.tooltip = "Unused function";
-                    
-                  }
-                  sourceNode.addChildren(symbolNode);
-                }
-                
-              }
-
-
         }
       }
+    }
+
+
+    // Add sources
+    let sources = parser.getSymbolsType(Edk2SymbolType.infSource) as EdkSymbolInfSource[];
+    if(sources.length > 0){
+      let sectionSource = new SectionTreeItem(fileUri,sources[0].parent!.range.start, "Sources", wp, );
+      
+      node.addChildren(sectionSource);
+      for (const source of sources) {
+        let filePath = await source.getValue();
+
+        if(!filePath.toLowerCase().endsWith(".c")){continue;} // Only C files
+        
+        let pos = new vscode.Position(0,0);
+        let fileUri = vscode.Uri.file(filePath);
+
+        let sourceNode = new FileTreeItemLibraryTree(fileUri, pos, wp, source);
+        sectionSource.addChildren(sourceNode);
+          
+        // Find includes
+        const compileCommand = gCompileCommands.getCompileCommandForFile(fileUri.fsPath);
+        if(compileCommand){
+          const compiledIncludePaths = compileCommand.getIncludePaths();
+          const includeHeaders = await findHeaderIncludes(fileUri, compiledIncludePaths);
+          for (const includeHeader of includeHeaders) {
+            sourceNode.addChildren(includeHeader);
+          }
+        }
+        
+
+        // Check if the symbol is used
+        const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(fileUri);
+        for (const symbol of sourceSymbols) {
+          const symbolNode = new SourceSymbolTreeItem(fileUri, symbol, wp, source);
+          if(symbol.kind === vscode.SymbolKind.Function){
+            if(!gMapFileManager.isSymbolUsed(symbol.name)){
+              DiagnosticManager.warning(fileUri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
+              let label:string = symbolNode.label as string;
+              symbolNode.label = {label:label, highlights:[[0,label.length]]};
+              symbolNode.tooltip = "Unused function";                    
+            }
+          }
+          sourceNode.addChildren(symbolNode);
+        }
+      }
+    }
   }
 
   node.iconPath = tempIcon;

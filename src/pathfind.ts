@@ -71,12 +71,9 @@ export class PathFind{
         }
 
         if (relativePath) {
-            if (fs.existsSync(relativePath) && fs.statSync(relativePath).isFile()) {
-                relativePath = path.dirname(relativePath);
-            }
-            let p = path.join(relativePath, pathArg);
-            if (fs.existsSync(p)) {
-                return this.produceLocation(p);
+            const location = await this.findRelativePath(pathArg, relativePath);
+            if(location){
+                return [location];
             }
         }
 
@@ -117,6 +114,18 @@ export class PathFind{
 
         return retPath;
 
+    }
+
+    async findRelativePath(pathArg: string, relativePath: string){
+        if (relativePath) {
+            if (fs.existsSync(relativePath) && fs.statSync(relativePath).isFile()) {
+                relativePath = path.dirname(relativePath);
+            }
+            let p = path.join(relativePath, pathArg);
+            if (fs.existsSync(p)) {
+                return new vscode.Location(vscode.Uri.file(p), new vscode.Position(0, 0));
+            }
+        }
     }
 
     produceLocation(path:string){
