@@ -17,7 +17,7 @@ import { PathFind } from './pathfind';
 import { WorkspaceDefinitions } from './index/definitions';
 import { EdkWorkspaces } from './index/edkWorkspace';
 import { Edk2CallHierarchyProvider } from './callHiearchy';
-import { checkCompileCommandsConfig, getCurrentDocument, gotoFile, showVirtualFile } from './utils';
+import { checkCompileCommandsConfig, copyToClipboard, getCurrentDocument, gotoFile, showVirtualFile } from './utils';
 import { ParserFactory } from './edkParser/parserFactory';
 import { SettingsPanel } from './settings/settingsPanel';
 import { TreeDetailsDataProvider, TreeItem } from './TreeDataProvider';
@@ -132,6 +132,26 @@ export async function activate(context: vscode.ExtensionContext) {
 			// Your export logic here
 			let strTree = edkLensTreeDetailProvider.expandAll(edkLensTreeDetailView);
 		  }),
+
+		  vscode.commands.registerCommand('edk2code.getItemTreePath', (node:TreeItem) => {
+			// Your export logic here
+			let itemParent = node.getParent();
+			let pathStack = [node];
+			while(itemParent){
+				pathStack.push(itemParent);
+				itemParent = itemParent.getParent();
+			}
+			let path = "";
+			let count = 0;
+			for (const pathItem of pathStack.reverse()) {
+				path += "  ".repeat(count) + pathItem.toString() + "\n";
+				count++;
+			}
+			void copyToClipboard(path, "Path copied to clipboard");
+		  }),
+
+
+
 	];
 
 	context.subscriptions.concat(commands);

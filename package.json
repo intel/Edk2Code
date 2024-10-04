@@ -118,6 +118,10 @@
         "command": "edk2code.expandAllTree",
         "title": "EDK2: Expand all",
         "icon": "$(expand-all)"
+      },
+      {
+        "command": "edk2code.getItemTreePath",
+        "title": "Get tree path"
       }
 
     ],
@@ -257,6 +261,10 @@
           "when": "false"
         },
         {
+          "command": "edk2code.getItemTreePath",
+          "when": "false"
+        },
+        {
           "command": "edk2code.expandAllTree",
           "when": "false"
         }
@@ -316,6 +324,12 @@
           "command": "edk2code.showReferences",
           "group": "navigation",
           "when": "editorLangId == edk2_inf && edk2code.parseComplete"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "edk2code.getItemTreePath",
+          "group": "navigation"
         }
       ]
     },

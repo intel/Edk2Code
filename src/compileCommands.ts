@@ -3,7 +3,7 @@
 import path = require("path");
 import { gWorkspacePath } from "./extension";
 import * as fs from 'fs';
-import { readEdkCodeFolderFile } from "./edk2CodeFolder";
+import { readEdkCodeFolderFile, writeEdkCodeFolderFile } from "./edk2CodeFolder";
 import { normalizePath } from "./utils";
 
 interface CompileCommandsEntryJson{
@@ -20,8 +20,24 @@ export class CompileCommandsEntry{
     constructor(command: string, directory: string, file: string){
         this.command = command;
         this.directory = directory;
-        this.file = file;
+        this.file = normalizePath(file);
     }
+
+    backup(){
+        const compileCommandsText = readEdkCodeFolderFile("compile_commands.json");
+        if(compileCommandsText){
+            writeEdkCodeFolderFile("backup_compile_commands.json", compileCommandsText);    
+        }
+    }
+
+    restore(){
+        const compileCommandsText = readEdkCodeFolderFile("backup_compile_commands.json");
+        if(compileCommandsText){
+            writeEdkCodeFolderFile("compile_commands.json", compileCommandsText);
+        }
+    }
+
+
 
     getDefines(): string[]{
         const defines: string[] = [];
@@ -72,5 +88,22 @@ export class CompileCommands{
     getCompileCommandForFile(file: string): CompileCommandsEntry|undefined{
         const filePath = normalizePath(file);
         return this.compileCommands.get(filePath);
+    }
+
+    addCompileCommandForFile(entry:CompileCommandsEntry){
+        this.compileCommands.set(entry.file, entry);
+        this.save();
+    }
+
+    save(){
+        const compileCommandsObject: CompileCommandsEntryJson[] = [];
+        this.compileCommands.forEach((entry, file) => {
+            compileCommandsObject.push({
+                command: entry.command,
+                directory: entry.directory,
+                file: file
+            });
+        });
+        writeEdkCodeFolderFile("compile_commands.json", JSON.stringify(compileCommandsObject, null, 4));
     }
 }

@@ -118,6 +118,19 @@ export async function gotoFile(uri: vscode.Uri, range?: vscode.Range): Promise<v
     let e = await vscode.window.showTextDocument(f, option);
 }
 
+export async function openTextDocumentInRange(uri: vscode.Uri, range: vscode.Range) {
+    let f = await openTextDocument(uri);
+    let option: vscode.TextDocumentShowOptions = {
+        preserveFocus: false,
+        preview: true,
+        selection: range,
+        viewColumn: vscode.ViewColumn.Active
+    };
+    // open an editor
+    let e = await vscode.window.showTextDocument(f, option);
+
+}
+
 export async function openFileSide(uri: vscode.Uri, range?: vscode.Range): Promise<void> {
     // open a document
     if (!fs.existsSync(uri.fsPath)) {
@@ -282,9 +295,14 @@ export async function copyTreeProviderToClipboard(treeProvider: TreeDetailsDataP
     for (const items of <TreeItem[]>treeProvider.getChildren()) {
         _copyTreeProviderToClipboardRecursive(items, 0, result);
     }
-    await vscode.env.clipboard.writeText(result["content"]);
+    await copyToClipboard(result["content"]);
+    
+}
+
+export async function copyToClipboard(data:string, message:string="Data copied to clipboard"){
+    await vscode.env.clipboard.writeText(data);
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    vscode.window.showInformationMessage("Data copied to clipboard");
+    vscode.window.showInformationMessage("📋" + " " + message);
 }
 
 
@@ -342,6 +360,19 @@ export async function getAllSymbols(fileUri: vscode.Uri) {
         return symbols || [];
     }
     return [];
+}
+
+
+export async function getSymbolAtLocation(uri: vscode.Uri, location: vscode.Location): Promise<vscode.DocumentSymbol | undefined> {
+    const symbols = await getAllSymbols(uri);
+    let returnSymbol = undefined;
+    for (const symbol of symbols) {
+        if (symbol.range.intersection(location.range)) {
+            returnSymbol = symbol;
+        }
+    }
+
+    return returnSymbol;
 }
 
 export async function readLinesAsync(filePath: string) {

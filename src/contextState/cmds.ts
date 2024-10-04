@@ -349,10 +349,10 @@ import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder"
 
 
 
-    export async function showLibraryTree(fileUri:vscode.Uri) {
+    export async function showLibraryTree(moduleUri:vscode.Uri) {
 
 
-        let parser = await getParser(fileUri);
+        let parser = await getParser(moduleUri);
         if(parser && (parser instanceof InfParser) ){
             // Check if INF file is a library
             if(parser.isLibrary()){
@@ -363,21 +363,21 @@ import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder"
             edkLensTreeDetailProvider.clear();
             edkLensTreeDetailProvider.refresh();
             edkLensTreeDetailView.title = "EDK2 Library Tree";
-            edkLensTreeDetailView.description = path.basename(fileUri.fsPath);
+            edkLensTreeDetailView.description = path.basename(moduleUri.fsPath);
 
 
-            let wps = await gEdkWorkspaces.getWorkspace(fileUri);
+            let wps = await gEdkWorkspaces.getWorkspace(moduleUri);
             let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
             
             for (const wp of wps) {
                 // let dscDeclarations = await wp.getDscDeclaration(fileUri);
                 const sectionRange = libraries[0].parent?.range.start;
                 if(sectionRange===undefined){continue;}
-                let moduleNode = new FileTreeItemLibraryTree(fileUri, sectionRange, wp, libraries[0].parent!);
+                let moduleNode = new FileTreeItemLibraryTree(moduleUri, sectionRange, wp, libraries[0].parent!);
                 moduleNode.description = wp.platformName;
                 edkLensTreeDetailProvider.addChildren(moduleNode);
                 moduleNode.loaded = true;
-                await openLibraryNode(fileUri, moduleNode,wp);
+                await openLibraryNode(moduleUri, moduleUri, moduleNode,wp);
             }
         }
 

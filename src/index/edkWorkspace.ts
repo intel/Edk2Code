@@ -1223,7 +1223,8 @@ export class EdkWorkspace {
      * 3. Gets properties from the module URI.
      * 4. Checks all module declarations to match library classes with module properties.
      * 
-     * @param fileUri - The URI of the INF where the library is being used.
+     * @param fileUri - The URI of the INF where the library is being used. If INF is a library it will return multiple declarations. For Modules i
+     * should return single one.
      * @param libName - The name of the library to be found.
      * 
      * @returns A promise that resolves to an array of `InfDsc` objects representing the libraries that match the module properties.
