@@ -4,10 +4,11 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { cwd } from "process";
 import { gCompileCommands, gDebugLog, gEdkWorkspaces, gExtensionContext, gWorkspacePath } from "./extension";
-import { TreeDetailsDataProvider, TreeItem } from "./TreeDataProvider";
+import { TreeDetailsDataProvider } from "./TreeDataProvider";
 import { rejects } from "assert";
 import { REGEX_PCD } from "./edkParser/commonParser";
 import { infoMissingCompilesCommandCpp, updateCompilesCommandCpp } from "./ui/messages";
+import { TreeItem } from "./treeElements/TreeItem";
 
 
 var normalizeCache = new Map();

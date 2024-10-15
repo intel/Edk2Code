@@ -7,7 +7,8 @@ import { getUri } from "./utilities/getUri";
 import { getCurrentDocument, gotoFile } from "./utils";
 import * as vscode from 'vscode';
 import { TreeWebview } from "./TreeWebview";
-import { TreeDetailsDataProvider, TreeItem } from "./TreeDataProvider";
+import { TreeDetailsDataProvider } from "./TreeDataProvider";
+import { TreeItem } from "./treeElements/TreeItem";
 
 class ModulePickOption implements vscode.QuickPickItem{
     label: string;

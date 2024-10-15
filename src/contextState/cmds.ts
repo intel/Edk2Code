@@ -9,7 +9,7 @@ import { distance, closest } from 'fastest-levenshtein';
 import { glob } from "fast-glob";
 import { BuildFolder } from "../Languages/buildFolder";
 import { EdkWorkspace, InfDsc } from "../index/edkWorkspace";
-import { FileTreeItem, FileTreeItemLibraryTree, openLibraryNode, SectionTreeItem, TreeItem } from "../TreeDataProvider";
+import { FileTreeItem, FileTreeItemLibraryTree, openLibraryNode, SectionTreeItem } from "../TreeDataProvider";
 import { ParserFactory, getParser } from "../edkParser/parserFactory";
 import { Edk2SymbolType } from "../symbols/symbolsType";
 import * as edkStatusBar from '../statusBar';
@@ -19,6 +19,8 @@ import { InfParser } from "../edkParser/infParser";
 import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
 import { debuglog } from "util";
 import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder";
+import { EdkInfNode } from "../treeElements/Library";
+import { TreeItem } from "../treeElements/TreeItem";
 
     export async function rebuildIndexDatabase() {
 
@@ -360,6 +362,8 @@ import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder"
                 void vscode.window.showWarningMessage("This INF is a library. This command only works with EDK Modules for now");
                 return;
             }
+
+            // Initialize tree view
             edkLensTreeDetailProvider.clear();
             edkLensTreeDetailProvider.refresh();
             edkLensTreeDetailView.title = "EDK2 Library Tree";
@@ -373,11 +377,11 @@ import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder"
                 // let dscDeclarations = await wp.getDscDeclaration(fileUri);
                 const sectionRange = libraries[0].parent?.range.start;
                 if(sectionRange===undefined){continue;}
-                let moduleNode = new FileTreeItemLibraryTree(moduleUri, sectionRange, wp, libraries[0].parent!);
-                moduleNode.description = wp.platformName;
+                let librarySet = new Set<string>();
+                let moduleNode = new EdkInfNode(moduleUri, moduleUri, sectionRange, wp, libraries[0].parent!, librarySet);
+
                 edkLensTreeDetailProvider.addChildren(moduleNode);
-                moduleNode.loaded = true;
-                await openLibraryNode(moduleUri, moduleUri, moduleNode,wp);
+
             }
         }
 

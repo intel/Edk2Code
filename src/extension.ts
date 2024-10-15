@@ -20,10 +20,11 @@ import { Edk2CallHierarchyProvider } from './callHiearchy';
 import { checkCompileCommandsConfig, copyToClipboard, getCurrentDocument, gotoFile, showVirtualFile } from './utils';
 import { ParserFactory } from './edkParser/parserFactory';
 import { SettingsPanel } from './settings/settingsPanel';
-import { TreeDetailsDataProvider, TreeItem } from './TreeDataProvider';
+import { TreeDetailsDataProvider } from './TreeDataProvider';
 import { DiagnosticManager } from './diagnostics';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
+import { TreeItem } from './treeElements/TreeItem';
 
 
 
@@ -191,7 +192,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	edkLensTreeDetailProvider.refresh();
 	edkLensTreeDetailView.onDidExpandElement(async event => {
 		let node = event.element as TreeItem;
-		await node.onExpanded();
+		await node.expand();
 		edkLensTreeDetailProvider.refresh();
 	});
 

@@ -1,10 +1,11 @@
 
 import * as vscode from 'vscode';
-import { TreeDetailsDataProvider, TreeItem } from './TreeDataProvider';
+import { TreeDetailsDataProvider } from './TreeDataProvider';
 import { copyTreeProviderToClipboard, gotoFile, openFileSide } from './utils';
 import { gExtensionContext } from './extension';
 import { getNonce } from './utilities/getNonce';
 import path = require('path');
+import { TreeItem } from './treeElements/TreeItem';
 
 //https://bendera.github.io/vscode-webview-elements/
 

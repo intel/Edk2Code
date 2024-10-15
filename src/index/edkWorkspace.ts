@@ -1223,7 +1223,7 @@ export class EdkWorkspace {
      * 3. Gets properties from the module URI.
      * 4. Checks all module declarations to match library classes with module properties.
      * 
-     * @param fileUri - The URI of the INF where the library is being used. If INF is a library it will return multiple declarations. For Modules i
+     * @param contextUri - The URI of the INF where the library is being used. If INF is a library it will return multiple declarations. For Modules i
      * should return single one.
      * @param libName - The name of the library to be found.
      * 
@@ -1231,7 +1231,7 @@ export class EdkWorkspace {
      * 
      * @throws Will throw an error if the file cannot be read or if there are issues processing the library declarations.
      */
-    async getLibDeclarationModule(fileUri:vscode.Uri,libName:string, ) {
+    async getLibDeclarationModule(contextUri:vscode.Uri,libName:string, ) {
     
         let dscLibDeclarations: InfDsc[] = await this.getLibDeclaration(libName);
         
@@ -1241,7 +1241,7 @@ export class EdkWorkspace {
             if(library.parent === undefined){continue;}
             let parentPaths = await gPathFind.findPath(library.parent);
             for (const parentLocation of parentPaths) {
-                if(parentLocation.uri.fsPath === fileUri.fsPath){
+                if(parentLocation.uri.fsPath === contextUri.fsPath){
                     return [library];
                 }
             }
@@ -1250,7 +1250,7 @@ export class EdkWorkspace {
         // Return libraries that match module properties
         
         // Get MODULE_TYPE from original INF file
-        let infText = (await vscode.workspace.openTextDocument(fileUri)).getText();
+        let infText = (await vscode.workspace.openTextDocument(contextUri)).getText();
         let m = /MODULE_TYPE\s*=\s*\b(\w*)\b/gi.exec(infText);
         let moduleType = "common";
         if(m!==null){
@@ -1258,7 +1258,7 @@ export class EdkWorkspace {
         }
 
         //Get properties from moduleUri
-        let modulesDeclarations = await this.getDscDeclaration(fileUri);
+        let modulesDeclarations = await this.getDscDeclaration(contextUri);
         let currentAccuracy = 0;
         let locations = new Map<string,InfDsc>();
 
@@ -1273,8 +1273,8 @@ export class EdkWorkspace {
             }
 
             for (const library of dscLibDeclarations) {
-                // 2. [LibraryClasses.$(Arch).$(MODULE_TYPE), LibraryClasses.$(Arch).$(MODULE_TYPE)]
-                // 3. [LibraryClasses.$(Arch).$(MODULE_TYPE)]
+                // 2. Library Class Instance that is defined in the [LibraryClasses.$(ARCH).$(MODULE_TYPE)] section will be used
+                
                 if(library.compareArch(module) && library.compareModuleType(module)){
                     locationFound = true;
                     locations.set(library.path, library);
@@ -1285,7 +1285,6 @@ export class EdkWorkspace {
             if(locationFound){continue;}
 
             for (const library of dscLibDeclarations) {
-                // 4. [LibraryClasses.common.$(MODULE_TYPE)]
                 if(library.compareArchStr("common") && library.compareModuleType(module)){
                     locationFound = true;
                     locations.set(library.path, library);
@@ -1294,26 +1293,30 @@ export class EdkWorkspace {
             }
             if(locationFound){continue;}
 
+            // ? common.common
             for (const library of dscLibDeclarations) {
-                // 5. [LibraryClasses.$(Arch)]
-                if(library.compareArch(module)){
-                    locationFound = true;
-                    locations.set(library.path, library);
-
-                    break;
-                }
-            }
-            if(locationFound){continue;}
-
-            for (const library of dscLibDeclarations) {
-                // 6. [LibraryClasses.common] or [LibraryClasses]
-                if(library.compareArchStr("common")){
+                if(library.compareArchStr("common") && library.compareModuleTypeStr("common")){
                     locationFound = true;
                     locations.set(library.path, library);
                     break;
                 }
             }
             if(locationFound){continue;}
+
+
+            for (const library of dscLibDeclarations) {
+                // ?? just check for library classes
+                if(library.compareLibSectionTypeStr("libraryclasses")){
+                    locationFound = true;
+                    locations.set(library.path, library);
+                    break;
+                }
+            }
+            if(locationFound){continue;}
+
+
+            gDebugLog.error(`Library ${libName} not found in ${module.path}`);
+
         }
         return Array.from(locations.values());
     }

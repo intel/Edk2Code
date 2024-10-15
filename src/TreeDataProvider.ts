@@ -11,10 +11,8 @@ import { EdkWorkspace } from './index/edkWorkspace';
 import { EdkSymbol } from './symbols/edkSymbols';
 import { DiagnosticManager, EdkDiagnosticCodes } from './diagnostics';
 import { CompileCommandsEntry } from './compileCommands';
+import { TreeItem } from './treeElements/TreeItem';
 
-
-
-let recursion = 0;
 
 export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<undefined | void> = new vscode.EventEmitter<undefined | void>();
@@ -28,23 +26,21 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
   }
 
   async expandAll(view:vscode.TreeView<vscode.TreeItem>){
-
     await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       title: "Expanding Tree nodes...",
       cancellable: true
     }, async (progress, reject) => {
-      recursion = 0;
       for (const item of this.data) {
-        await this.expandAllNode(item, view, reject);
+        await item.expand();
+        for (const child of item.iterateChildren()) {
+          await child.expand();
+        }
       }
     });
-
-    
   }
 
   async expandAllNode(node:TreeItem, view:vscode.TreeView<vscode.TreeItem>, reject:vscode.CancellationToken){
-    console.log(`Expanding node: ${node.toString()}, ${recursion}`, );
     if(reject.isCancellationRequested){
       return;
     }
@@ -55,8 +51,7 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
       }
     }
     
-    recursion+=1;
-    await node.onExpanded();
+    await node.expand();
     node.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
     
     
@@ -64,7 +59,6 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
       await this.expandAllNode(child, view, reject);
     }
     await view.reveal(node);
-    recursion-=1;
   }
 
   getHierarchy(item: TreeItem, level: number = 0): string {
@@ -126,45 +120,12 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
 
 
 
-export class TreeItem extends vscode.TreeItem {
-  children: TreeItem[] = [];
-  parent: TreeItem | undefined;
-  visible:boolean = true;
-  getParent() {
-    return this.parent;
-  }
-
-  addChildren(node: TreeItem) {
-    node.parent = this;
-    this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
-    this.children.push(node);
-  }
-
-  async onExpanded(){
-
-  }
 
 
-  toString(){
-    let result = "";
-    if(typeof this.label === 'string'){
-      result = this.label;
-    }
-    if(typeof this.label === 'object' && 'label' in this.label){
-      result = this.label.label;
-    }
-
-    result += this.description ? ` *${this.description}*` : '';
-    return result;
-  }
-
-}
-
-
-class Edk2TreeItem extends TreeItem{
+class Edk2TreeItem extends TreeItem {
   uri:vscode.Uri;
   loaded = false;
-  wp:EdkWorkspace;
+  workspace:EdkWorkspace;
   edkObject:EdkSymbol;
   circularDependency = false;
   contextModuleUri:vscode.Uri|undefined = undefined;
@@ -172,7 +133,7 @@ class Edk2TreeItem extends TreeItem{
   constructor(uri:vscode.Uri, position:vscode.Position, wp:EdkWorkspace, edkObject:EdkSymbol){
     super(uri, vscode.TreeItemCollapsibleState.Collapsed);
     this.edkObject = edkObject;
-    this.wp = wp;
+    this.workspace = wp;
     this.uri = uri;
     this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
     
@@ -200,7 +161,7 @@ class Edk2TreeItem extends TreeItem{
       if(this.contextModuleUri){
         contextModule = this.contextModuleUri;
       }
-      await openLibraryNode(this.uri, contextModule,this,this.wp);
+      await openLibraryNode(this.uri, contextModule,this,this.workspace);
       this.loaded = true;
     }
 
@@ -213,22 +174,7 @@ class Edk2TreeItem extends TreeItem{
   }
 }
 
-export class FileTreeItem extends TreeItem{
-  uri:vscode.Uri;
-  constructor(uri:vscode.Uri, position:vscode.Position,wp:EdkWorkspace){
-    super(uri);
-    let name = uri.fsPath.slice(gWorkspacePath.length + 1);
-    this.description = name;
-    this.label = path.basename(uri.fsPath);
-    this.iconPath = new vscode.ThemeIcon("file");
-    this.uri = uri;
-    this.command = {
-      "command": "editor.action.peekLocations",
-      "title":"Open file",
-      "arguments": [this.uri, position, []]
-    };
-  }
-}
+
 
 
 function getIconForSymbolKind(kind: vscode.SymbolKind): string {
@@ -397,7 +343,23 @@ export class FileTreeItemLibraryTree extends Edk2TreeItem{
     };
 
   }
+}
 
+export class FileTreeItem extends TreeItem{
+  uri:vscode.Uri;
+  constructor(uri:vscode.Uri, position:vscode.Position,wp:EdkWorkspace){
+    super(uri);
+    let name = vscode.workspace.asRelativePath(uri);
+    this.description = name;
+    this.label = path.basename(uri.fsPath);
+    this.iconPath = new vscode.ThemeIcon("file");
+    this.uri = uri;
+    this.command = {
+      "command": "editor.action.peekLocations",
+      "title":"Open file",
+      "arguments": [this.uri, position, []]
+    };
+  }
 }
 
 export class HeaderFileTreeItemLibraryTree extends TreeItem{
@@ -509,7 +471,6 @@ function updateCompileCommandsForHeaderFile(headerItem:HeaderFileTreeItemLibrary
 }
 
 
-
 /**
  * Populates a node with all the libraries found in fileUri.
  *
@@ -526,11 +487,6 @@ function updateCompileCommandsForHeaderFile(headerItem:HeaderFileTreeItemLibrary
 export async function openLibraryNode(infUri:vscode.Uri, moduleUri:vscode.Uri, node:FileTreeItemLibraryTree, wp:EdkWorkspace){
 
   if(node.circularDependency){return;} // Dont process duplicated elements
-
-  const tempIcon = node.iconPath;
-  node.iconPath = new vscode.ThemeIcon("loading~spin");
-  edkLensTreeDetailProvider.refresh();
-
 
   DiagnosticManager.clearProblems(infUri);
   let parser = await getParser(infUri) as InfParser;
@@ -615,7 +571,7 @@ export async function openLibraryNode(infUri:vscode.Uri, moduleUri:vscode.Uri, n
     }
   }
 
-  node.iconPath = tempIcon;
+
   edkLensTreeDetailProvider.refresh();
 }
 
@@ -629,7 +585,6 @@ function isCircularDependencies(libNode: FileTreeItemLibraryTree) {
               `Library circular dependency detected`, [vscode.DiagnosticTag.Unnecessary]
           );
           libNode.collapsibleState = vscode.TreeItemCollapsibleState.None;
-          libNode.description = `${libNode.description} (Circular dependency)`;
           libNode.iconPath = new vscode.ThemeIcon("extensions-refresh");
           libNode.tooltip = "Circular library dependency";
           return true;
