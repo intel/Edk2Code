@@ -32,53 +32,20 @@ interface Pcd {
     position:vscode.Location
 }
 
-export class Property{
-    sectionType:string;
-    arch:string;
-    moduleType:string;
-
-    constructor(sectionType:string, arch:string, moduleType:string){
-        this.sectionType = sectionType.toLocaleLowerCase();
-        this.arch = arch.toLocaleLowerCase();
-        this.moduleType = moduleType.toLocaleLowerCase();
-    }
-
-}
-
-export class InfDsc{
-    path: string;
-    location:vscode.Location;
-    properties: Property[];
-    text:string;
-    parent: string|undefined;
-    constructor(filePath:string, location:vscode.Location, parent:string, line:string){
-        this.path = filePath.replaceAll("\\",path.sep).replaceAll("/",path.sep);
-        this.location = location;
-        this.properties = [];
-        this.text = line;
-
-        if(parent.match(/\.inf$/gi)){
-            // Parent its a file
-            this.parent = parent.replaceAll("\\",path.sep).replaceAll("/",path.sep);;
-        }else{
-            // Parent its a section
-            this.parent = undefined;
-            let props = parent.split(",");
-            for (const p of props) {
-                let [sectionType,arch,moduleType] = split(p.toLowerCase(),".",3,"common");
-                let property = new Property(sectionType, arch, moduleType);
-                this.properties.push(property);
-            }
-        }
+export class SectionProperties{
+    properties: SectionProperty[] = [];
+    constructor(){
         
     }
 
-    toString(): string {
-        return `${this.path}:${this.location.range.start.line} - ${JSON.stringify(this.properties)} }`;
+
+
+    addProperty(sectionType:string, arch:string, moduleType:string){
+        let property = new SectionProperty(sectionType, arch, moduleType);
+        this.properties.push(property);
     }
 
-
-    compareArch(other:InfDsc){
+    compareArch(other:SectionProperties){
         for (const thisProperty of this.properties) {
             for (const otherProperty of other.properties) {
                 if(otherProperty.arch === thisProperty.arch){
@@ -99,7 +66,7 @@ export class InfDsc{
         return false;
     }
 
-    compareLibSectionType(other:InfDsc){
+    compareLibSectionType(other:SectionProperties){
         for (const thisProperty of this.properties) {
             for (const otherProperty of other.properties) {
                 if(otherProperty.sectionType === thisProperty.sectionType){
@@ -120,7 +87,7 @@ export class InfDsc{
         return false;
     }
 
-    compareModuleType(other:InfDsc){
+    compareModuleType(other:SectionProperties){
         for (const thisProperty of this.properties) {
             for (const otherProperty of other.properties) {
                 if(otherProperty.moduleType === thisProperty.moduleType){
@@ -141,6 +108,59 @@ export class InfDsc{
         return false;
     }
 
+    toString(){
+        return this.properties.map(x=>x.toString()).join(",");
+    }
+
+}
+
+export class SectionProperty{
+    sectionType:string;
+    arch:string;
+    moduleType:string;
+
+    constructor(sectionType:string, arch:string, moduleType:string){
+        this.sectionType = sectionType.toLocaleLowerCase();
+        this.arch = arch.toLocaleLowerCase();
+        this.moduleType = moduleType.toLocaleLowerCase();
+    }
+
+}
+
+export class InfDsc{
+    path: string;
+    location:vscode.Location;
+    sectionProperties: SectionProperties;
+    text:string;
+    parent: string|undefined;
+    constructor(filePath:string, location:vscode.Location, parent:string, line:string){
+        this.path = filePath.replaceAll("\\",path.sep).replaceAll("/",path.sep);
+        this.location = location;
+        this.sectionProperties = new SectionProperties();
+        this.text = line;
+
+        if(parent.match(/\.inf$/gi)){
+            // Parent its a file
+            this.parent = parent.replaceAll("\\",path.sep).replaceAll("/",path.sep);;
+        }else{
+            // Parent its a section
+            this.parent = undefined;
+            let props = parent.split(",");
+            for (const p of props) {
+                let [sectionType,arch,moduleType] = split(p.toLowerCase(),".",3,"common");
+                this.sectionProperties.addProperty(sectionType, arch, moduleType);
+            }
+        }
+        
+    }
+
+    toString(): string {
+        return `${this.path}:${this.location.range.start.line} - ${JSON.stringify(this.sectionProperties)} }`;
+    }
+
+
+
+
     /**
      * Retrieves a comma-separated string of module types from the properties.
      *
@@ -148,7 +168,7 @@ export class InfDsc{
      *
      */
     getModuleTypeStr(){
-        return this.properties.map(x=>x.moduleType).join(",");
+        return this.sectionProperties.properties.map(x=>x.moduleType).join(",");
     }
 }
 
@@ -1132,6 +1152,14 @@ export class EdkWorkspace {
     }
 
 
+    async getDscProperties(uri:vscode.Uri){
+        let declarations = await this.getDscDeclaration(uri);
+        if(declarations.length){
+            return declarations[declarations.length-1].sectionProperties;
+        }
+        return undefined;
+    }
+
     // Helper functions
     /**
      * Looks for DSC files in the workspace to find where
@@ -1268,14 +1296,14 @@ export class EdkWorkspace {
 
             // Module contains the properties obtained from DSC file.
             // Here overwrite module type with the actual definition of the INF file
-            for (const property of module.properties) {
+            for (const property of module.sectionProperties.properties) {
                 property.moduleType = moduleType;
             }
 
             for (const library of dscLibDeclarations) {
                 // 2. Library Class Instance that is defined in the [LibraryClasses.$(ARCH).$(MODULE_TYPE)] section will be used
                 
-                if(library.compareArch(module) && library.compareModuleType(module)){
+                if(library.sectionProperties.compareArch(module.sectionProperties) && library.sectionProperties.compareModuleType(module.sectionProperties)){
                     locationFound = true;
                     locations.set(library.path, library);
                     
@@ -1285,7 +1313,7 @@ export class EdkWorkspace {
             if(locationFound){continue;}
 
             for (const library of dscLibDeclarations) {
-                if(library.compareArchStr("common") && library.compareModuleType(module)){
+                if(library.sectionProperties.compareArchStr("common") && library.sectionProperties.compareModuleType(module.sectionProperties)){
                     locationFound = true;
                     locations.set(library.path, library);
                     break;
@@ -1295,7 +1323,7 @@ export class EdkWorkspace {
 
             // ? common.common
             for (const library of dscLibDeclarations) {
-                if(library.compareArchStr("common") && library.compareModuleTypeStr("common")){
+                if(library.sectionProperties.compareArchStr("common") && library.sectionProperties.compareModuleTypeStr("common")){
                     locationFound = true;
                     locations.set(library.path, library);
                     break;
@@ -1306,7 +1334,7 @@ export class EdkWorkspace {
 
             for (const library of dscLibDeclarations) {
                 // ?? just check for library classes
-                if(library.compareLibSectionTypeStr("libraryclasses")){
+                if(library.sectionProperties.compareLibSectionTypeStr("libraryclasses")){
                     locationFound = true;
                     locations.set(library.path, library);
                     break;

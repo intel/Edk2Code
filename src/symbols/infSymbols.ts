@@ -1,16 +1,42 @@
-import { gConfigAgent, gCscope, gEdkWorkspaces, gPathFind, gWorkspacePath } from "../extension";
+import { gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gPathFind, gWorkspacePath } from "../extension";
 import path = require('path');
 import {  EdkSymbol } from "./edkSymbols";
 import * as vscode from 'vscode';
 import { rgSearch, rgSearchText } from "../rg";
 import { Edk2SymbolType } from "./symbolsType";
-import { createRange, isFileEdkLibrary, listFiles, listFilesRecursive, openTextDocument, split } from "../utils";
+import { isFileEdkLibrary, listFiles, listFilesRecursive, openTextDocument, split } from "../utils";
 import { InfDsc } from "../index/edkWorkspace";
 import { DocumentParser } from "../edkParser/languageParser";
-import { Cscope } from "../cscope";
 import * as fs from 'fs';
 import { ParserFactory } from "../edkParser/parserFactory";
-export class EdkSymbolInfSectionLibraries extends EdkSymbol {
+import { REGEX_INF_SECTION } from "../edkParser/commonParser";
+
+
+
+export class InfSection extends EdkSymbol{
+    onCompletion: Function | undefined;
+    onDefinition: Function | undefined;
+    onHover: Function | undefined;
+    onDeclaration: Function | undefined;
+    
+    public constructor(textLine: string, location: vscode.Location, enabled: boolean, visible: boolean, parser:DocumentParser) {
+        super(textLine,location, enabled, visible, parser);
+        const match = REGEX_INF_SECTION.exec(textLine);
+        if(match){
+            let sectionType = (match.groups?.['sectionType'] || '').toLowerCase();
+            let arch = (match.groups?.['arch'] || 'common').toLowerCase();
+            
+            this.sectionProperties.addProperty(sectionType, arch, "Library");
+        }else{
+            gDebugLog.error("Failed to parse section type: " + textLine);
+        }
+
+        
+        
+    }
+}
+
+export class EdkSymbolInfSectionLibraries extends InfSection {
 
     type = Edk2SymbolType.infSectionLibraries;
     kind = vscode.SymbolKind.Class;
@@ -24,7 +50,7 @@ export class EdkSymbolInfSectionLibraries extends EdkSymbol {
     onDeclaration: undefined;
 }
 
-export class EdkSymbolInfSectionSource extends EdkSymbol {
+export class EdkSymbolInfSectionSource extends InfSection {
 
     type = Edk2SymbolType.infSectionSource;
     kind = vscode.SymbolKind.Class;
@@ -46,7 +72,7 @@ export class EdkSymbolInfSectionSource extends EdkSymbol {
     onDeclaration: undefined;
 }
 
-export class EdkSymbolInfSectionProtocols extends EdkSymbol {
+export class EdkSymbolInfSectionProtocols extends InfSection {
 
     type = Edk2SymbolType.infSectionProtocols;
     kind = vscode.SymbolKind.Class;
@@ -76,7 +102,7 @@ export class EdkSymbolInfPpi extends EdkSymbol {
     onDeclaration: undefined;
 }
 
-export class EdkSymbolInfSectionPpis extends EdkSymbol {
+export class EdkSymbolInfSectionPpis extends InfSection {
 
     type = Edk2SymbolType.infSectionPpis;
     kind = vscode.SymbolKind.Class;
@@ -88,7 +114,7 @@ export class EdkSymbolInfSectionPpis extends EdkSymbol {
     onHover: undefined;
     onDeclaration: undefined;
 }
-export class EdkSymbolInfSectionGuids extends EdkSymbol {
+export class EdkSymbolInfSectionGuids extends InfSection {
 
     type = Edk2SymbolType.infSectionGuids;
     kind = vscode.SymbolKind.Class;
@@ -101,7 +127,7 @@ export class EdkSymbolInfSectionGuids extends EdkSymbol {
     onDeclaration: undefined;
 }
 
-export class EdkSymbolinfSectionDepex extends EdkSymbol {
+export class EdkSymbolinfSectionDepex extends InfSection {
 
     type = Edk2SymbolType.infSectionDepex;
     kind = vscode.SymbolKind.Class;
@@ -114,7 +140,7 @@ export class EdkSymbolinfSectionDepex extends EdkSymbol {
     onDeclaration: undefined;
 }
 
-export class EdkSymbolInfSectionPcds extends EdkSymbol {
+export class EdkSymbolInfSectionPcds extends InfSection {
 
     type = Edk2SymbolType.infSectionPcds;
     kind = vscode.SymbolKind.Class;
@@ -137,7 +163,7 @@ export class EdkSymbolInfSection extends EdkSymbol {
     onDeclaration: undefined;
 }
 
-export class EdkSymbolSectionPackages extends EdkSymbol {
+export class EdkSymbolSectionPackages extends InfSection {
 
     type = Edk2SymbolType.infSectionPackages;
     kind = vscode.SymbolKind.Class;

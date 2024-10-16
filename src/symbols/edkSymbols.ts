@@ -2,14 +2,7 @@ import * as vscode from 'vscode';
 import { gDebugLog } from '../extension';
 import { Edk2SymbolType, typeToStr } from './symbolsType';
 import { DocumentParser } from '../edkParser/languageParser';
-
-
-
-export interface Edk2SymbolProperties {
-    sectionType: string;
-    arch: string;
-    moduleType: string;
-}
+import { SectionProperties } from '../index/edkWorkspace';
 
 
 
@@ -28,7 +21,7 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
     enabled: boolean = true;
     visible: boolean = true;
 
-    properties: Edk2SymbolProperties[] = [];
+    sectionProperties: SectionProperties;
     parent: EdkSymbol | undefined = undefined;
 
     guid:string = "";
@@ -65,6 +58,11 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
         this._textLine = textLine;
         this.parser = parser;
         this.name = textLine.replaceAll(/\s+/gi," ");
+        let parent = parser.symbolStack[parser.symbolStack.length - 1];
+        this.sectionProperties = new SectionProperties();
+        if(parent){
+            this.sectionProperties = parent.sectionProperties;
+        }
         gDebugLog.verbose(`Symbol Created: ${location.range.start.line}: ${this.toString()}`);
     }
 

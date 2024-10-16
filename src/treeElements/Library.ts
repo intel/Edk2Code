@@ -16,6 +16,7 @@ export class EdkInfNode extends EdkNode{
     constructor(uri:vscode.Uri, contextUri:vscode.Uri, position:vscode.Position, wp:EdkWorkspace, edkObject:EdkSymbol, librarySet?:Set<string>|undefined){
         super(uri, position, wp, edkObject);
         this.contextUri = contextUri;
+        this.description = `${uri.fsPath}`;
         this.iconPath = new vscode.ThemeIcon("file");
         this.command = {
             "command": "vscode.open",
@@ -45,8 +46,23 @@ export class EdkInfNode extends EdkNode{
             gDebugLog.error("Parser not found for file: " + this.uri.fsPath);
             return;
         }
+        let contextProperties = await this.workspace.getDscProperties(this.contextUri);
 
         let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
+
+        // Just keep the libraries that matches the context properties
+        libraries = libraries.filter((library)=>{
+            if(library.sectionProperties.compareArchStr('common')){
+                return true;
+            }
+
+            if(contextProperties){
+                return library.sectionProperties.compareArch(contextProperties);
+            }
+            return false;
+
+        });
+
         for (const library of libraries) {
             let libDefinitions = await this.workspace.getLibDeclarationModule(this.contextUri, library.name);
             for (const libDefinition of libDefinitions) {

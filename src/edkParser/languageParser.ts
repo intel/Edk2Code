@@ -3,9 +3,9 @@ import { gDebugLog } from "../extension";
 import * as vscode from 'vscode';
 import path = require("path");
 import { SymbolFactory } from "../symbols/symbolFactory";
-import { EdkSymbol } from "../symbols/edkSymbols";
 import { Edk2SymbolType } from '../symbols/symbolsType';
 import { WorkspaceDefinitions } from "../index/definitions";
+import { EdkSymbol } from "../symbols/edkSymbols";
 
 
 export abstract class BlockParser {
@@ -477,7 +477,9 @@ addSymbol(symbol: EdkSymbol) {
      * @returns An array of symbols of the specified type.
      */
     getSymbolsType(type: Edk2SymbolType) {
-        return Array.from(this.symbolsList.filter((x) => { return x.type === type; }));
+        let symboList = Array.from(this.symbolsList.filter((x) => { return x.type === type; }));
+        return symboList;
+        
     }
 }
 
