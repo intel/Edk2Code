@@ -21,15 +21,19 @@ export class InfSection extends EdkSymbol{
     
     public constructor(textLine: string, location: vscode.Location, enabled: boolean, visible: boolean, parser:DocumentParser) {
         super(textLine,location, enabled, visible, parser);
-        const match = REGEX_INF_SECTION.exec(textLine);
-        if(match){
-            let sectionType = (match.groups?.['sectionType'] || '').toLowerCase();
-            let arch = (match.groups?.['arch'] || 'common').toLowerCase();
-            
-            this.sectionProperties.addProperty(sectionType, arch, "Library");
-        }else{
-            gDebugLog.error("Failed to parse section type: " + textLine);
+        textLine = textLine.replace('[','').replace(']','').trim();
+        let items = textLine.split(',');
+        for (const item of items) {
+            REGEX_INF_SECTION.lastIndex = 0;
+            let match = REGEX_INF_SECTION.exec(item.trim());
+            if(match){
+                let sectionType = (match.groups?.['sectionType'] || '').toLowerCase();
+                let arch = (match.groups?.['arch'] || 'common').toLowerCase();
+                this.sectionProperties.addProperty(sectionType, arch, "Library");
+            }
         }
+
+
 
         
         

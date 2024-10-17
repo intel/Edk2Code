@@ -2,7 +2,7 @@
 import * as vscode from 'vscode';
 import { gCompileCommands, gConfigAgent, gDebugLog, gMapFileManager, gPathFind, gWorkspacePath } from '../extension';
 import { GrayoutController } from '../grayout';
-import { createRange, openTextDocument, split } from '../utils';
+import { createRange, openTextDocument, pathCompare, split } from '../utils';
 import { REGEX_DEFINE as REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_INCLUDE as REGEX_INCLUDE, REGEX_LIBRARY_PATH, REGEX_MODULE_PATH, REGEX_PCD_LINE, REGEX_VAR_USAGE } from "../edkParser/commonParser";
 import { UNDEFINED_VARIABLE, WorkspaceDefinitions } from "./definitions";
 import * as fs from 'fs';
@@ -316,6 +316,7 @@ export class EdkWorkspace {
     private pcdDefinitions: Map<string,Map<string,Pcd>> = new Map();
 
     private grayoutControllers:Map<vscode.Uri,GrayoutController>;
+    private libraryTypeTrack = new Map<string,InfDsc>();
 
     private _filesLibraries: InfDsc[] = [];
     public get filesLibraries(): InfDsc[] {
@@ -385,6 +386,7 @@ export class EdkWorkspace {
         this.filesLibraries = [];
         this.filesModules = [];
         this.filesDsc = [];
+        this.libraryTypeTrack = new Map<string,InfDsc>(); 
 
         
         this.conditionStack = [];
@@ -480,7 +482,6 @@ export class EdkWorkspace {
     private async _proccessDsc(document: vscode.TextDocument) {
         DiagnosticManager.clearProblems(document.uri);
         gDebugLog.verbose(`findDefines: ${document.fileName}`);
-        let libraryTypeTrack = new Map<string,InfDsc>();
         // Add document to inactiveLines
         if (this.isDocumentInIndex(document)) {
             gDebugLog.warning(`findDefines: ${document.fileName} already in inactiveLines`);
@@ -610,8 +611,9 @@ export class EdkWorkspace {
                 const libName = inf.text.split("|")[0].trim();
                 const libNameTag = libName +" - "+inf.getModuleTypeStr();
                 
-                if(libraryTypeTrack.has(libNameTag)){
-                    let originalLibrary = libraryTypeTrack.get(libNameTag)!;
+                if(this.libraryTypeTrack.has(libNameTag) && (libName.toLocaleLowerCase() !== "null")){
+                    
+                    let originalLibrary = this.libraryTypeTrack.get(libNameTag)!;
                     let diagnosticDuplicatedInf = DiagnosticManager.warning(originalLibrary.location.uri, originalLibrary.location.range.start.line, EdkDiagnosticCodes.duplicateStatement, `Library overwritten: ${libName}`, [vscode.DiagnosticTag.Unnecessary]);
                     diagnosticDuplicatedInf.relatedInformation = [new vscode.DiagnosticRelatedInformation(inf.location, "New definition")];
                     
@@ -622,7 +624,7 @@ export class EdkWorkspace {
                     }
                 }
 
-                libraryTypeTrack.set(libNameTag,inf);
+                this.libraryTypeTrack.set(libNameTag,inf);
                 
                 this.filesLibraries.push(inf);
                 continue;
@@ -993,7 +995,7 @@ export class EdkWorkspace {
 
                 switch(tokens[0].toLowerCase()){
                     case "!if":
-                        conditionValue = this.evaluateConditional(conditionStr);
+                        conditionValue = this.evaluateConditional(conditionStr.replaceAll(UNDEFINED_VARIABLE,'FALSE'));
                         break;
                     case "!ifdef":
                         conditionValue = this.pushConditional((tokens[1] !== UNDEFINED_VARIABLE));
@@ -1018,8 +1020,7 @@ export class EdkWorkspace {
                     DiagnosticManager.error(documentUri, lineIndex, EdkDiagnosticCodes.conditionalMissform, "!elseif without !if");
                     return true;
                 }
-                
-                conditionValue = this.evaluateConditional(conditionStr);
+                conditionValue = this.evaluateConditional(conditionStr.replaceAll(UNDEFINED_VARIABLE,'FALSE'));
                 parentActive = this.conditionStack.length <= 1 || this.conditionStack[this.conditionStack.length - 2].active;
 
                 // Update the top of the stack
@@ -1187,10 +1188,12 @@ export class EdkWorkspace {
                 entryList = this.filesLibraries;
             }
             for (const entry of entryList) {
-                let entryPath = await gPathFind.findPath(entry.path);
-                if(entryPath.length){
-                    if(entryPath[0].uri.fsPath === uri.fsPath){
-                        dscInfs.push(entry);
+                let entryPathList = await gPathFind.findPath(entry.path);
+                if(entryPathList.length){
+                    for (const entryPath of entryPathList) {
+                        if(pathCompare(entryPath.uri.fsPath,uri.fsPath)){
+                            dscInfs.push(entry);
+                        }   
                     }
                 }
             }

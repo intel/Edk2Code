@@ -372,6 +372,10 @@ import { TreeItem } from "../treeElements/TreeItem";
 
             let wps = await gEdkWorkspaces.getWorkspace(moduleUri);
             let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
+            if(libraries.length === 0){
+                void vscode.window.showWarningMessage("No libraries found in file");
+                return;
+            }
             
             for (const wp of wps) {
                 // let dscDeclarations = await wp.getDscDeclaration(fileUri);

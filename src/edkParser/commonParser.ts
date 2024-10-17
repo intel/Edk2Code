@@ -16,5 +16,5 @@ export const REGEX_GUID = /^\s*[a-z\d]+\s*=\s*\{\s*0x[a-f\d]{8}\s*,\s*0x[a-f\d]{
 
 export const REGEX_PCD = /(?:\w[\w\d\[\]]+\.)+[\w\d\[\]]+/gi;
 
-export const REGEX_INF_SECTION = /\[\s*(?<sectionType>.*?)(\.(?<arch>.*))?\s*\]/m;
+export const REGEX_INF_SECTION = /(?<sectionType>.*?)(\.(?<arch>.*))?$/m;
 
