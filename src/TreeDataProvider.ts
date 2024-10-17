@@ -112,9 +112,10 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
   getParent?(element: TreeItem): vscode.ProviderResult<TreeItem> {
     return element.getParent();
   }
-  resolveTreeItem?(item: vscode.TreeItem, element: TreeItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
-    throw new Error('Method not implemented.');
-  }
+  
+  // resolveTreeItem?(item: vscode.TreeItem, element: TreeItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
+  //   throw new Error('Method not implemented.');
+  // }
 
 }
 
