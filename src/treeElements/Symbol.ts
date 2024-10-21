@@ -118,6 +118,9 @@ export class EdkSymbolNode extends EdkNode{
             void documentGetText(this.uri, child.range).then((text) => {
               const childType = text.trim().split(" ")[0];
               newChild.description = childType;
+              if(baseTypeSet.has(childType)){
+                newChild.collapsibleState = vscode.TreeItemCollapsibleState.None;
+              }
             });
           }
       }
