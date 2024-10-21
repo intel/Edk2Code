@@ -366,7 +366,7 @@ import { TreeItem } from "../treeElements/TreeItem";
             // Initialize tree view
             edkLensTreeDetailProvider.clear();
             edkLensTreeDetailProvider.refresh();
-            edkLensTreeDetailView.title = "EDK2 Library Tree";
+            edkLensTreeDetailView.title = "EDK2 Module Map";
             edkLensTreeDetailView.description = path.basename(moduleUri.fsPath);
 
 
@@ -662,3 +662,32 @@ export async function openWpConfigJson() {
     await gotoFile(gConfigAgent.getConfigFileUri());
 }
 
+
+
+
+
+var nodeStack = new Array<TreeItem[]>();
+
+export async function focusOnNode(node:TreeItem) {
+    nodeStack.push(edkLensTreeDetailProvider.data);
+	await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', true);
+
+    edkLensTreeDetailProvider.clear();
+    edkLensTreeDetailProvider.addChildren(node);
+    await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
+    edkLensTreeDetailProvider.refresh();
+    edkLensTreeDetailView.title = "EDK2 Library Tree";
+}
+
+export async function nodeFocusBack(){
+    if(nodeStack.length){
+        edkLensTreeDetailProvider.clear();
+        edkLensTreeDetailProvider.data = nodeStack.pop()!;
+        await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
+        edkLensTreeDetailProvider.refresh();
+    }
+
+    if(nodeStack.length === 0){
+        await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', false);
+    }
+}

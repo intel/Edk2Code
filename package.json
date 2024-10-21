@@ -75,7 +75,7 @@
       },
       {
         "command": "edk2code.showLibraryTree",
-        "title": "EDK2: Show library tree"
+        "title": "EDK2: Show Module Map"
       },
       {
         "command": "edk2code.saveBuildConfiguration",
@@ -122,8 +122,16 @@
       {
         "command": "edk2code.getItemTreePath",
         "title": "Get tree path"
+      },
+      {
+        "command": "edk2code.focusOnNode",
+        "title": "Focus on Node"
+      },
+      {
+        "command": "edk2code.NodeFocusBack",
+        "title": "Node Focus Back",
+        "icon": "$(arrow-left)"
       }
-
     ],
     "configuration": [
       {
@@ -265,6 +273,14 @@
           "when": "false"
         },
         {
+          "command": "edk2code.focusOnNode",
+          "when": "false"
+        },
+        {
+          "command": "edk2code.NodeFocusBack",
+          "when": "false"
+        },
+        {
           "command": "edk2code.expandAllTree",
           "when": "false"
         }
@@ -273,6 +289,11 @@
       ],
       "editor/title": [],
       "view/title": [
+        {
+          "command": "edk2code.NodeFocusBack",
+          "group": "navigation",
+          "when": "view == detailsView && edk2code.isNodeFocusBackStack"
+        },
         {
           "command": "edk2code.copyTreeData",
           "when": "view == detailsView",
@@ -283,6 +304,7 @@
           "when": "view == detailsView",
           "group": "navigation"
         }
+
       ],
       "editor/context": [
         {
@@ -330,7 +352,12 @@
         {
           "command": "edk2code.getItemTreePath",
           "group": "navigation"
+        },
+        {
+          "command": "edk2code.focusOnNode",
+          "group": "navigation,"
         }
+
       ]
     },
     "keybindings": [

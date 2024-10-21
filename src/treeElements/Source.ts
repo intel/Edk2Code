@@ -2,15 +2,17 @@ import path = require("path");
 import { CompileCommandsEntry } from "../compileCommands";
 import { InfParser } from "../edkParser/infParser";
 import { getParser } from "../edkParser/parserFactory";
-import { edkLensTreeDetailProvider, gCompileCommands, gDebugLog, gPathFind } from "../extension";
+import { edkLensTreeDetailProvider, gCompileCommands, gDebugLog, gMapFileManager, gPathFind } from "../extension";
 import { EdkWorkspace } from "../index/edkWorkspace";
 import { EdkSymbol } from "../symbols/edkSymbols";
 import { EdkSymbolInfLibrary, EdkSymbolInfSource } from "../symbols/infSymbols";
 import { Edk2SymbolType } from "../symbols/symbolsType";
 import { findHeaderIncludes, HeaderFileTreeItemLibraryTree } from "../TreeDataProvider";
-import { openTextDocument } from "../utils";
+import { getAllSymbols, openTextDocument } from "../utils";
 import { EdkNode } from "./EdkObject";
 import * as vscode from 'vscode';
+import { DiagnosticManager, EdkDiagnosticCodes } from "../diagnostics";
+import { EdkSymbolNode } from "./Symbol";
 
 
 
@@ -40,6 +42,22 @@ export class EdkSourceNode extends EdkNode{
                     updateCompileCommandsForHeaderFile(includeHeader.uri, compileCommand);
                 }
             }
+
+            // Symbols
+            const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(this.uri);
+            for (const symbol of sourceSymbols) {
+                const symbolNode = new EdkSymbolNode(this.uri, symbol, this.workspace);
+                if(symbol.kind === vscode.SymbolKind.Function){
+                  if(!gMapFileManager.isSymbolUsed(symbol.name)){
+                    DiagnosticManager.warning(this.uri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
+                    symbolNode.tooltip = "Unused function";
+                    symbolNode.description = `Unused ${symbolNode.description}`;
+                    symbolNode.iconPath = new vscode.ThemeIcon("warning");
+                  }
+                }
+                this.addChildren(symbolNode);
+              }
+
         });
     }
 

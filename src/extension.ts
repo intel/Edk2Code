@@ -134,6 +134,15 @@ export async function activate(context: vscode.ExtensionContext) {
 			let strTree = edkLensTreeDetailProvider.expandAll(edkLensTreeDetailView);
 		  }),
 
+		  vscode.commands.registerCommand('edk2code.focusOnNode', async (node:TreeItem) => {
+			await cmds.focusOnNode(node);
+		  }),
+
+		  vscode.commands.registerCommand('edk2code.NodeFocusBack', async () => {
+			await cmds.nodeFocusBack();
+		  }),
+
+
 		  vscode.commands.registerCommand('edk2code.getItemTreePath', (node:TreeItem) => {
 			// Your export logic here
 			let itemParent = node.getParent();
@@ -196,6 +205,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		edkLensTreeDetailProvider.refresh();
 	});
 
+	await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', false);
 	
 }
 
