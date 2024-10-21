@@ -6,6 +6,7 @@ import { SymbolFactory } from "../symbols/symbolFactory";
 import { Edk2SymbolType } from '../symbols/symbolsType';
 import { WorkspaceDefinitions } from "../index/definitions";
 import { EdkSymbol } from "../symbols/edkSymbols";
+import { SectionProperties } from "../index/edkWorkspace";
 
 
 export abstract class BlockParser {
@@ -476,10 +477,24 @@ addSymbol(symbol: EdkSymbol) {
      * @param type - The type of the symbols to retrieve.
      * @returns An array of symbols of the specified type.
      */
-    getSymbolsType(type: Edk2SymbolType) {
+    getSymbolsType(type: Edk2SymbolType, filterContext: SectionProperties | undefined = undefined) {
+
         let symboList = Array.from(this.symbolsList.filter((x) => { return x.type === type; }));
+        if(filterContext){
+            // Just keep the libraries that matches the context properties
+            symboList = symboList.filter((library)=>{
+                if(library.sectionProperties.compareArchStr('common')){
+                    return true;
+                }
+
+                if(filterContext){
+                    return library.sectionProperties.compareArch(filterContext);
+                }
+                return false;
+
+            });
+        }
         return symboList;
-        
     }
 }
 

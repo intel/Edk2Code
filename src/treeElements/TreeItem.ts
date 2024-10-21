@@ -1,9 +1,15 @@
 import * as vscode from 'vscode';
+import { edkLensTreeDetailProvider } from '../extension';
 
 export class TreeItem extends vscode.TreeItem {
     children: TreeItem[] = [];
     parent: TreeItem | undefined;
     visible:boolean = true;
+    
+    private tempIcon: string | vscode.ThemeIcon | vscode.Uri | {
+      light: string | vscode.Uri;
+      dark: string | vscode.Uri;
+    } | undefined;
 
     getParent() {
       return this.parent;
@@ -44,5 +50,39 @@ export class TreeItem extends vscode.TreeItem {
     }
 
     async expand(){}
-  
+
+    setLoading(){
+      this.tempIcon = this.iconPath;
+      this.iconPath = new vscode.ThemeIcon("loading~spin");
+      edkLensTreeDetailProvider.refresh();
+    }
+
+    clearLoading(){
+      this.iconPath = this.tempIcon;
+      edkLensTreeDetailProvider.refresh();
+    }
+
+    needsExpandProcess(){
+      if(this.collapsibleState === vscode.TreeItemCollapsibleState.None){
+        return false;
+      }
+
+      if(this.children.length > 0){
+        this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+        return false;
+      }
+
+      return true;
+    }
+
+    async expandWithLoading(expandFunction:Function){
+      if(this.needsExpandProcess()){
+        this.setLoading();
+        await expandFunction();
+        this.clearLoading();
+        if(this.children.length === 0){
+          this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+        }
+      }
+    }
   }

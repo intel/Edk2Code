@@ -7,15 +7,14 @@ export class EdkNode extends TreeItem {
     uri:vscode.Uri;
     loaded = false;
     workspace:EdkWorkspace;
-    edkObject:EdkSymbol;
+    edkObject:EdkSymbol|undefined;
     contextModuleUri:vscode.Uri|undefined = undefined;
   
-    constructor(uri:vscode.Uri, position:vscode.Position, wp:EdkWorkspace, edkObject:EdkSymbol){
+    constructor(uri:vscode.Uri, position:vscode.Position, wp:EdkWorkspace, edkObject:EdkSymbol|undefined){
       super(uri, vscode.TreeItemCollapsibleState.Collapsed);
       this.edkObject = edkObject;
       this.workspace = wp;
       this.uri = uri;
-      this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
       
       this.command = {
         "command": "editor.action.peekLocations",

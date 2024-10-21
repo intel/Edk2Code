@@ -3,10 +3,11 @@ import { getParser } from "../edkParser/parserFactory";
 import { gDebugLog, gPathFind } from "../extension";
 import { EdkWorkspace } from "../index/edkWorkspace";
 import { EdkSymbol } from "../symbols/edkSymbols";
-import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
+import { EdkSymbolInfLibrary, EdkSymbolInfSource } from "../symbols/infSymbols";
 import { Edk2SymbolType } from "../symbols/symbolsType";
 import { EdkNode } from "./EdkObject";
 import * as vscode from 'vscode';
+import { EdkSourceNode } from "./Source";
 
 
 
@@ -21,7 +22,7 @@ export class EdkInfNode extends EdkNode{
         this.command = {
             "command": "vscode.open",
             "title":"Open file",
-            "arguments": [this.uri]
+            "arguments": [this.uri] 
           };
         this.librarySet = librarySet;
         if(librarySet){
@@ -29,7 +30,7 @@ export class EdkInfNode extends EdkNode{
                 this.setDuplicatedLibrary();
             }else{
                 librarySet.add(uri.fsPath);
-                console.log(`* ${uri.fsPath}`);
+                console.log(`${uri.fsPath}`);
             }
         }
 
@@ -38,51 +39,59 @@ export class EdkInfNode extends EdkNode{
 
 
     async expand(){
-        if(this.collapsibleState === vscode.TreeItemCollapsibleState.None){return;}// Do not expand
-
-        let parser = await getParser(this.uri);
+        await this.expandWithLoading(async ()=>{
+            let parser = await getParser(this.uri);
         
-        if(parser === undefined){
-            gDebugLog.error("Parser not found for file: " + this.uri.fsPath);
-            return;
-        }
-        let contextProperties = await this.workspace.getDscProperties(this.contextUri);
-
-        let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
-
-        // Just keep the libraries that matches the context properties
-        libraries = libraries.filter((library)=>{
-            if(library.sectionProperties.compareArchStr('common')){
-                return true;
+            if(parser === undefined){
+                gDebugLog.error("Parser not found for file: " + this.uri.fsPath);
+                return;
             }
-
-            if(contextProperties){
-                return library.sectionProperties.compareArch(contextProperties);
-            }
-            return false;
-
-        });
-
-        for (const library of libraries) {
-            let libDefinitions = await this.workspace.getLibDeclarationModule(this.contextUri, library.name);
-            for (const libDefinition of libDefinitions) {
-                let filePaths = await gPathFind.findPath(libDefinition.path);
-                for (const path of filePaths) {
-                    let childLibNode = new EdkInfNode(path.uri, this.contextUri, new vscode.Position(0,0), this.workspace, library, this.librarySet);
-                    this.addChildren(childLibNode); 
-
-                    // Check circular dependencies
-                    for (const parent of childLibNode.iterateParents()) {
-                        if(parent instanceof EdkInfNode){
-                            if(parent.uri.fsPath === childLibNode.uri.fsPath){
-                                childLibNode.setCircularDependency();
-                                break;
+            let contextProperties = await this.workspace.getDscProperties(this.contextUri);
+    
+            let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary, contextProperties) as EdkSymbolInfLibrary[];
+    
+            // Load libraries
+            for await (const library of libraries) {
+                let libDefinitions = await this.workspace.getLibDeclarationModule(this.contextUri, library.name);
+                for (const libDefinition of libDefinitions) {
+                    let filePaths = await gPathFind.findPath(libDefinition.path);
+                    for (const path of filePaths) {
+                        let childLibNode = new EdkInfNode(path.uri, this.contextUri, new vscode.Position(0,0), this.workspace, library, this.librarySet);
+                        this.addChildren(childLibNode); 
+    
+                        // Check circular dependencies
+                        for (const parent of childLibNode.iterateParents()) {
+                            if(parent instanceof EdkInfNode){
+                                if(parent.uri.fsPath === childLibNode.uri.fsPath){
+                                    childLibNode.setCircularDependency();
+                                    break;
+                                }
                             }
                         }
                     }
                 }
             }
-        }
+    
+            let sources = parser.getSymbolsType(Edk2SymbolType.infSource, contextProperties) as EdkSymbolInfSource[];
+            for (const source of sources) {
+                let filePath = await source.getValue();
+    
+                if(!filePath.toLowerCase().endsWith(".c")){continue;} // Only C files
+                
+                let pos = new vscode.Position(0,0);
+                let fileUri = vscode.Uri.file(filePath);
+                let childSourceNode = new EdkSourceNode(fileUri, this.contextUri, pos, this.workspace, source, this.librarySet);
+                this.addChildren(childSourceNode);
+        
+            }
+        });
+
+        
+
+
+
+
+        
     }
 
     setDuplicatedLibrary(){
