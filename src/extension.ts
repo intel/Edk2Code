@@ -100,7 +100,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 		vscode.commands.registerCommand('edk2code.libUsage', async (editor)=>{await cmds.showLibUsage(editor.document.uri);}),
 		vscode.commands.registerCommand('edk2code.showReferences', ()=>{cmds.showReferences();}),
-		vscode.commands.registerTextEditorCommand('edk2code.showLibraryTree', async (editor)=>{await cmds.showLibraryTree(editor.document.uri);}),
+		vscode.commands.registerTextEditorCommand('edk2code.showLibraryTree', async (editor)=>{await cmds.showEdkMap(editor.document.uri);}),
 		
 		// Internal
 		vscode.commands.registerCommand('edk2code.searchDefinition', ()=>{}),

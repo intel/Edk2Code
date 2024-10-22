@@ -351,9 +351,7 @@ import { TreeItem } from "../treeElements/TreeItem";
 
 
 
-    export async function showLibraryTree(moduleUri:vscode.Uri) {
-
-
+    export async function showEdkMap(moduleUri:vscode.Uri) {
         let parser = await getParser(moduleUri);
         if(parser && (parser instanceof InfParser) ){
             // Check if INF file is a library

@@ -114,11 +114,7 @@
         "title": "EDK2: Copy tree data",
         "icon": "$(copy)"
       },
-      {
-        "command": "edk2code.expandAllTree",
-        "title": "EDK2: Expand all",
-        "icon": "$(expand-all)"
-      },
+
       {
         "command": "edk2code.getItemTreePath",
         "title": "Get tree path"
@@ -162,6 +158,12 @@
             "type": "boolean",
             "markdownDescription": "Set this to use EDK2 call hiearchy (cscope) instead of vscode native one. `(reload of vscode after setup)`",
             "default": true
+          },
+          "edk2code.ExpandCircularOrDuplicateLibraries": {
+            "order": 2,
+            "type": "boolean",
+            "markdownDescription": "Expand circular include or duplicated libraries in the Edk2 Map view",
+            "default": false
           },
           "edk2code.cscopeOverwritePath": {
             "order": 2,
@@ -279,10 +281,6 @@
         {
           "command": "edk2code.NodeFocusBack",
           "when": "false"
-        },
-        {
-          "command": "edk2code.expandAllTree",
-          "when": "false"
         }
 
         
@@ -296,11 +294,6 @@
         },
         {
           "command": "edk2code.copyTreeData",
-          "when": "view == detailsView",
-          "group": "navigation"
-        },
-        {
-          "command": "edk2code.expandAllTree",
           "when": "view == detailsView",
           "group": "navigation"
         }

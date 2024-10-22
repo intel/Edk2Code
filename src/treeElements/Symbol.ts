@@ -13,6 +13,8 @@ import { documentGetText, documentGetTextSync, getSymbolAtLocation, openTextDocu
 
 
 var baseTypeSet = new Set<string>([
+"UINTN",
+"INTN",
 "UINT64",
 "INT64",
 "UINT32",
@@ -89,10 +91,13 @@ function getIconForSymbolKind(kind: vscode.SymbolKind): string {
 export class EdkSymbolNode extends EdkNode{
     uri:vscode.Uri;
     range:vscode.Range;
+    name:string;
+    baseType:boolean = false;
     constructor(uri:vscode.Uri, symbol:vscode.DocumentSymbol,  wp:EdkWorkspace){
       super(uri, symbol.range.start, wp, undefined);
 
       this.label = symbol.name;
+      this.name = symbol.name;
       this.description = symbol.detail.length?symbol.detail:vscode.SymbolKind[symbol.kind];
       this.iconPath = new vscode.ThemeIcon(getIconForSymbolKind(symbol.kind));
       this.collapsibleState = vscode.TreeItemCollapsibleState.None;
@@ -109,7 +114,15 @@ export class EdkSymbolNode extends EdkNode{
       }
 
 
-      if(!baseTypeSet.has(this.description)){ // Skip base types children
+      // Avoid expand basetypes
+      let baseTypeDef = false;
+      if(this.description === "typedef"){
+        baseTypeDef = baseTypeSet.has(this.label.split(" ")[0].trim());
+      }
+
+      this.baseType = baseTypeDef || baseTypeSet.has(this.description);
+
+      if(!this.baseType){ // Skip base types children
         for (const child of symbol.children) {
             let newChild = new EdkSymbolNode(uri,child, this.workspace);
             this.addChildren(newChild);
@@ -159,15 +172,21 @@ export class EdkSymbolNode extends EdkNode{
             }
     
             let symbolNode = new EdkSymbolNode(locations[0].uri, symbol, this.workspace);
+            
+
+            if(symbolNode.name.includes("unnamed") && symbolNode.children.length> 0 && !symbolNode.baseType){
+              for (const child of symbolNode.children) {
+                this.addChildren(child);
+              }
+            }else{
+              this.addChildren(symbolNode);
+            }
             symbolNode.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
-            this.addChildren(symbolNode);
+   
           }else{
             this.collapsibleState = vscode.TreeItemCollapsibleState.None;
           }
         }
       });
-
-      
     }
-  
   }

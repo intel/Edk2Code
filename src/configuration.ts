@@ -247,6 +247,10 @@ export class ConfigAgent {
         return <boolean>this.get("useEdkCallHierarchy");
     }
 
+    getExpandCircularOrDuplicateLibraries(){
+        return <boolean>this.get("ExpandCircularOrDuplicateLibraries");
+    }
+
     getExtraIgnorePatterns() {
         return <string[]>this.get("extraIgnorePatterns");
     }

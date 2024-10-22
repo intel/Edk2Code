@@ -1,6 +1,6 @@
 import { InfParser } from "../edkParser/infParser";
 import { getParser } from "../edkParser/parserFactory";
-import { gDebugLog, gPathFind } from "../extension";
+import { gConfigAgent, gDebugLog, gPathFind } from "../extension";
 import { EdkWorkspace } from "../index/edkWorkspace";
 import { EdkSymbol } from "../symbols/edkSymbols";
 import { EdkSymbolInfLibrary, EdkSymbolInfSource } from "../symbols/infSymbols";
@@ -8,6 +8,7 @@ import { Edk2SymbolType } from "../symbols/symbolsType";
 import { EdkNode } from "./EdkObject";
 import * as vscode from 'vscode';
 import { EdkSourceNode } from "./Source";
+import { ConfigAgent } from "../configuration";
 
 
 
@@ -33,6 +34,21 @@ export class EdkInfNode extends EdkNode{
                 console.log(`${uri.fsPath}`);
             }
         }
+
+        void getParser(this.uri).then(async (parser)=>{
+            if(parser){
+                let defines = parser.getSymbolsType(Edk2SymbolType.infDefine);
+                let libraryClass = "";
+                for (const define of defines) {
+                    if((await define.getKey()).toLowerCase() === "library_class"){
+                        libraryClass = (await define.getValue() || "").split("|")[0];
+                        this.label = libraryClass;
+                        break;
+                    }
+                }
+            }
+        });
+
 
         
     }
@@ -95,14 +111,18 @@ export class EdkInfNode extends EdkNode{
     }
 
     setDuplicatedLibrary(){
-        this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+        if(!gConfigAgent.getExpandCircularOrDuplicateLibraries()){
+            this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+        }
         this.description = `(Duplicated library)`;
         this.iconPath = new vscode.ThemeIcon("extensions-remote");
         this.tooltip = "Duplicated library";
     }
 
     setCircularDependency(){
-        this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+        if(!gConfigAgent.getExpandCircularOrDuplicateLibraries()){
+            this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+        }
         this.description = `(Circular dependency)`;
         this.iconPath = new vscode.ThemeIcon("extensions-refresh");
         this.tooltip = "Circular library dependency";
