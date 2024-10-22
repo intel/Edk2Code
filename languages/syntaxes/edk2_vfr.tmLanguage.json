@@ -22,7 +22,7 @@
         },
         {
           "name": "variable.language.edk2_vfr",
-          "match": "((?<!\\w)(suppressif|grayoutif|warningif|inconsistentif|endif|ideqval|ideqvallist))(?!\\w)"
+          "match": "((?<!\\w)(suppressif|grayoutif|warningif|inconsistentif|disableif|nosubmitif|endif|ideqval|ideqvallist))(?!\\w)"
         },
         {
           "name": "support.function.edk2_vfr",
