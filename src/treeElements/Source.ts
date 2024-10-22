@@ -82,7 +82,7 @@ export class EdkSourceNode extends EdkNode{
                 }
                 let includePath = match[2];
         
-                let includeUri:vscode.Uri = this.uri;
+                let includeUri:vscode.Uri|undefined = undefined;
                 
                 if(isRelative){
                     // Relative includes
@@ -95,17 +95,23 @@ export class EdkSourceNode extends EdkNode{
                     for (const compiledIncludePath of compiledIncludePaths) {
                         const location = await gPathFind.findRelativePath(includePath, compiledIncludePath);
                         if(location){
-                        includeUri = location.uri;
-                        break;
+                            includeUri = location.uri;
+                            break;
                         }
                     }
                 }
-        
-                let includeNode = new EdkSourceNode(includeUri, this.contextUri, new vscode.Position(lineNo, 0), this.workspace, undefined, this.librarySet);
+                
+                let includeNode = new EdkSourceNode(includeUri||this.uri, this.contextUri, new vscode.Position(lineNo, 0), this.workspace, undefined, this.librarySet);
+                if(includeUri === undefined){
+                    includeNode.label = includePath;
+                    includeNode.tooltip = "Missing include";
+                    includeNode.description = "Missing include";
+                    includeNode.collapsibleState = vscode.TreeItemCollapsibleState.None;
+                    DiagnosticManager.error(this.uri,new vscode.Range(new vscode.Position(lineNo, 0), new vscode.Position(lineNo, line.length)),EdkDiagnosticCodes.includePathNotFound, `Missing include: ${includePath}`);
+                }
                 includeNodes.push(includeNode);
-                lineNo++;
-        
             }
+            lineNo++;
         }  
         return includeNodes;
 
