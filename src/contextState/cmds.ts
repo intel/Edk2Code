@@ -1,7 +1,7 @@
 import { Uri } from "vscode";
 import * as vscode from 'vscode';
 import { rgSearch } from "../rg";
-import { checkCompileCommandsConfig, delay, getCurrentWord, gotoFile, isWorkspacePath, listFilesRecursive, openTextDocument, profileEnd, profileStart, readLines, toPosix } from "../utils";
+import { checkCompileCommandsConfig, delay, getCurrentWord, gotoFile, isWorkspacePath, listFilesRecursive, openTextDocument, pathCompare, profileEnd, profileStart, readLines, toPosix } from "../utils";
 import path = require("path");
 import * as fs from 'fs';
 import { edkLensTreeDetailProvider, edkLensTreeDetailView, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gMapFileManager, gPathFind, gWorkspacePath } from "../extension";
@@ -21,6 +21,7 @@ import { debuglog } from "util";
 import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder";
 import { EdkInfNode } from "../treeElements/Library";
 import { TreeItem } from "../treeElements/TreeItem";
+import { EdkModule, ModuleReport } from "../moduleReport";
 
     export async function rebuildIndexDatabase() {
 
@@ -353,22 +354,56 @@ import { TreeItem } from "../treeElements/TreeItem";
 
     export async function showEdkMap(moduleUri:vscode.Uri) {
         let parser = await getParser(moduleUri);
+        let contextModule = moduleUri;
         if(parser && (parser instanceof InfParser) ){
             // Check if INF file is a library
             if(parser.isLibrary()){
-                // list all modules and ask for context
-                void vscode.window.showWarningMessage("This INF is a library. This command only works with EDK Modules for now");
-                return;
+                let modulesUsage: EdkModule[] = [];
+                let modules = ModuleReport.getInstance().getModuleList();
+                for (const module of modules) {
+                    if(!module.isLibrary){
+                        for (const lib of module.libraries) {
+                            if(pathCompare(lib.path, moduleUri.fsPath)){
+                                modulesUsage.push(module);
+                            }
+                        }
+                    }
+                }
+                if(modulesUsage.length){
+                    const options = modulesUsage.map(mod => ({
+                        label: mod.name,
+                        description: mod.path,
+                        module: mod
+                    }));
+                    const selectedOption = await vscode.window.showQuickPick(options, {
+                        title: "Select a Module for context",
+                        canPickMany: false
+                    });
+                    if (!selectedOption) {
+                        return;
+                    }
+                    contextModule = vscode.Uri.file(selectedOption.module.path);
+
+                }else{
+                    
+                    // list all modules and ask for context
+                    void vscode.window.showWarningMessage("This INF is a library. This command only works with EDK Modules for now");
+                    return;
+                }
             }
 
             // Initialize tree view
             edkLensTreeDetailProvider.clear();
             edkLensTreeDetailProvider.refresh();
             edkLensTreeDetailView.title = "EDK2 Module Map";
-            edkLensTreeDetailView.description = path.basename(moduleUri.fsPath);
+            let description = path.basename(moduleUri.fsPath);
+            if(moduleUri.fsPath !== contextModule.fsPath){
+                description = `${path.basename(moduleUri.fsPath)} - ${path.basename(contextModule.fsPath)}`;
+            }
+            edkLensTreeDetailView.description = description;
 
 
-            let wps = await gEdkWorkspaces.getWorkspace(moduleUri);
+            let wps = await gEdkWorkspaces.getWorkspace(contextModule);
             let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
             if(libraries.length === 0){
                 void vscode.window.showWarningMessage("No libraries found in file");
@@ -380,7 +415,7 @@ import { TreeItem } from "../treeElements/TreeItem";
                 const sectionRange = libraries[0].parent?.range.start;
                 if(sectionRange===undefined){continue;}
                 let librarySet = new Set<string>();
-                let moduleNode = new EdkInfNode(moduleUri, moduleUri, sectionRange, wp, libraries[0].parent!, librarySet);
+                let moduleNode = new EdkInfNode(moduleUri, contextModule, sectionRange, wp, libraries[0].parent!, librarySet);
 
                 edkLensTreeDetailProvider.addChildren(moduleNode);
 

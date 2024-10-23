@@ -202,6 +202,7 @@ export class ModuleReport
     constructor(){        
         this.reportPath = getEdkCodeFolderFilePath("module_report.json");
         this.moduleData = [];
+        this.load();
     }
 
     public static getInstance(){
@@ -212,12 +213,13 @@ export class ModuleReport
     }
 
     load(){
+        this.moduleData = [];
         if(!fs.existsSync(this.reportPath)){
             return;
         }
         let strData = fs.readFileSync(this.reportPath).toString();
         this.data = JSON.parse(strData);
-        this.moduleData = [];
+
         for (const d of this.data) {
             this.moduleData.push(new EdkModule(d));
         }

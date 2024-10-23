@@ -207,6 +207,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', false);
 	
+	
 }
 
 // this method is called when your extension is deactivated
