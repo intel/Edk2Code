@@ -612,7 +612,11 @@ export class EdkWorkspace {
                 const libNameTag = libName +" - "+inf.getModuleTypeStr();
                 
                 if(this.libraryTypeTrack.has(libNameTag) && (libName.toLocaleLowerCase() !== "null")){
-                    
+                    if(this.sectionsStack[this.sectionsStack.length-1].toLowerCase().endsWith(".inf")){
+                        // If parent its a module, the this is n overwrite so its ok.
+                        continue;
+                    }
+
                     let originalLibrary = this.libraryTypeTrack.get(libNameTag)!;
                     let diagnosticDuplicatedInf = DiagnosticManager.warning(originalLibrary.location.uri, originalLibrary.location.range.start.line, EdkDiagnosticCodes.duplicateStatement, `Library overwritten: ${libName}`, [vscode.DiagnosticTag.Unnecessary]);
                     diagnosticDuplicatedInf.relatedInformation = [new vscode.DiagnosticRelatedInformation(inf.location, "New definition")];
@@ -638,6 +642,12 @@ export class EdkWorkspace {
                 let filePath = match[0].trim();
                 
                 let inf = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[0], line);
+                // If new module found. remove previous model from section stack
+                if(filePath.toLowerCase().endsWith(".inf")){
+                    if(this.sectionsStack[this.sectionsStack.length-1].toLowerCase().endsWith(".inf")){
+                        this.sectionsStack.pop();
+                    }
+                }
                 this.sectionsStack.push(filePath);
                 this.filesModules.push(inf);
                 continue;
