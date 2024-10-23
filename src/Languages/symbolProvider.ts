@@ -8,7 +8,17 @@ import { gEdkWorkspaces } from '../extension';
 
 
 export class EdkSymbolProvider implements vscode.DocumentSymbolProvider {
+  private _idUpdateNeeded: boolean = true;
+
   constructor() {
+    vscode.workspace.onDidChangeTextDocument(this.setFlag, this);
+  }
+
+  private setFlag(event: vscode.TextDocumentChangeEvent) {
+    const languageIds = ["edk2_dsc", "edk2_inf", "edk2_dec", "edk2_fdf"];
+    if (languageIds.includes(event.document.languageId)) {
+      this._idUpdateNeeded = true;
+    }
   }
 
   public async provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken) {
@@ -20,24 +30,23 @@ export class EdkSymbolProvider implements vscode.DocumentSymbolProvider {
     if (parser) {
 
       await parser.parseFile();
-
-      if (document.languageId === 'edk2_dsc') {
-        // create document from dscPath
-        let wp = await gEdkWorkspaces.getWorkspace(document.uri);
-        if(wp.length){
-          // By defautl use the first workspace to parse the dsc file
-          await wp[0].proccessWorkspace();
-          await wp[0].grayoutDocument(document);
+      
+        if (document.languageId === 'edk2_dsc' || document.languageId === 'edk2_fdf') {
+          // create document from dscPath
+          let wp = await gEdkWorkspaces.getWorkspace(document.uri);
+          if(wp.length){
+            // By defautl use the first workspace to parse the dsc file
+            if(this._idUpdateNeeded){
+              await wp[0].proccessWorkspace();
+              this._idUpdateNeeded = false;
+            }
+            if (document.languageId === 'edk2_fdf') {
+              await wp[0].fdfPostProcces(document);
+            }else{
+              await wp[0].grayoutDocument(document);
+            }
+          }
         }
-      } else if (document.languageId === 'edk2_fdf') {
-
-        let wp = await gEdkWorkspaces.getWorkspace(document.uri);
-        if(wp.length){
-          await wp[0].proccessWorkspace();
-          await wp[0].fdfPostProcces(document);
-        }
-      }
-
       return parser.symbolsTree;
     }
     return [];

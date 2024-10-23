@@ -76,25 +76,28 @@ export class DiagnosticManager {
         return DiagnosticManager.instance;
     }
 
-    public static warning(documentUri: vscode.Uri, line: number | vscode.Range, edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = []) {
+    public static warning(documentUri: vscode.Uri, line: number | vscode.Range, edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = [],
+         relatedInformation?: vscode.DiagnosticRelatedInformation[]|undefined) {
         if(!edkErrorDescriptions.has(edkDiagCode)){
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
-        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Warning,"","", tags);
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Warning,"","", tags, relatedInformation);
     }
 
-    public static info(documentUri: vscode.Uri, line: number | vscode.Range, edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = []) {
+    public static info(documentUri: vscode.Uri, line: number | vscode.Range, edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = [],
+        relatedInformation?: vscode.DiagnosticRelatedInformation[]|undefined) {
         if(!edkErrorDescriptions.has(edkDiagCode)){
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
-        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Information,"","", tags);
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Information,"","", tags, relatedInformation);
     }
 
-    public static error(documentUri: vscode.Uri, line: number | vscode.Range,  edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = []){
+    public static error(documentUri: vscode.Uri, line: number | vscode.Range,  edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = [],
+        relatedInformation?: vscode.DiagnosticRelatedInformation[]|undefined) {
         if(!edkErrorDescriptions.has(edkDiagCode)){
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
-        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Error,"","", tags);
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Error,"","", tags, relatedInformation);
     }
 
     private static addDiagnostic(documentUri: vscode.Uri, diagnostic: vscode.Diagnostic) {
@@ -122,7 +125,8 @@ export class DiagnosticManager {
                                 severity: vscode.DiagnosticSeverity,
                                 source?: string,
                                 code?: string | number,
-                                tags: vscode.DiagnosticTag[]= []) 
+                                tags: vscode.DiagnosticTag[]= [],
+                                relatedInformation?: vscode.DiagnosticRelatedInformation[]|undefined) 
         {
         // Create a range that covers the entire line
         let range:vscode.Range;
@@ -141,6 +145,7 @@ export class DiagnosticManager {
             diagnostic.code = code;
         }
         diagnostic.tags = tags;
+        diagnostic.relatedInformation = relatedInformation;
         
         DiagnosticManager.addDiagnostic(documentUri, diagnostic);
         DiagnosticManager.diagnosticsCollection.set(documentUri, DiagnosticManager.getDiagnostic(documentUri));

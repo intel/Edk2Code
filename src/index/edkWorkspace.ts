@@ -481,10 +481,10 @@ export class EdkWorkspace {
 
     private async _proccessDsc(document: vscode.TextDocument) {
         DiagnosticManager.clearProblems(document.uri);
-        gDebugLog.verbose(`findDefines: ${document.fileName}`);
+        gDebugLog.verbose(`_proccessDsc: ${document.fileName}`);
         // Add document to inactiveLines
         if (this.isDocumentInIndex(document)) {
-            gDebugLog.warning(`findDefines: ${document.fileName} already in inactiveLines`);
+            gDebugLog.warning(`_proccessDsc: ${document.fileName} already in inactiveLines`);
             return;
         }
 
@@ -555,7 +555,7 @@ export class EdkWorkspace {
                     let lineIndexEnd = lineIndex-1;
                     arr.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
                 } else {
-                    gDebugLog.error(`findDefines: ${document.fileName} has no range for unuseRange`);
+                    gDebugLog.error(`_proccessDsc: ${document.fileName} has no range for unuseRange`);
                 }
             }
 
@@ -607,9 +607,9 @@ export class EdkWorkspace {
                 if(results.length === 0){
                     DiagnosticManager.error(document.uri,lineIndex,EdkDiagnosticCodes.missingPath, filePath);
                 }
-                let inf = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[this.sectionsStack.length - 1], line);
-                const libName = inf.text.split("|")[0].trim();
-                const libNameTag = libName +" - "+inf.getModuleTypeStr();
+                let newLibDefinition = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[this.sectionsStack.length - 1], line);
+                const libName = newLibDefinition.text.split("|")[0].trim();
+                const libNameTag = libName +" - "+newLibDefinition.getModuleTypeStr();
                 
                 if(this.libraryTypeTrack.has(libNameTag) && (libName.toLocaleLowerCase() !== "null")){
                     if(this.sectionsStack[this.sectionsStack.length-1].toLowerCase().endsWith(".inf")){
@@ -617,20 +617,20 @@ export class EdkWorkspace {
                         continue;
                     }
 
-                    let originalLibrary = this.libraryTypeTrack.get(libNameTag)!;
-                    let diagnosticDuplicatedInf = DiagnosticManager.warning(originalLibrary.location.uri, originalLibrary.location.range.start.line, EdkDiagnosticCodes.duplicateStatement, `Library overwritten: ${libName}`, [vscode.DiagnosticTag.Unnecessary]);
-                    diagnosticDuplicatedInf.relatedInformation = [new vscode.DiagnosticRelatedInformation(inf.location, "New definition")];
-                    
+                    let previousLibDefinition = this.libraryTypeTrack.get(libNameTag)!;
+                    DiagnosticManager.warning(previousLibDefinition.location.uri, previousLibDefinition.location.range.start.line,
+                        EdkDiagnosticCodes.duplicateStatement,
+                        `Library overwritten: ${libName}`,
+                        [vscode.DiagnosticTag.Unnecessary],
+                        [new vscode.DiagnosticRelatedInformation(newLibDefinition.location, "New definition")]);
+
                     // Find and remove originalLibrary from this.filesLibraries
-                    const index = this.filesLibraries.indexOf(originalLibrary);
+                    const index = this.filesLibraries.indexOf(previousLibDefinition);
                     if (index > -1) {
-                        this.filesLibraries.splice(index, 1);
+                        this.filesLibraries[index] = newLibDefinition;
                     }
                 }
-
-                this.libraryTypeTrack.set(libNameTag,inf);
-                
-                this.filesLibraries.push(inf);
+                this.libraryTypeTrack.set(libNameTag,newLibDefinition);
                 continue;
             }
 
@@ -815,23 +815,7 @@ export class EdkWorkspace {
         return this.parsedDocuments.get(document.uri.fsPath) || [];
     }
 
-    async grayoutDocument(document: vscode.TextDocument) {
 
-        if (this.processComplete) {
-            // check if document is in index documents
-            if (this.isDocumentInIndex(document)) {
-                let grayoutRange = this.getGrayoutRange(document);
-                let grayoutController = this.grayoutControllers.get(document.uri);
-                if(!grayoutController){
-                    grayoutController = new GrayoutController(document, grayoutRange);
-                    this.grayoutControllers.set(document.uri, grayoutController);
-                }
-                grayoutController.grayoutRange(grayoutRange);
-                // grayoutController.doGrayOut();
-                return;
-            }
-        }
-    }
 
     async findDefinesFdf() {
         if (this.workInProgress) {
@@ -956,7 +940,23 @@ export class EdkWorkspace {
     }
 
 
+    async grayoutDocument(document: vscode.TextDocument) {
 
+        if (this.processComplete) {
+            // check if document is in index documents
+            if (this.isDocumentInIndex(document)) {
+                let grayoutRange = this.getGrayoutRange(document);
+                let grayoutController = this.grayoutControllers.get(document.uri);
+                if(!grayoutController){
+                    grayoutController = new GrayoutController(document, grayoutRange);
+                    this.grayoutControllers.set(document.uri, grayoutController);
+                }
+                grayoutController.grayoutRange(grayoutRange);
+                // grayoutController.doGrayOut();
+                return;
+            }
+        }
+    }
     async fdfPostProcces(document: vscode.TextDocument) {
         // preprocess fdf files
         if (this.processComplete) {
