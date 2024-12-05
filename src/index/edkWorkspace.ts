@@ -664,6 +664,8 @@ export class EdkWorkspace {
                     if (index > -1) {
                         this.filesLibraries[index] = newLibDefinition;
                     }
+                }else{
+                    this.filesLibraries.push(newLibDefinition);
                 }
                 this.libraryTypeTrack.set(libNameTag,newLibDefinition);
                 continue;

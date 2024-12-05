@@ -38,7 +38,7 @@
         },
         {
           "name": "keyword.control.edk2_fdf",
-          "match": "(!)(ifdef|elseif|ifndef|if|endif|include|else)"
+          "match": "(!)(ifdef|elseif|ifndef|if|endif|include|else|error)"
         },
         {
           "name": "constant.numeric.edk2_fdf",

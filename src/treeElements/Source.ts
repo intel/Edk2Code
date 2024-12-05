@@ -50,12 +50,12 @@ export class EdkSourceNode extends EdkNode{
                 for (const symbol of sourceSymbols) {
                     const symbolNode = new EdkSymbolNode(this.uri, symbol, this.workspace);
                     if(symbol.kind === vscode.SymbolKind.Function){
-                    if(!gMapFileManager.isSymbolUsed(symbol.name)){
-                        DiagnosticManager.warning(this.uri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
-                        symbolNode.tooltip = "Unused function";
-                        symbolNode.description = `Unused ${symbolNode.description}`;
-                        symbolNode.iconPath = new vscode.ThemeIcon("warning");
-                    }
+                        if(!gMapFileManager.isSymbolUsed(symbol.name)){
+                            DiagnosticManager.warning(this.uri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
+                            symbolNode.tooltip = "Unused function";
+                            symbolNode.description = `Unused ${symbolNode.description}`;
+                            symbolNode.iconPath = new vscode.ThemeIcon("warning");
+                        }
                     }
                     this.addChildren(symbolNode);
                 }
