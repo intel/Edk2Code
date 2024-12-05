@@ -432,11 +432,13 @@ export class EdkWorkspace {
         let isRangeActive = false;
         let unuseRangeStart = 0;
 
+        gDebugLog.verbose(`# Parsing DSC Document: ${document.uri.fsPath}`);
         for (let line of text) {
+            
             lineIndex++;
+            gDebugLog.verbose(`\t\t${lineIndex}: ${line}`);
             // Skip comments
-            line = line.split("#")[0].trim();
-            if (line.length === 0) { continue; }
+            if(line.trim().startsWith("#")){continue;}
 
             let rawLine = line;
             // replace definitions
@@ -763,7 +765,7 @@ export class EdkWorkspace {
     }
 
 
-
+    // TODO: Unifiy this function with _proccessDsc
     private async _proccessFdf(document: vscode.TextDocument) {
         gDebugLog.verbose(`findDefines Fdf: ${document.fileName}`);
 
@@ -784,8 +786,7 @@ export class EdkWorkspace {
         for (let line of text) {
             lineIndex++;
             // Skip comments
-            line = line.split("#")[0].trim();
-            if (line.length === 0) { continue; }
+            if(line.trim().startsWith("#")){continue;}
 
             // replace definitions
             let originalLine = line;
@@ -889,12 +890,16 @@ export class EdkWorkspace {
 
 
     private processConditional(text: string):string|undefined {
+        let originalText = text;
         text = text.replaceAll(REGEX_VAR_USAGE, `"${UNDEFINED_VARIABLE}"`);
         // text = text.replaceAll(UNDEFINED_VARIABLE, '"???"');
 
         let tokens = [];
         if (text.includes('"')) {
             tokens = text.split('"');
+            if(tokens.length%2 !== 1){ // check if there is an open string
+                return `Open string: ${originalText}`;
+            }
             tokens = [...tokens[0].trim().split(" "), ...[tokens[1].trim()], ...tokens[2].trim().split(" ")];
         } else {
             tokens = text.trim().split(" ");
