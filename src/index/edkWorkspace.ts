@@ -437,8 +437,9 @@ export class EdkWorkspace {
             
             lineIndex++;
             gDebugLog.verbose(`\t\t${lineIndex}: ${line}`);
+            line = line.trim();
             // Skip comments
-            if(line.trim().startsWith("#")){continue;}
+            if(line.startsWith("#")){continue;}
 
             let rawLine = line;
             // replace definitions
@@ -786,7 +787,8 @@ export class EdkWorkspace {
         for (let line of text) {
             lineIndex++;
             // Skip comments
-            if(line.trim().startsWith("#")){continue;}
+            line = line.trim();
+            if(line.startsWith("#")){continue;}
 
             // replace definitions
             let originalLine = line;
