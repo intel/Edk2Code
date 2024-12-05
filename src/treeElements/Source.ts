@@ -44,19 +44,22 @@ export class EdkSourceNode extends EdkNode{
             }
 
             // Symbols
-            const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(this.uri);
-            for (const symbol of sourceSymbols) {
-                const symbolNode = new EdkSymbolNode(this.uri, symbol, this.workspace);
-                if(symbol.kind === vscode.SymbolKind.Function){
-                  if(!gMapFileManager.isSymbolUsed(symbol.name)){
-                    DiagnosticManager.warning(this.uri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
-                    symbolNode.tooltip = "Unused function";
-                    symbolNode.description = `Unused ${symbolNode.description}`;
-                    symbolNode.iconPath = new vscode.ThemeIcon("warning");
-                  }
+            // TODO: experimental function
+            if(false){
+                const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(this.uri);
+                for (const symbol of sourceSymbols) {
+                    const symbolNode = new EdkSymbolNode(this.uri, symbol, this.workspace);
+                    if(symbol.kind === vscode.SymbolKind.Function){
+                    if(!gMapFileManager.isSymbolUsed(symbol.name)){
+                        DiagnosticManager.warning(this.uri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
+                        symbolNode.tooltip = "Unused function";
+                        symbolNode.description = `Unused ${symbolNode.description}`;
+                        symbolNode.iconPath = new vscode.ThemeIcon("warning");
+                    }
+                    }
+                    this.addChildren(symbolNode);
                 }
-                this.addChildren(symbolNode);
-              }
+            }
 
         });
     }

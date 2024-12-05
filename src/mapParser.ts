@@ -19,7 +19,7 @@ export class MapFileData {
 
     constructor(mapFilePath: string) {
         if (!fs.existsSync(mapFilePath)) {
-            gDebugLog.error(`Map file not found at ${mapFilePath}`);
+            gDebugLog.warning(`Map file not found at ${mapFilePath}`);
             return;
         }
         this.parseMapFile(mapFilePath);

@@ -554,18 +554,21 @@ export async function openLibraryNode(infUri:vscode.Uri, moduleUri:vscode.Uri, n
         
         
         // Check if the symbol is used
-        const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(fileUri);
-        for (const symbol of sourceSymbols) {
-          const symbolNode = new SourceSymbolTreeItem(fileUri, symbol);
-          if(symbol.kind === vscode.SymbolKind.Function){
-            if(!gMapFileManager.isSymbolUsed(symbol.name)){
-              DiagnosticManager.warning(fileUri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
-              symbolNode.tooltip = "Unused function";
-              symbolNode.description = `Unused ${symbolNode.description}`;
-              symbolNode.iconPath = new vscode.ThemeIcon("warning");
+        // TODO: Experimental function
+        if(false){
+          const sourceSymbols:vscode.DocumentSymbol[] = await getAllSymbols(fileUri);
+          for (const symbol of sourceSymbols) {
+            const symbolNode = new SourceSymbolTreeItem(fileUri, symbol);
+            if(symbol.kind === vscode.SymbolKind.Function){
+              if(!gMapFileManager.isSymbolUsed(symbol.name)){
+                DiagnosticManager.warning(fileUri,symbol.range,EdkDiagnosticCodes.unusedSymbol, `Unused function: ${symbol.name}`, [vscode.DiagnosticTag.Unnecessary]);
+                symbolNode.tooltip = "Unused function";
+                symbolNode.description = `Unused ${symbolNode.description}`;
+                symbolNode.iconPath = new vscode.ThemeIcon("warning");
+              }
             }
+            sourceNode.addChildren(symbolNode);
           }
-          sourceNode.addChildren(symbolNode);
         }
         
       }

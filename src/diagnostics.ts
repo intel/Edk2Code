@@ -81,7 +81,7 @@ export class DiagnosticManager {
         if(!edkErrorDescriptions.has(edkDiagCode)){
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
-        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Warning,"","", tags, relatedInformation);
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Warning,"EDK2Code",edkDiagCode, tags, relatedInformation);
     }
 
     public static info(documentUri: vscode.Uri, line: number | vscode.Range, edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = [],
@@ -89,7 +89,7 @@ export class DiagnosticManager {
         if(!edkErrorDescriptions.has(edkDiagCode)){
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
-        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Information,"","", tags, relatedInformation);
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Information,"EDK2Code",edkDiagCode, tags, relatedInformation);
     }
 
     public static error(documentUri: vscode.Uri, line: number | vscode.Range,  edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = [],
@@ -97,7 +97,7 @@ export class DiagnosticManager {
         if(!edkErrorDescriptions.has(edkDiagCode)){
             throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
         }
-        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Error,"","", tags, relatedInformation);
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Error,"EDK2Code",edkDiagCode, tags, relatedInformation);
     }
 
     private static addDiagnostic(documentUri: vscode.Uri, diagnostic: vscode.Diagnostic) {

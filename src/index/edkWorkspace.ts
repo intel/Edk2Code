@@ -479,6 +479,41 @@ export class EdkWorkspace {
         return this.pcdDefinitions.get(namespace);
     }
 
+
+    private stripComment(line: string): string {
+        if (!line.includes("#")) {
+            return line.trim();
+        }
+    
+        const result: string[] = [];
+        let insideQuotes = false;
+        let quoteChar: string | null = null;
+        let escaped = false;
+    
+        for (const char of line) {
+            if ((char === '"' || char === "'") && !escaped) {
+                if (!insideQuotes) {
+                    insideQuotes = true;
+                    quoteChar = char;
+                } else if (char === quoteChar) {
+                    insideQuotes = false;
+                    quoteChar = null;
+                }
+            } else if (char === "#" && !insideQuotes) {
+                break;
+            } else if (char === "\\" && !escaped) {
+                escaped = true;
+            } else {
+                escaped = false;
+            }
+    
+            result.push(char);
+        }
+    
+        return result.join("").trimEnd();
+    }
+    
+
     private async _proccessDsc(document: vscode.TextDocument) {
         DiagnosticManager.clearProblems(document.uri);
         gDebugLog.verbose(`_proccessDsc: ${document.fileName}`);
@@ -504,9 +539,9 @@ export class EdkWorkspace {
             lineIndex++;
             gDebugLog.verbose(`\t\t${lineIndex}: ${line}`);
 
-            line = line.trim();
+            line = this.stripComment(line);
             // Skip comments
-            if(line.startsWith("#")){continue;}
+            if(line.length === 0){continue;}
 
 
 
@@ -640,7 +675,10 @@ export class EdkWorkspace {
 
                 // get matched string 
                 let filePath = match[0].trim();
-                
+                let results = await gPathFind.findPath(filePath, document.uri.fsPath);
+                if(results.length === 0){
+                    DiagnosticManager.error(document.uri,lineIndex,EdkDiagnosticCodes.missingPath, filePath);
+                }
                 let inf = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[0], line);
                 // If new module found. remove previous model from section stack
                 if(filePath.toLowerCase().endsWith(".inf")){
@@ -841,7 +879,7 @@ export class EdkWorkspace {
     // TODO: Unifiy this function with _proccessDsc
     private async _proccessFdf(document: vscode.TextDocument) {
         gDebugLog.verbose(`findDefines Fdf: ${document.fileName}`);
-
+        DiagnosticManager.clearProblems(document.uri);
         // Add document to inactiveLines
         if (this.isDocumentInIndex(document)) {
             gDebugLog.warning(`findDefines Fdf: ${document.fileName} already in inactiveLines`);
@@ -858,8 +896,9 @@ export class EdkWorkspace {
 
         for (let line of text) {
             lineIndex++;
+            line = this.stripComment(line);
+            
             // Skip comments
-            line = line.trim();
             if(line.startsWith("#")){continue;}
 
 
@@ -983,7 +1022,8 @@ export class EdkWorkspace {
         if (conditionStr.includes('"')) {
             tokens = conditionStr.split('"');
             if(tokens.length%2 !== 1){ // check if there is an open string
-                return `Open string: ${originalText}`;
+                DiagnosticManager.error(documentUri,lineIndex,EdkDiagnosticCodes.syntaxStatement, inputText);
+                return true;
             }
             tokens = [...tokens[0].trim().split(" "), ...[tokens[1].trim()], ...tokens[2].trim().split(" ")];
         } else {
@@ -1005,7 +1045,7 @@ export class EdkWorkspace {
 
                 switch(tokens[0].toLowerCase()){
                     case "!if":
-                        conditionValue = this.evaluateConditional(conditionStr.replaceAll(UNDEFINED_VARIABLE,'FALSE'));
+                        conditionValue = this.evaluateConditional(conditionStr.replaceAll(UNDEFINED_VARIABLE,'FALSE'), documentUri, lineIndex);
                         break;
                     case "!ifdef":
                         conditionValue = this.pushConditional((tokens[1] !== UNDEFINED_VARIABLE));
@@ -1030,7 +1070,7 @@ export class EdkWorkspace {
                     DiagnosticManager.error(documentUri, lineIndex, EdkDiagnosticCodes.conditionalMissform, "!elseif without !if");
                     return true;
                 }
-                conditionValue = this.evaluateConditional(conditionStr.replaceAll(UNDEFINED_VARIABLE,'FALSE'));
+                conditionValue = this.evaluateConditional(conditionStr.replaceAll(UNDEFINED_VARIABLE,'FALSE'), documentUri, lineIndex);
                 parentActive = this.conditionStack.length <= 1 || this.conditionStack[this.conditionStack.length - 2].active;
 
                 // Update the top of the stack
@@ -1105,7 +1145,7 @@ export class EdkWorkspace {
         this.conditionalStack.push(v);
     }
 
-    private evaluateConditional(text: string): any {
+    private evaluateConditional(text: string, documentUri:vscode.Uri, lineNo:number): any {
 
 
         let data = text.replaceAll(/(?<![\!"])\b(\w+)\b(?!")/gi, '"$1"'); // convert words to string
@@ -1133,6 +1173,8 @@ export class EdkWorkspace {
             result = eval(data);
         } catch (error) {
             gDebugLog.error(`Evaluation problem ${text}`);
+            DiagnosticManager.error(documentUri,lineNo,EdkDiagnosticCodes.conditionalMissform,`${(error as Error).message} - ${text}` );
+
             return false;
         }
 
