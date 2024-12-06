@@ -1174,8 +1174,8 @@ export class EdkWorkspace {
             }
             result = eval(data);
         } catch (error) {
-            gDebugLog.error(`Evaluation problem ${text}`);
-            DiagnosticManager.error(documentUri,lineNo,EdkDiagnosticCodes.conditionalMissform,`${(error as Error).message} - ${text}` );
+            gDebugLog.error(`Evaluate conditional ${documentUri.fsPath}:${lineNo + 1} - ${(error as Error).message} - ${text}`);
+            // DiagnosticManager.error(documentUri,lineNo,EdkDiagnosticCodes.conditionalMissform,`${(error as Error).message} - ${text}` );
 
             return false;
         }
