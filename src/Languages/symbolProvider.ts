@@ -5,6 +5,7 @@ import path = require('path');
 import { CompletionItemKind } from 'vscode';
 import { ParserFactory } from '../edkParser/parserFactory';
 import { gEdkWorkspaces } from '../extension';
+import { Debouncer } from '../debouncer';
 
 
 export class EdkSymbolProvider implements vscode.DocumentSymbolProvider {
@@ -37,8 +38,11 @@ export class EdkSymbolProvider implements vscode.DocumentSymbolProvider {
           if(wp.length){
             // By defautl use the first workspace to parse the dsc file
             if(this._idUpdateNeeded){
-              await wp[0].proccessWorkspace();
-              this._idUpdateNeeded = false;
+              const debouncer = Debouncer.getInstance();
+              debouncer.debounce("updateDocumentSymbols",async () => {
+                await wp[0].proccessWorkspace();
+                this._idUpdateNeeded = false;
+              }, 5000);
             }
             if (document.languageId === 'edk2_fdf') {
               await wp[0].fdfPostProcces(document);

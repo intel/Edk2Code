@@ -6,6 +6,7 @@ import { exec, execWindow, getStaticPath, normalizePath, readLines, toPosix } fr
 import { execSync } from 'child_process';
 import * as edkStatusBar from './statusBar';
 import { getEdkCodeFolderFilePath, getEdkCodeFolderPath } from './edk2CodeFolder';
+import { Debouncer } from './debouncer';
 
 /*
 cscope -R -L -2 ".*" | awk -F ' ' '{print $2 "#" $1}' | sort | uniq
@@ -327,11 +328,8 @@ export class CscopeAgent {
     /**
      * Updates Cscope database based on cscope.files elements
      */
-        if(this.taskUpdateId !== undefined){
-            clearTimeout(this.taskUpdateId);
-        }
-
-        this.taskUpdateId = setTimeout(async () => {
+        const debouncer = Debouncer.getInstance();
+        debouncer.debounce("updateCscopeDb", async () => {
             let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
             if(fs.existsSync(cscopeFilesPath)){
                 
@@ -343,3 +341,4 @@ export class CscopeAgent {
         }, this.updateFrequency);
     }
 }
+
