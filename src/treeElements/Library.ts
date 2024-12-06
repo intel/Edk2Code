@@ -114,9 +114,9 @@ export class EdkInfNode extends EdkNode{
         if(!gConfigAgent.getExpandCircularOrDuplicateLibraries()){
             this.collapsibleState = vscode.TreeItemCollapsibleState.None;
         }
-        this.description = `(Duplicated library)`;
+        this.description = `(Recursive library)`;
         this.iconPath = new vscode.ThemeIcon("extensions-remote");
-        this.tooltip = "Duplicated library";
+        this.tooltip = "Recursive library";
     }
 
     setCircularDependency(){

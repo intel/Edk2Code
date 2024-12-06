@@ -1149,9 +1149,13 @@ export class EdkWorkspace {
 
     private evaluateConditional(text: string, documentUri:vscode.Uri, lineNo:number): any {
 
-
-        let data = text.replaceAll(/(?<![\!"])\b(\w+)\b(?!")/gi, '"$1"'); // convert words to string
-        data = data.replace(/\!\w+/gi, "");  // remove conditional keyword
+        let data = text.replaceAll(/"true"/gi, "true"); // replace booleans
+        data = data.replaceAll(/"false"/gi, "false");
+        data = data.replaceAll(/ and /gi, " && ");
+        data = data.replaceAll(/ or /gi, " || ");
+        data = data.replace(/ not /gi, " ! ");
+        data = data.replaceAll(/(?<![\!"])\b(\w+)\b(?!")/gi, '"$1"'); // convert words to string
+        data = data.replace(/^\!\w+/gi, "");  // remove conditional keyword
 
 
         while (data.match(/"in"/gi)) {
@@ -1161,11 +1165,7 @@ export class EdkWorkspace {
             data = beging + ".includes(" + last;
         }
 
-        data = data.replaceAll(/"true"/gi, "true"); // replace booleans
-        data = data.replaceAll(/"false"/gi, "false");
-        data = data.replaceAll(/"and"/gi, "&&");
-        data = data.replaceAll(/"or"/gi, "||");
-        data = data.replace(/"not"\s/gi, "!");
+
 
         let result = false;
         try {
