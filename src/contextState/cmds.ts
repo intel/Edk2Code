@@ -709,7 +709,7 @@ export async function focusOnNode(node:TreeItem) {
     edkLensTreeDetailProvider.addChildren(node);
     await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
     edkLensTreeDetailProvider.refresh();
-    edkLensTreeDetailView.title = "EDK2 Library Tree";
+    edkLensTreeDetailView.title = "EDK2 Module Map";
 }
 
 export async function nodeFocusBack(){

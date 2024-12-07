@@ -4,7 +4,7 @@ import { getStaticPath, itsPcdSelected } from '../utils';
 import path = require('path');
 import { CompletionItemKind } from 'vscode';
 import { ParserFactory } from '../edkParser/parserFactory';
-import { gEdkWorkspaces } from '../extension';
+import { gConfigAgent, gEdkWorkspaces } from '../extension';
 import { Debouncer } from '../debouncer';
 
 
@@ -42,7 +42,7 @@ export class EdkSymbolProvider implements vscode.DocumentSymbolProvider {
               debouncer.debounce("updateDocumentSymbols",async () => {
                 await wp[0].proccessWorkspace();
                 this._idUpdateNeeded = false;
-              }, 5000);
+              }, gConfigAgent.getDelayToRefreshWorkspace());
             }
             if (document.languageId === 'edk2_fdf') {
               await wp[0].fdfPostProcces(document);

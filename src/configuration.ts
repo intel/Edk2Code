@@ -29,7 +29,7 @@ export class ConfigAgent {
 
 
 
-    public loadedConfiguration: vscode.WorkspaceConfiguration;
+    public vscodeSettings: vscode.WorkspaceConfiguration;
 
     private reloadConfigs = ["dscPaths", "buildDefines"];
     private configFileWatcher: vscode.FileSystemWatcher | null = null;
@@ -40,8 +40,18 @@ export class ConfigAgent {
     private settingsFileName: string = "edk2_workspace_properties.json";
 
     public constructor() {
-        this.loadedConfiguration = vscode.workspace.getConfiguration('edk2code');
+        this.vscodeSettings = vscode.workspace.getConfiguration('edk2code');
         this.workspaceConfig = this.readWpConfig();
+        vscode.workspace.onDidChangeConfiguration(this.reloadVscodeSettings.bind(this));
+
+    }
+
+    reloadVscodeSettings(){
+        this.vscodeSettings = vscode.workspace.getConfiguration('edk2code');
+    }
+
+    isDiagnostics(){
+        return <boolean>this.get("enableDiagnostics");
     }
 
     reloadConfigFile(){
@@ -141,11 +151,11 @@ export class ConfigAgent {
 
 
     get(option: string) {
-        return this.loadedConfiguration.get(option);
+        return this.vscodeSettings.get(option);
     }
 
     async set(option: string, value: any) {
-        await this.loadedConfiguration.update(option, value);
+        await this.vscodeSettings.update(option, value);
     }
 
     getLogLevel(): LogLevel {
@@ -241,6 +251,11 @@ export class ConfigAgent {
 
     getIsGenIgnoreFile() {
         return <boolean>this.get("generateIgnoreFile");
+    }
+
+    getDelayToRefreshWorkspace() {
+        console.log(<number>this.get("delayToRefreshWorkspace"));
+        return <number>this.get("delayToRefreshWorkspace");
     }
 
     getUseEdkCallHiearchy(){

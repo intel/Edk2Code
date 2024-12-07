@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { gConfigAgent } from './extension';
 
 
 export enum EdkDiagnosticCodes{
@@ -27,6 +28,7 @@ unusedSymbol,
 emptyFile,
 circularDependency,
 inactiveCode,
+edk2CodeUnsuported,
 }
 
 export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
@@ -55,6 +57,7 @@ export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
     [EdkDiagnosticCodes.emptyFile, "Empty file"],
     [EdkDiagnosticCodes.circularDependency, "Circular dependency"],
     [EdkDiagnosticCodes.inactiveCode, "Inactive code"],
+    [EdkDiagnosticCodes.edk2CodeUnsuported, "Edk2Code unsupported"],
   ]);
 
 export class DiagnosticManager {
@@ -128,6 +131,11 @@ export class DiagnosticManager {
                                 tags: vscode.DiagnosticTag[]= [],
                                 relatedInformation?: vscode.DiagnosticRelatedInformation[]|undefined) 
         {
+
+        if(gConfigAgent.isDiagnostics() === false){
+            return undefined;
+        }
+
         // Create a range that covers the entire line
         let range:vscode.Range;
         if (line instanceof vscode.Range) {

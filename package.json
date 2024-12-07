@@ -153,6 +153,18 @@
             "markdownDescription": "Generate `.ignore` file. This file reduce the scope of files consumed by vscode commands as `search` or `open file`",
             "default": false
           },
+          "edk2code.delayToRefreshWorkspace": {
+            "order": 2,
+            "type": "number",
+            "markdownDescription": "Delay to refresh EDK2 workspace after a file change in milliseconds",
+            "default": 5000
+          },
+          "edk2code.enableDiagnostics": {
+            "order": 2,
+            "type": "boolean",
+            "markdownDescription": "Experimental diagnostics for EDK2",
+            "default": true
+          },
           "edk2code.useEdkCallHierarchy": {
             "order": 2,
             "type": "boolean",
@@ -344,11 +356,13 @@
       "view/item/context": [
         {
           "command": "edk2code.getItemTreePath",
-          "group": "navigation"
+          "group": "navigation",
+          "when": "view == detailsView"
         },
         {
           "command": "edk2code.focusOnNode",
-          "group": "navigation,"
+          "group": "navigation",
+          "when": "view == detailsView"
         }
 
       ]

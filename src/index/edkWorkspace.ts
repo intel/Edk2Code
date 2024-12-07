@@ -475,6 +475,7 @@ export class EdkWorkspace {
         return this.defines.replaceDefines(text);
     }
 
+
     getPcds(namespace: any) {
         return this.pcdDefinitions.get(namespace);
     }
@@ -1044,7 +1045,6 @@ export class EdkWorkspace {
             case "!ifdef":
             case "!ifndef":
                 this.conditionOpen.push({uri:documentUri, lineNo:lineIndex});
-
                 switch(tokens[0].toLowerCase()){
                     case "!if":
                         conditionValue = this.evaluateConditional(conditionStr.replaceAll(UNDEFINED_VARIABLE,'FALSE'), documentUri, lineIndex);
@@ -1145,6 +1145,7 @@ export class EdkWorkspace {
 
     private pushConditional(v: boolean) {
         this.conditionalStack.push(v);
+        return v;
     }
 
     private evaluateConditional(text: string, documentUri:vscode.Uri, lineNo:number): any {
@@ -1174,8 +1175,8 @@ export class EdkWorkspace {
             }
             result = eval(data);
         } catch (error) {
-            gDebugLog.error(`Evaluate conditional ${documentUri.fsPath}:${lineNo + 1} - ${(error as Error).message} - ${text}`);
-            // DiagnosticManager.error(documentUri,lineNo,EdkDiagnosticCodes.conditionalMissform,`${(error as Error).message} - ${text}` );
+            gDebugLog.warning(`Evaluate conditional ${documentUri.fsPath}:${lineNo + 1} - ${(error as Error).message} - ${text}`);
+            DiagnosticManager.info(documentUri,lineNo,EdkDiagnosticCodes.edk2CodeUnsuported,`Edk2Code extension doesnt support this conditional yet: ${text}` );
 
             return false;
         }
