@@ -25,6 +25,7 @@ import { DiagnosticManager } from './diagnostics';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
 import { TreeItem } from './treeElements/TreeItem';
+import { isCpptoolsExtension, missingCppExtension } from './ui/messages';
 
 
 
@@ -110,6 +111,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		// Debug
 		vscode.commands.registerCommand('edk2code.debugCommand', async ()=>{
+			const allCommands = await vscode.commands.getCommands(true);
+			console.log("Available Commands:");
+			allCommands.forEach(command => console.log(command));
+
 			let factory = new ParserFactory();
 			let doc = getCurrentDocument()!;
 			let parser = factory.getParser(doc);
@@ -170,6 +175,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	gConfigAgent.initConfigWatcher();
 	
+	isCpptoolsExtension();
 
 
 	initLanguages();
@@ -207,8 +213,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', false);
 	
+
 	
 }
+
+
+
+
 
 // this method is called when your extension is deactivated
 export async function deactivate() {

@@ -463,44 +463,27 @@ export async function itsPcdSelected(document: vscode.TextDocument, position: vs
 }
 
 export async function checkCompileCommandsConfig(){
-    let cCppPropertiesPath = path.join(gWorkspacePath, ".vscode", "c_cpp_properties.json");
-    const clangdExtension = vscode.extensions.getExtension('llvm-vs-code-extensions.vscode-clangd');
+    if (! await fixCompileCommands()) {
+        infoMissingCompilesCommandCpp();
+    }
+}
 
+export async function fixCompileCommands(){
+    let cCppPropertiesPath = path.join(gWorkspacePath, ".vscode", "c_cpp_properties.json");
     const expectedPath = path.join("${workspaceFolder}", ".edkCode", "compile_commands.json");
+
     if (fs.existsSync(cCppPropertiesPath)) {
         let cProperties = JSON.parse(fs.readFileSync(cCppPropertiesPath).toString());
         const commandsPath = cProperties["configurations"][0]["compileCommands"];
         gDebugLog.debug(`cCppPropertiesPath: ${commandsPath}`);
         gDebugLog.debug(`expectedPath: ${expectedPath}`);
         if(commandsPath !== expectedPath){
-            let update = await updateCompilesCommandCpp();
-            if(update){
-                cProperties["configurations"][0]["compileCommands"] = expectedPath;
-                fs.writeFileSync(cCppPropertiesPath, JSON.stringify(cProperties,null,4));
-            }
+            cProperties["configurations"][0]["compileCommands"] = expectedPath;
+            fs.writeFileSync(cCppPropertiesPath, JSON.stringify(cProperties,null,4));
         }
-    } else if (clangdExtension) {
-        const expectedArgument = "--compile-commands-dir=${workspaceFolder}/.edkCode/";
-        const clangdConfiguration = vscode.workspace.getConfiguration('clangd');
-        const clangdArguments = clangdConfiguration.get<string[]>('arguments') || [];
-        const existingIndex = clangdArguments.findIndex(arg => arg.startsWith('--compile-commands-dir='));
-        let updatedArguments = [...clangdArguments];
-        if (existingIndex === -1) {
-            let update = await updateCompilesCommandCpp();
-            if (update) {
-                updatedArguments.push(expectedArgument);
-                await clangdConfiguration.update('arguments', updatedArguments, vscode.ConfigurationTarget.Workspace);
-            }
-        } else if (!clangdArguments.includes(expectedArgument)) {
-            let update = await updateCompilesCommandCpp();
-            if (update) {
-                updatedArguments[existingIndex] = expectedArgument;
-                await clangdConfiguration.update('arguments', updatedArguments, vscode.ConfigurationTarget.Workspace);
-            }
-        }
-    } else {
-        infoMissingCompilesCommandCpp();
+        return true;
     }
+    return false;
 }
 
 
@@ -517,6 +500,8 @@ export function profileEnd() {
     let diff = profileEndTime - profileStartTime;
     console.log(`PROFILE END: ${diff}`);
 }
+
+
 
 
 
