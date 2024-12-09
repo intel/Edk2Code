@@ -1,7 +1,7 @@
 import { Uri } from "vscode";
 import * as vscode from 'vscode';
 import { rgSearch } from "../rg";
-import { checkCompileCommandsConfig, delay, getCurrentWord, gotoFile, isWorkspacePath, listFilesRecursive, openTextDocument, pathCompare, profileEnd, profileStart, readLines, toPosix } from "../utils";
+import { delay, getCurrentWord, gotoFile, isWorkspacePath, listFilesRecursive, openTextDocument, pathCompare, profileEnd, profileStart, readLines, toPosix } from "../utils";
 import path = require("path");
 import * as fs from 'fs';
 import { edkLensTreeDetailProvider, edkLensTreeDetailView, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gMapFileManager, gPathFind, gWorkspacePath } from "../extension";
@@ -13,7 +13,6 @@ import { FileTreeItem, FileTreeItemLibraryTree, openLibraryNode, SectionTreeItem
 import { ParserFactory, getParser } from "../edkParser/parserFactory";
 import { Edk2SymbolType } from "../symbols/symbolsType";
 import * as edkStatusBar from '../statusBar';
-import { infoMissingCompileInfo } from "../ui/messages";
 import { SettingsPanel } from "../settings/settingsPanel";
 import { InfParser } from "../edkParser/infParser";
 import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
@@ -22,6 +21,8 @@ import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder"
 import { EdkInfNode } from "../treeElements/Library";
 import { TreeItem } from "../treeElements/TreeItem";
 import { EdkModule, ModuleReport } from "../moduleReport";
+import { infoMissingCompileInfo } from "../ui/messages";
+import { checkCppConfiguration } from "../cppUtils";
 
     export async function rebuildIndexDatabase() {
 
@@ -110,7 +111,7 @@ import { EdkModule, ModuleReport } from "../moduleReport";
                         infoMissingCompileInfo();
                         await reloadSymbols();
                     }else{
-                        await checkCompileCommandsConfig();
+                        await checkCppConfiguration();
                         await gCscope.reload();
                     }
 

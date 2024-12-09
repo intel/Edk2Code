@@ -50,6 +50,14 @@ export class ConfigAgent {
         this.vscodeSettings = vscode.workspace.getConfiguration('edk2code');
     }
 
+    isWarningCppExtension(){
+        return <boolean>this.get("warningAboutCppExtension");
+    }
+
+    async setWarningCppExtension(value:boolean){
+        await this.set("warningAboutCppExtension",value);
+    }
+
     isDiagnostics(){
         return <boolean>this.get("enableDiagnostics");
     }

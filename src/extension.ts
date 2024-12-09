@@ -13,21 +13,15 @@ import { initLanguages } from './Languages/languages';
 import { ModuleReport } from './moduleReport';
 import { GuidProvider } from './Languages/guidProvider';
 import { PathFind } from './pathfind';
-
-import { WorkspaceDefinitions } from './index/definitions';
 import { EdkWorkspaces } from './index/edkWorkspace';
 import { Edk2CallHierarchyProvider } from './callHiearchy';
-import { checkCompileCommandsConfig, copyToClipboard, getCurrentDocument, gotoFile, showVirtualFile } from './utils';
+import { copyToClipboard, getCurrentDocument, gotoFile, showVirtualFile } from './utils';
 import { ParserFactory } from './edkParser/parserFactory';
-import { SettingsPanel } from './settings/settingsPanel';
 import { TreeDetailsDataProvider } from './TreeDataProvider';
 import { DiagnosticManager } from './diagnostics';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
 import { TreeItem } from './treeElements/TreeItem';
-import { isCpptoolsExtension, missingCppExtension } from './ui/messages';
-
-
 
 
 // Global variables
@@ -111,9 +105,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		// Debug
 		vscode.commands.registerCommand('edk2code.debugCommand', async ()=>{
-			const allCommands = await vscode.commands.getCommands(true);
-			console.log("Available Commands:");
-			allCommands.forEach(command => console.log(command));
 
 			let factory = new ParserFactory();
 			let doc = getCurrentDocument()!;
@@ -174,9 +165,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	edkStatusBar.init(context);
 
 	gConfigAgent.initConfigWatcher();
-	
-	isCpptoolsExtension();
-
 
 	initLanguages();
 	gMapFileManager = new MapFilesManager();

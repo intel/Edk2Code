@@ -7,7 +7,6 @@ import { gCompileCommands, gDebugLog, gEdkWorkspaces, gExtensionContext, gWorksp
 import { TreeDetailsDataProvider } from "./TreeDataProvider";
 import { rejects } from "assert";
 import { REGEX_PCD } from "./edkParser/commonParser";
-import { infoMissingCompilesCommandCpp, updateCompilesCommandCpp } from "./ui/messages";
 import { TreeItem } from "./treeElements/TreeItem";
 
 
@@ -462,29 +461,6 @@ export async function itsPcdSelected(document: vscode.TextDocument, position: vs
     }
 }
 
-export async function checkCompileCommandsConfig(){
-    if (! await fixCompileCommands()) {
-        infoMissingCompilesCommandCpp();
-    }
-}
-
-export async function fixCompileCommands(){
-    let cCppPropertiesPath = path.join(gWorkspacePath, ".vscode", "c_cpp_properties.json");
-    const expectedPath = path.join("${workspaceFolder}", ".edkCode", "compile_commands.json");
-
-    if (fs.existsSync(cCppPropertiesPath)) {
-        let cProperties = JSON.parse(fs.readFileSync(cCppPropertiesPath).toString());
-        const commandsPath = cProperties["configurations"][0]["compileCommands"];
-        gDebugLog.debug(`cCppPropertiesPath: ${commandsPath}`);
-        gDebugLog.debug(`expectedPath: ${expectedPath}`);
-        if(commandsPath !== expectedPath){
-            cProperties["configurations"][0]["compileCommands"] = expectedPath;
-            fs.writeFileSync(cCppPropertiesPath, JSON.stringify(cProperties,null,4));
-        }
-        return true;
-    }
-    return false;
-}
 
 
 
@@ -502,7 +478,16 @@ export function profileEnd() {
 }
 
 
-
+export async function closeFileIfOpened(filePath: string) {
+    const openEditors = vscode.window.visibleTextEditors;
+    for (const editor of openEditors) {
+        if (editor.document.uri.fsPath === filePath) {
+            await vscode.window.showTextDocument(editor.document);
+            await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            break;
+        }
+    }
+}
 
 
 export function delay(ms: number) {
