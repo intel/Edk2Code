@@ -22,7 +22,7 @@ export function infoMissingCompileInfo(){
 }
 
 export function infoMissingCompilesCommandCpp(){
-    void vscode.window.showInformationMessage("Build contains compile_commands.json but C++ is not configured", "Help").then(async selection => {
+    void vscode.window.showInformationMessage("Build contains compile_commands.json but vscode-cpptools/vscode-clangd is not configured/installed", "Help").then(async selection => {
         if (selection === "Help"){
             await vscode.env.openExternal(vscode.Uri.parse("https://github.com/intel/Edk2Code/wiki/Index-source-code#compile_commandsjson"));
         }
@@ -31,7 +31,7 @@ export function infoMissingCompilesCommandCpp(){
 
 export async function updateCompilesCommandCpp():Promise<Boolean>{
     return new Promise<Boolean>(async (resolve, reject) => {
-        return vscode.window.showInformationMessage("c_cpp_properties.json points to wrong compile_commands.json", "Fix").then(async selection => {
+        return vscode.window.showInformationMessage("c_cpp_properties.json/settings.json points to wrong compile_commands.json", "Fix").then(async selection => {
             if (selection === "Fix"){
                 resolve(true);
             }else{
