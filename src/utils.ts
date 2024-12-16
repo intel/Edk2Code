@@ -398,6 +398,7 @@ export async function itsPcdSelected(document: vscode.TextDocument, position: vs
 
 export async function checkCompileCommandsConfig(){
     let cCppPropertiesPath = path.join(gWorkspacePath, ".vscode", "c_cpp_properties.json");
+    const clangdExtension = vscode.extensions.getExtension('llvm-vs-code-extensions.vscode-clangd');
 
     const expectedPath = path.join("${workspaceFolder}", ".edkCode", "compile_commands.json");
     if (fs.existsSync(cCppPropertiesPath)) {
@@ -412,7 +413,26 @@ export async function checkCompileCommandsConfig(){
                 fs.writeFileSync(cCppPropertiesPath, JSON.stringify(cProperties,null,4));
             }
         }
-    }else{
+    } else if (clangdExtension) {
+        const expectedArgument = "--compile-commands-dir=${workspaceFolder}/.edkCode/";
+        const clangdConfiguration = vscode.workspace.getConfiguration('clangd');
+        const clangdArguments = clangdConfiguration.get<string[]>('arguments') || [];
+        const existingIndex = clangdArguments.findIndex(arg => arg.startsWith('--compile-commands-dir='));
+        let updatedArguments = [...clangdArguments];
+        if (existingIndex === -1) {
+            let update = await updateCompilesCommandCpp();
+            if (update) {
+                updatedArguments.push(expectedArgument);
+                await clangdConfiguration.update('arguments', updatedArguments, vscode.ConfigurationTarget.Workspace);
+            }
+        } else if (!clangdArguments.includes(expectedArgument)) {
+            let update = await updateCompilesCommandCpp();
+            if (update) {
+                updatedArguments[existingIndex] = expectedArgument;
+                await clangdConfiguration.update('arguments', updatedArguments, vscode.ConfigurationTarget.Workspace);
+            }
+        }
+    } else {
         infoMissingCompilesCommandCpp();
     }
 }
