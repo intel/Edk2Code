@@ -1,5 +1,32 @@
 # Change Log
 
+## [1.0.8]
+
+### Enhancements
+- **JSON Configuration & Syntax:**
+  - Added new keyword pairs: `warningif`, `inconsistentif`, `disableif`, `nosubmitif` to `edk2_vfr.conf.json` and `edk2_vfr.tmLanguage.json` for improved syntax highlighting and language support. 🆕✨
+
+### Bug Fixes
+- **Typographical Errors:**
+  - Corrected misspelled words: `seeting` to `setting` and `Generationg` to `Generating`. 📝🛠️
+  - Fixed a typo in the message: "c_cpp_properties.json points to wrong compile_commands.json". 📝🔧
+
+### Features
+- **New Commands:**
+  - Introduced `edk2code.copyTreeData` command to copy tree data to clipboard in a formatted string. 📋🌳
+- **Clangd Support:**
+  - Added support for Clang compile commands in the workspace configuration. 🛠️🔧
+    - Automatically updates `clangd` configuration with the correct `--compile-commands-dir` argument if `vscode-clangd` extension is installed. 🆕🔄
+
+### Code Quality
+- **Refactoring & Cleanup:**
+  - Improved code readability by trimming redundant spaces and unifying function behavior. 🧼🛠️
+  - Renamed `edksymbol.ts` to `edkSymbols.ts` for consistency. 📂🗂️
+
+### Miscellaneous
+- **Version Update:**
+  - Updated version in `package.json` from `1.0.7` to `1.0.8`. 🚀🆙
+
 
 All notable changes to the "edk2code" extension will be documented in this file.
 ## [1.0.7]
