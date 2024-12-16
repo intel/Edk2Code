@@ -37,7 +37,6 @@ export function getEdkCodeFolderPath() {
 export function readEdkCodeFolderFile(filename: string) {
     let p = path.join(gWorkspacePath, ".edkCode", filename);
     if (!fs.existsSync(p)) { 
-        void vscode.window.showInformationMessage("This EDK2Code workspace doesn't contains compile_commands.json");
         return undefined; 
     }
     return fs.readFileSync(p).toString();
