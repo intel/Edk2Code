@@ -257,6 +257,7 @@ export class EdkWorkspace {
 
     private conditionalStack: boolean[] = [];
     private lastConditionalPop = true;
+    private hasTrueConditionalPop = false;
     private sectionsStack: string[] = [];
     private parsedDocuments: Map<string, vscode.Range[]> = new Map();
 
@@ -938,7 +939,11 @@ export class EdkWorkspace {
                return `!else conditional has additional tokens: ${text}`;
             }
             let v = this.popConditional();
-            this.pushConditional(!v);
+            if (this.hasTrueConditionalPop) {
+                this.pushConditional(false);
+            } else {
+                this.pushConditional(true);
+            }
             return;
         }
 
@@ -947,6 +952,7 @@ export class EdkWorkspace {
                return `!endif conditional has additional tokens: ${text}`;
             }
             this.popConditional();
+            this.hasTrueConditionalPop = false;
             return;
         }
         return;
@@ -961,6 +967,9 @@ export class EdkWorkspace {
     private popConditional() {
         if (this.conditionalStack.length > 0) {
             this.lastConditionalPop = this.conditionalStack[this.conditionalStack.length -1];
+            if (this.lastConditionalPop) {
+                this.hasTrueConditionalPop = true;
+            }
             return this.conditionalStack.pop();
         }
     }
@@ -972,7 +981,7 @@ export class EdkWorkspace {
 
     private evaluateConditional(text: string): any {
 
-
+        text = text.split("#")[0].trim(); // remove comments
         let data = text.replaceAll(/(?<![\!"])\b(\w+)\b(?!")/gi, '"$1"'); // convert words to string
         data = data.replace(/\!\w+/gi, "");  // remove conditional keyword
 
