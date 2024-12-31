@@ -46,6 +46,18 @@ export class BuildFolder {
 
                     if (l.startsWith("Active Platform: ")) {
                         let buildActivePlatform: string = split(l, ":", 2)[1].trim();
+                        let edk2BuildWorkspace = this.getEdk2BuildWorkspace(path.join(buildOptionsPath, "AutoGen"));
+                        // buildActivePlatform cannot access or start with current gWorkspacePath(vscode)
+                        // may cause wrong relative buildActivePlatform, fix it to start with gWorkspacePath
+                        if (!fs.existsSync(buildActivePlatform) || !buildActivePlatform.startsWith(gWorkspacePath)) {
+                            if (edk2BuildWorkspace !== "" && buildActivePlatform.startsWith(edk2BuildWorkspace)) {
+                                let fixBuildActivePlatform = buildActivePlatform.replace(edk2BuildWorkspace, gWorkspacePath);
+                                if (fs.existsSync(fixBuildActivePlatform)) {
+                                    gDebugLog.info(`Correct ${buildActivePlatform} to ${fixBuildActivePlatform}`);
+                                    buildActivePlatform = fixBuildActivePlatform;
+                                }
+                            }
+                        }
                         buildActivePlatform = getRealPathRelative(buildActivePlatform);
                         gDebugLog.verbose(`Active platform: ${buildActivePlatform}`);
                         dscFiles.add(buildActivePlatform);
@@ -84,23 +96,39 @@ export class BuildFolder {
                 continue;
             }
 
+            let needFixCompilerInfoPath: boolean = false;
+            let edk2BuildWorkspace = this.getEdk2BuildWorkspace(path.join(folder, "AutoGen"));
+            if (edk2BuildWorkspace.toLowerCase() !== gWorkspacePath.toLowerCase()) {
+                // if edk2BuildWorkspace still exist, means file path in CompilerInfo can access, do not replace it.
+                if (edk2BuildWorkspace !== "" && !fs.existsSync(edk2BuildWorkspace)) {
+                    needFixCompilerInfoPath = true;
+                }
+            }
+
             // Cscope
             let cscopeLines = readLines(path.join(folder, "CompileInfo", "cscope.files"));
 
+            let replacePath = edk2BuildWorkspace;
+            if (needFixCompilerInfoPath) {
+                replacePath = gWorkspacePath;
+            }
             for (const l of cscopeLines) {
-                cscopeMap.set(l.toUpperCase(), l);
+                cscopeMap.set(l.toUpperCase(), l.replaceAll(edk2BuildWorkspace, replacePath));
             }
 
+            if (needFixCompilerInfoPath) {
+                replacePath = gWorkspacePath.includes('\\') ? gWorkspacePath.replace(/\\/g, '\\\\') : gWorkspacePath;;
+            }
             let commands = JSON.parse(fs.readFileSync(path.join(folder, "CompileInfo", "compile_commands.json")).toString());
             // Merge compile commands
             for (const cmd of commands) {
-                compileCommands.push(cmd);
+                compileCommands.push(JSON.parse(JSON.stringify(cmd).replaceAll(edk2BuildWorkspace, replacePath)));
             }
 
             let modules = JSON.parse(fs.readFileSync(path.join(folder, "CompileInfo", "module_report.json")).toString());
             // Merge build report
             for (const mod of modules) {
-                moduleReport.push(mod);
+                moduleReport.push(JSON.parse(JSON.stringify(mod).replaceAll(edk2BuildWorkspace, replacePath)));
             }
         }
         let filteredCscope = [];
@@ -119,5 +147,20 @@ export class BuildFolder {
         if(compileCommands.length === 0){
             writeEdkCodeFolderFile(".missing", "");
         }
+    }
+
+    getEdk2BuildWorkspace(pathOfCurrentAutoGen: string) {
+        if (fs.existsSync(pathOfCurrentAutoGen)) {
+            let lines = readLines(pathOfCurrentAutoGen);
+            for (let l of lines) {
+                if (l.endsWith ("BuildOptions")) {
+                    let match = l.match(/^(.*?)[\\/]Build[\\/]/);
+                    if (match) {
+                        return match[1].toString();
+                    }
+                }
+            }
+        }
+        return "";
     }
 }
