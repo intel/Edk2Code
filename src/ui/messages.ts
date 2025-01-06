@@ -15,7 +15,7 @@ export function askReloadFiles(){
 
 
 export function infoMissingCompileInfo(){
-    void vscode.window.showInformationMessage("EDK2 Compile Info folder is missing.", "How to enable?").then(async selection => {
+    void vscode.window.showInformationMessage("EDK2 Compile Information folder is missing.", "How to enable?").then(async selection => {
         if (selection === "How to enable?"){
             void vscode.env.openExternal(vscode.Uri.parse("https://github.com/intel/Edk2Code/wiki/Index-source-code#enable-compile-information"));
         }
@@ -26,10 +26,21 @@ export function infoMissingCompileInfo(){
 
 export function infoMissingCppExtension(){
     if(gConfigAgent.isWarningCppExtension()){
-        void vscode.window.showInformationMessage("The ms-vscode.cpptools extension is not installed. Please install it to use full EDK2Code features.", "Install", "Don't show this warning again").then(async selection => {
-            if (selection === "Install"){
+        void vscode.window.showInformationMessage("The MS C/C++ or Cland extension is not installed. Please install one of those to use full EDK2Code features.",
+             "Install MS C/C++ extension",
+             "Install Clangd extension",
+             "Don't show this warning again").then(async selection => 
+        {
+
+            if (selection === "Install MS C/C++ extension"){
                 void vscode.env.openExternal(vscode.Uri.parse('vscode:extension/ms-vscode.cpptools'));
             }
+
+            if (selection === "Install Clangd extension"){
+                void vscode.env.openExternal(vscode.Uri.parse('vscode:extension/llvm-vs-code-extensions.vscode-clangd'));
+            }
+            
+
             if(selection === "Don't show this warning again"){
                 await gConfigAgent.setWarningCppExtension(false);
             }

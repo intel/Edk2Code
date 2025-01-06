@@ -159,6 +159,12 @@
             "markdownDescription": "Delay to refresh EDK2 workspace after a file change in milliseconds",
             "default": 5000
           },
+          "edk2code.warningAboutCppExtension": {
+            "order": 2,
+            "type": "boolean",
+            "markdownDescription": "Show warning about the need of C++ extension",
+            "default": true
+          },
           "edk2code.enableDiagnostics": {
             "order": 2,
             "type": "boolean",

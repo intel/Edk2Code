@@ -22,7 +22,7 @@ import { EdkInfNode } from "../treeElements/Library";
 import { TreeItem } from "../treeElements/TreeItem";
 import { EdkModule, ModuleReport } from "../moduleReport";
 import { infoMissingCompileInfo } from "../ui/messages";
-import { checkCppConfiguration } from "../cppUtils";
+import { checkCppConfiguration } from "../cppProviders/cppUtils";
 
     export async function rebuildIndexDatabase() {
 
