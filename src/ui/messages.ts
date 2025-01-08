@@ -24,29 +24,32 @@ export function infoMissingCompileInfo(){
 
 
 
-export function infoMissingCppExtension(){
-    if(gConfigAgent.isWarningCppExtension()){
-        void vscode.window.showInformationMessage("The MS C/C++ or Cland extension is not installed. Please install one of those to use full EDK2Code features.",
-             "Install MS C/C++ extension",
-             "Install Clangd extension",
-             "Don't show this warning again").then(async selection => 
-        {
+export function infoMissingCppExtension() {
+    if (gConfigAgent.isWarningCppExtension()) {
+        void vscode.window.showInformationMessage(
+            "The MS C/C++ or Clangd extension is not installed. Please install one of those to use full EDK2Code features.",
+            "Install Extension",
+            "Don't show this message again",
+            "Close"
+        ).then(async selection => {
+            if (selection === "Install Extension") {
+                const extensionChoice = await vscode.window.showQuickPick(
+                    ["C/C++ for Visual Studio Code", "Clangd"],
+                    { placeHolder: "Select the extension to install" }
+                );
 
-            if (selection === "Install MS C/C++ extension"){
-                void vscode.env.openExternal(vscode.Uri.parse('vscode:extension/ms-vscode.cpptools'));
-            }
-
-            if (selection === "Install Clangd extension"){
-                void vscode.env.openExternal(vscode.Uri.parse('vscode:extension/llvm-vs-code-extensions.vscode-clangd'));
-            }
-            
-
-            if(selection === "Don't show this warning again"){
+                if (extensionChoice === "C/C++ for Visual Studio Code") {
+                    void vscode.env.openExternal(vscode.Uri.parse('vscode:extension/ms-vscode.cpptools'));
+                } else if (extensionChoice === "Clangd") {
+                    void vscode.env.openExternal(vscode.Uri.parse('vscode:extension/llvm-vs-code-extensions.vscode-clangd'));
+                }
+            } else if (selection === "Don't show this message again") {
                 await gConfigAgent.setWarningCppExtension(false);
             }
         });
     }
 }
+
 
 
 export async function updateCompilesCommandCpp():Promise<Boolean>{
