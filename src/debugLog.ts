@@ -28,6 +28,8 @@ export class DebugLog {
 
     public error(text:string){
         this.out(`[Edk2Code Error] ${text}`, LogLevel.error);
+        let callStack = (new Error()).stack || '';
+        this.out(`[Edk2Code Stack]\n${callStack}`, LogLevel.error);
     }
 
     public info(text:string){

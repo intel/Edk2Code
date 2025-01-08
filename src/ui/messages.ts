@@ -51,6 +51,19 @@ export function infoMissingCppExtension() {
 }
 
 
+export async function isFixWorkspacePath(buildPath:string, workspacePath:string):Promise<Boolean>{
+    return new Promise<Boolean>(async (resolve, reject) => {
+        return vscode.window.showInformationMessage(`The Active platform in the build directory "${buildPath}" is different than Vscode Workspace path folder "${workspacePath}". Do you want EDK2Code to attempt to fix it? **Build directory wont be modified by this**`, "Yes", "No").then(async selection => {
+            if (selection === "Yes"){
+                resolve(true);
+            }else{
+                resolve(false);
+            }
+          });
+    });
+
+}
+
 
 export async function updateCompilesCommandCpp():Promise<Boolean>{
     return new Promise<Boolean>(async (resolve, reject) => {

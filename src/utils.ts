@@ -192,7 +192,7 @@ export function getRealPath(inputPath: string) {
     let fullRealPath = fs.realpathSync.native(fullPath);
 
     // In case user is using subst. Replace workspace path
-    fullRealPath = path.join(gWorkspacePath, fullRealPath.slice(fullRealPath.length - path.relative(gWorkspacePath, fullPath).length));
+    // fullRealPath = path.join(gWorkspacePath, fullRealPath.slice(fullRealPath.length - path.relative(gWorkspacePath, fullPath).length));
     return fullRealPath;
 }
 
@@ -273,7 +273,7 @@ export async function openTextDocument(uri: vscode.Uri) {
         return f;
     } catch (error) {
 
-        gDebugLog.error(String(error));
+        gDebugLog.error(`Problem opening ${uri.fsPath}:\n ${error}`);
         return await createVirtualFile("error", "");
     }
 
@@ -378,21 +378,6 @@ export async function getSymbolAtLocation(uri: vscode.Uri, location: vscode.Loca
     return returnSymbol;
 }
 
-export async function readLinesAsync(filePath: string) {
-    return new Promise<string[]>((resolve, token) => {
-        gDebugLog.debug(`readLines: ${filePath}`);
-        filePath = getRealPath(filePath);
-        if (!fs.existsSync(filePath)) {
-            gDebugLog.warning(`readlines: File doesnt exist: ${filePath}`);
-            resolve([]);
-        }
-
-        let data = fs.readFileSync(filePath).toString().split(/\r?\n/);
-        resolve(data);
-    }
-    );
-
-}
 
 
 export function readLines(filePath: string) {

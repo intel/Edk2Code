@@ -117,7 +117,7 @@
 
       {
         "command": "edk2code.getItemTreePath",
-        "title": "Get tree path"
+        "title": "Copy tree node path"
       },
       {
         "command": "edk2code.focusOnNode",
@@ -168,7 +168,7 @@
           "edk2code.enableDiagnostics": {
             "order": 2,
             "type": "boolean",
-            "markdownDescription": "Experimental diagnostics for EDK2",
+            "markdownDescription": "Experimental diagnostics for EDK2. It will show EDK2 errors in Vs Code Problem window",
             "default": true
           },
           "edk2code.useEdkCallHierarchy": {

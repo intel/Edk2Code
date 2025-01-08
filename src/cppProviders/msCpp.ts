@@ -72,7 +72,7 @@ export class MsCppProvider extends CppProvider {
                 }
                 
             } catch (error) {
-                gDebugLog.error(String(error));
+                gDebugLog.error(`Error fixing c_cpp_properties.json: ${error}`);
             }
             return true;
         }

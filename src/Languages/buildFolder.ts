@@ -5,6 +5,7 @@ import { gCscope, gDebugLog, gWorkspacePath } from "../extension";
 import { getRealPath, getRealPathRelative, isWorkspacePath, normalizePath, readLines, split, toPosix } from "../utils";
 import glob = require("fast-glob");
 import { writeEdkCodeFolderFile } from "../edk2CodeFolder";
+import { isFixWorkspacePath } from "../ui/messages";
 
 export class BuildFolder {
     buildFolderPaths: string[]=[];
@@ -49,27 +50,31 @@ export class BuildFolder {
 
                     if (l.startsWith("Active Platform: ")) {
                         let buildActivePlatform: string = split(l, ":", 2)[1].trim();
-                        
+                        gDebugLog.info(`Active platform: ${buildActivePlatform}`);
                         if(!fs.existsSync(buildActivePlatform) && !isWorkspacePath(buildActivePlatform)){
                             gDebugLog.warning(`Active platform Build "${buildActivePlatform}" is not in current Vscode workspace folder "${gWorkspacePath}"`);
-                            const oldWorkspacePath = this.findBuildWorkspacePath(buildActivePlatform);
-                            if (oldWorkspacePath) {
-                                const newBuildActivePlatform = path.normalize(buildActivePlatform).replace(oldWorkspacePath, gWorkspacePath);
-                                if (fs.existsSync(newBuildActivePlatform)) {
-                                    buildActivePlatform = newBuildActivePlatform;
-                                    gDebugLog.verbose(`Corrected Active platform: ${buildActivePlatform}`);
-                                    if(this.replaceWorkspacePath !== undefined && this.replaceWorkspacePath !== oldWorkspacePath){
-                                        gDebugLog.error(`Multiple original workspace paths found: ${this.replaceWorkspacePath} and ${oldWorkspacePath}`);
-                                    }
-                                    this.replaceWorkspacePath = oldWorkspacePath;
-                                } else {
-                                    gDebugLog.error(`Active build platform not found: ${newBuildActivePlatform}`);
-                                }
+                            if(await isFixWorkspacePath(buildActivePlatform, gWorkspacePath)){
+                                const oldWorkspacePath = this.findBuildWorkspacePath(buildActivePlatform);
+                                if (oldWorkspacePath) {
 
-                            } else{
-                                gDebugLog.warning(`Old workspace path not found for: ${buildActivePlatform}`);
+                                    const newBuildActivePlatform = path.normalize(buildActivePlatform).replace(oldWorkspacePath, gWorkspacePath);
+                                    if (fs.existsSync(newBuildActivePlatform)) {
+                                        buildActivePlatform = newBuildActivePlatform;
+                                        gDebugLog.verbose(`Corrected Active platform: ${buildActivePlatform}`);
+                                        if(this.replaceWorkspacePath !== undefined && this.replaceWorkspacePath !== oldWorkspacePath){
+                                            gDebugLog.error(`Multiple original workspace paths found: ${this.replaceWorkspacePath} and ${oldWorkspacePath}`);
+                                        }
+                                        this.replaceWorkspacePath = oldWorkspacePath;
+                                    } else {
+                                        gDebugLog.error(`Active build platform not found: ${newBuildActivePlatform}`);
+                                    }
+
+                                } else{
+                                    gDebugLog.warning(`Old workspace path not found for: ${buildActivePlatform}`);
+                                }
                             }
                         }
+
 
                         buildActivePlatform = getRealPathRelative(buildActivePlatform);
                         gDebugLog.verbose(`Active platform: ${buildActivePlatform}`);
