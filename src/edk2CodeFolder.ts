@@ -53,7 +53,7 @@ export function deleteEdkCodeFolder() {
     try {
         fs.rmSync(p, { recursive: true, force: true });
     } catch (error: any) {
-        gDebugLog.error(error);
+        gDebugLog.error(`deleteEdkCodeFolder: ${error}`);
     }
     createEdkCodeFolder();
 }

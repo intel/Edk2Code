@@ -54,7 +54,7 @@ export abstract class BlockParser {
 
             const line = docParser.getLineAt(currentIndex);
             if (!line) {
-                gDebugLog.error("Wrong line");
+                gDebugLog.error(`Wrong line: ${currentIndex} at ${docParser.document.fileName}`);
                 return;
             }
 

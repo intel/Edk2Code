@@ -18,7 +18,7 @@ import { InfParser } from "../edkParser/infParser";
 import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
 import { debuglog } from "util";
 import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder";
-import { EdkInfNode } from "../treeElements/Library";
+import { EdkInfNode, EdkInfNodeLibrary } from "../treeElements/Library";
 import { TreeItem } from "../treeElements/TreeItem";
 import { EdkModule, ModuleReport } from "../moduleReport";
 import { infoMissingCompileInfo } from "../ui/messages";
@@ -356,6 +356,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
     export async function showEdkMap(moduleUri:vscode.Uri) {
         let parser = await getParser(moduleUri);
         let contextModule = moduleUri;
+        let contextSelected = false;
         if(parser && (parser instanceof InfParser) ){
             // Check if INF file is a library
             if(parser.isLibrary()){
@@ -384,6 +385,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                         return;
                     }
                     contextModule = vscode.Uri.file(selectedOption.module.path);
+                    contextSelected = true;
 
                 }else{
                     
@@ -416,7 +418,13 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                 const sectionRange = libraries[0].parent?.range.start;
                 if(sectionRange===undefined){continue;}
                 let librarySet = new Set<string>();
-                let moduleNode = new EdkInfNode(moduleUri, contextModule, sectionRange, wp, libraries[0].parent!, librarySet);
+                let moduleNode;
+                if(parser.isLibrary()){
+                    moduleNode = new EdkInfNodeLibrary(moduleUri, contextModule, sectionRange, wp, libraries[0].parent!, librarySet);
+                }else{
+
+                    moduleNode = new EdkInfNode(moduleUri, contextModule, sectionRange, wp, libraries[0].parent!, librarySet);
+                }
 
                 edkLensTreeDetailProvider.addChildren(moduleNode);
 
@@ -609,7 +617,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                         }
                     }
                 } catch (error) {
-                    gDebugLog.error(String(error));
+                    gDebugLog.error(`reloadSymbols: ${error}`);
                 }
             }
 
@@ -665,10 +673,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                 }
 
                 let posixWorkspacePath = toPosix(gWorkspacePath);
-                gDebugLog.debug(Array.from(filesSet).toString());
-                gDebugLog.debug("####################");
-                gDebugLog.debug(Array.from(globFilesList).toString());
-
+                gDebugLog.info(`Cscope files found: ${filesSet.size}`);
 
                 for (const globFile of globFilesList) {
                     // Just ignore EDK files

@@ -133,6 +133,7 @@ export class DiagnosticManager {
         {
 
         if(gConfigAgent.isDiagnostics() === false){
+            this.clearAllProblems();
             return undefined;
         }
 

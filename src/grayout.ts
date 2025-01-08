@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import { getCurrentDocument } from './utils';
+import { gDebugLog } from './extension';
 
 export class GrayoutController {
     decoration:vscode.TextEditorDecorationType|undefined;
@@ -23,17 +24,19 @@ export class GrayoutController {
     }
     
     grayoutRange(unusdedRanges:vscode.Range[]) {
-
+            gDebugLog.verbose("grayoutRange()");
             let activeEditor = vscode.window.activeTextEditor;
             
             if(!activeEditor){return;}
             if(activeEditor.document !== this.document){return;}
 
+            gDebugLog.verbose(`Unused Ranges: ${JSON.stringify(unusdedRanges)}`);
+            
             if(this.decoration){
+                gDebugLog.debug("Clearing old decoration");
                 this.decoration.dispose();
             }
 
-            
             let decoration = vscode.window.createTextEditorDecorationType({
                     isWholeLine: true,
                     light: {

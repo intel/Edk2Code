@@ -12,6 +12,7 @@ import { ConfigAgent } from "../configuration";
 
 
 
+
 export class EdkInfNode extends EdkNode{
     contextUri:vscode.Uri;
     librarySet:Set<string>|undefined;
@@ -19,21 +20,14 @@ export class EdkInfNode extends EdkNode{
         super(uri, position, wp, edkObject);
         this.contextUri = contextUri;
         this.description = `${uri.fsPath}`;
-        this.iconPath = new vscode.ThemeIcon("file");
+        this.iconPath = new vscode.ThemeIcon("extensions");
         this.command = {
             "command": "vscode.open",
             "title":"Open file",
             "arguments": [this.uri] 
           };
         this.librarySet = librarySet;
-        if(librarySet){
-            if(librarySet.has(uri.fsPath)){
-                this.setDuplicatedLibrary();
-            }else{
-                librarySet.add(uri.fsPath);
-                console.log(`${uri.fsPath}`);
-            }
-        }
+
 
         void getParser(this.uri).then(async (parser)=>{
             if(parser){
@@ -72,7 +66,7 @@ export class EdkInfNode extends EdkNode{
                 for (const libDefinition of libDefinitions) {
                     let filePaths = await gPathFind.findPath(libDefinition.path);
                     for (const path of filePaths) {
-                        let childLibNode = new EdkInfNode(path.uri, this.contextUri, new vscode.Position(0,0), this.workspace, library, this.librarySet);
+                        let childLibNode = new EdkInfNodeLibrary(path.uri, this.contextUri, new vscode.Position(0,0), this.workspace, library, this.librarySet);
                         this.addChildren(childLibNode); 
     
                         // Check circular dependencies
@@ -114,9 +108,8 @@ export class EdkInfNode extends EdkNode{
         if(!gConfigAgent.getExpandCircularOrDuplicateLibraries()){
             this.collapsibleState = vscode.TreeItemCollapsibleState.None;
         }
-        this.description = `(Recursive library)`;
-        this.iconPath = new vscode.ThemeIcon("extensions-remote");
-        this.tooltip = "Recursive library";
+        this.description = `(Duplicated library)`;
+        this.tooltip = "Duplicated library";
     }
 
     setCircularDependency(){
@@ -128,4 +121,19 @@ export class EdkInfNode extends EdkNode{
         this.tooltip = "Circular library dependency";
     }
 
+}
+
+export class EdkInfNodeLibrary extends EdkInfNode{
+    constructor(uri:vscode.Uri, contextUri:vscode.Uri, position:vscode.Position, wp:EdkWorkspace, edkObject:EdkSymbol, librarySet?:Set<string>|undefined){
+        super(uri, contextUri, position, wp, edkObject, librarySet);
+        this.iconPath = new vscode.ThemeIcon("library");
+        if(librarySet){
+            if(librarySet.has(uri.fsPath)){
+                this.setDuplicatedLibrary();
+            }else{
+                librarySet.add(uri.fsPath);
+                gDebugLog.verbose(`${uri.fsPath}`);
+            }
+        }
+    }
 }
