@@ -309,7 +309,10 @@ export async function copyToClipboard(data:string, message:string="Data copied t
 
 
 export function isWorkspacePath(p: string) {
-    return !path.relative(gWorkspacePath, p).includes("..");
+    let x = gWorkspacePath;
+    console.log(path.relative(gWorkspacePath, p));
+    const relativePath = path.relative(gWorkspacePath, p);
+    return !relativePath.includes("..") && relativePath !== p;
 }
 
 export function trimSpaces(text: string) {

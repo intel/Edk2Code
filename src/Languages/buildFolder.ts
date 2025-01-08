@@ -2,12 +2,14 @@ import path = require("path");
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { gCscope, gDebugLog, gWorkspacePath } from "../extension";
-import { getRealPath, getRealPathRelative, normalizePath, readLines, split, toPosix } from "../utils";
+import { getRealPath, getRealPathRelative, isWorkspacePath, normalizePath, readLines, split, toPosix } from "../utils";
 import glob = require("fast-glob");
 import { writeEdkCodeFolderFile } from "../edk2CodeFolder";
 
 export class BuildFolder {
     buildFolderPaths: string[]=[];
+    replaceWorkspacePath: string|undefined;
+
     constructor(folderPath: string[]) {
         this.buildFolderPaths = folderPath;
     }
@@ -47,6 +49,28 @@ export class BuildFolder {
 
                     if (l.startsWith("Active Platform: ")) {
                         let buildActivePlatform: string = split(l, ":", 2)[1].trim();
+                        
+                        if(!fs.existsSync(buildActivePlatform) && !isWorkspacePath(buildActivePlatform)){
+                            gDebugLog.warning(`Active platform Build "${buildActivePlatform}" is not in current Vscode workspace folder "${gWorkspacePath}"`);
+                            const oldWorkspacePath = this.findBuildWorkspacePath(buildActivePlatform);
+                            if (oldWorkspacePath) {
+                                const newBuildActivePlatform = path.normalize(buildActivePlatform).replace(oldWorkspacePath, gWorkspacePath);
+                                if (fs.existsSync(newBuildActivePlatform)) {
+                                    buildActivePlatform = newBuildActivePlatform;
+                                    gDebugLog.verbose(`Corrected Active platform: ${buildActivePlatform}`);
+                                    if(this.replaceWorkspacePath !== undefined && this.replaceWorkspacePath !== oldWorkspacePath){
+                                        gDebugLog.error(`Multiple original workspace paths found: ${this.replaceWorkspacePath} and ${oldWorkspacePath}`);
+                                    }
+                                    this.replaceWorkspacePath = oldWorkspacePath;
+                                } else {
+                                    gDebugLog.error(`Active build platform not found: ${newBuildActivePlatform}`);
+                                }
+
+                            } else{
+                                gDebugLog.warning(`Old workspace path not found for: ${buildActivePlatform}`);
+                            }
+                        }
+
                         buildActivePlatform = getRealPathRelative(buildActivePlatform);
                         gDebugLog.verbose(`Active platform: ${buildActivePlatform}`);
                         dscFiles.add(buildActivePlatform);
@@ -61,6 +85,21 @@ export class BuildFolder {
         }
     }
 
+    findBuildWorkspacePath(wrongPath:string){
+        const wrongPathParts = wrongPath.split(/[\\/]/);
+        let oldPathWorkspace = [];
+        while(wrongPathParts.length > 0){
+            const testPath = path.join(gWorkspacePath, ...wrongPathParts);
+            if(fs.existsSync(testPath)){
+                return oldPathWorkspace.join(path.sep);
+            }
+            const part = wrongPathParts.shift();
+            oldPathWorkspace.push(part);
+            gDebugLog.verbose(`Removed part: ${part}`);
+        }
+        return undefined;
+    }
+
     async copyMapFilesList(){
         let maplist = [];
         for (const buildPaths of this.buildFolderPaths) {
@@ -72,7 +111,14 @@ export class BuildFolder {
         writeEdkCodeFolderFile("mapFiles.json",JSON.stringify(maplist, null, 2));
     }
 
-    copyFilesToRoot() {
+    replaceOldWorkspacePath(p:string){
+        if(this.replaceWorkspacePath !== undefined){
+            return path.normalize(p).replace(this.replaceWorkspacePath, gWorkspacePath);
+        }
+        return p;
+    }
+
+    copyCompileInfoToRoot() {
         let cscopeMap = new Map();
         let moduleReport = [];
         let compileCommands:string[] = [];
@@ -87,19 +133,31 @@ export class BuildFolder {
             let cscopeLines = readLines(path.join(folder, "CompileInfo", "cscope.files"));
 
             for (const l of cscopeLines) {
-                cscopeMap.set(l.toUpperCase(), l);
+                cscopeMap.set(l.toUpperCase(), this.replaceOldWorkspacePath(l));
             }
 
-            let commands = JSON.parse(fs.readFileSync(path.join(folder, "CompileInfo", "compile_commands.json")).toString());
+
+            let compileInfoText = fs.readFileSync(path.join(folder, "CompileInfo", "compile_commands.json")).toString();
+            let modulesText = fs.readFileSync(path.join(folder, "CompileInfo", "module_report.json")).toString();
+
+            if(this.replaceWorkspacePath!==undefined){
+                // make path json compatible
+                const jsonReplacePath = this.replaceWorkspacePath.replaceAll(/\\/g, "\\\\").replaceAll("/", "\\/");
+                const jsonWorkspacePath = gWorkspacePath.replaceAll(/\\/g, "\\\\").replaceAll("/", "\\/");
+                compileInfoText = compileInfoText.replaceAll(jsonReplacePath, jsonWorkspacePath);
+                modulesText = modulesText.replaceAll(jsonReplacePath, jsonWorkspacePath);
+            }
+
+            let commands = JSON.parse(compileInfoText);
             // Merge compile commands
             for (const cmd of commands) {
-                compileCommands.push(cmd);
+                compileCommands.push(cmd); 
             }
 
-            let modules = JSON.parse(fs.readFileSync(path.join(folder, "CompileInfo", "module_report.json")).toString());
             // Merge build report
+            let modules = JSON.parse(modulesText);
             for (const mod of modules) {
-                moduleReport.push(mod);
+                    moduleReport.push(mod);
             }
         }
         let filteredCscope = [];
