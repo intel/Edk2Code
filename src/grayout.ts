@@ -8,20 +8,22 @@ export class GrayoutController {
     
     document:vscode.TextDocument;
     range:vscode.Range[];
+    changeEvent:vscode.Disposable;
+
     public constructor(document:vscode.TextDocument, range:vscode.Range[]) {
         
         this.document = document;
 
         this.range = range;
         // let subscriptions: vscode.Disposable[] = [];
-        // vscode.window.onDidChangeActiveTextEditor(this.doGrayOut, this, subscriptions);
-        // vscode.workspace.onDidSaveTextDocument(this.doGrayOut, this, subscriptions);
+        this.changeEvent = vscode.window.onDidChangeActiveTextEditor(()=>{
+            if(vscode.window.activeTextEditor?.document.uri.fsPath === this.document.uri.fsPath){
+                this.doGrayOut();
+            }
+        }, this);
         
     }
 
-    clearDecorator(){
-
-    }
     
     grayoutRange(unusdedRanges:vscode.Range[]) {
             gDebugLog.verbose("grayoutRange()");
@@ -32,10 +34,7 @@ export class GrayoutController {
 
             gDebugLog.verbose(`Unused Ranges: ${JSON.stringify(unusdedRanges)}`);
             
-            if(this.decoration){
-                gDebugLog.debug("Clearing old decoration");
-                this.decoration.dispose();
-            }
+            this.disposeDecoration();
 
             let decoration = vscode.window.createTextEditorDecorationType({
                     isWholeLine: true,
@@ -62,8 +61,23 @@ export class GrayoutController {
     }
 
 
+
+    dispose(){
+        this.disposeDecoration();
+        this.changeEvent?.dispose();
+    }
+
+    disposeDecoration(){
+        if(this.decoration){
+            this.decoration.dispose();
+        }
+    }
+
     doGrayOut(){
-        this.grayoutRange(this.range);
+        if (vscode.window.visibleTextEditors.some(editor => editor.document.uri.fsPath === this.document.uri.fsPath)) {
+            gDebugLog.info(`doGrayOut(): ${this.document.uri.fsPath}`);
+            this.grayoutRange(this.range);
+        }
     }
 
 }

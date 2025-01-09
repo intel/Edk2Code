@@ -315,7 +315,6 @@ export class EdkWorkspace {
     definesFdf: WorkspaceDefinitions = new WorkspaceDefinitions();
     private pcdDefinitions: Map<string,Map<string,Pcd>> = new Map();
 
-    private grayoutControllers:Map<vscode.Uri,GrayoutController>;
     private libraryTypeTrack = new Map<string,InfDsc>();
 
     private _filesLibraries: InfDsc[] = [];
@@ -333,18 +332,36 @@ export class EdkWorkspace {
         this._filesModules = value;
     }
     private _filesDsc: vscode.TextDocument[] = [];
+    private _filesFdf: vscode.TextDocument[] = [];
+
     public get filesDsc(): vscode.TextDocument[] {
         return this._filesDsc;
     }
     public set filesDsc(value: vscode.TextDocument[]) {
         this._filesDsc = value;
     }
-    private _filesFdf: vscode.TextDocument[] = [];
     public get filesFdf(): vscode.TextDocument[] {
         return this._filesFdf;
     }
     public set filesFdf(value: vscode.TextDocument[]) {
         this._filesFdf = value;
+    }
+
+    private _grayoutControllers:GrayoutController[] = [];
+
+    public updateGrayoutRange(document: vscode.TextDocument, range: vscode.Range[]){
+        for (const grayoutController of this._grayoutControllers) {
+            
+            if(grayoutController.document.uri.fsPath === document.uri.fsPath){
+                grayoutController.range = range;
+                grayoutController.doGrayOut();
+                return;
+            }
+        }
+        const dscGrayoutController = new GrayoutController(document, range);
+        dscGrayoutController.doGrayOut();
+        this._grayoutControllers.push(dscGrayoutController);
+
     }
 
     public dscList(){
@@ -365,7 +382,6 @@ export class EdkWorkspace {
         this.mainDsc = document.uri;
         // generate random number
         this.id = Math.floor(Math.random() * 100000000000000);
-        this.grayoutControllers = new Map();
     }
 
 
@@ -386,6 +402,10 @@ export class EdkWorkspace {
         this.filesLibraries = [];
         this.filesModules = [];
         this.filesDsc = [];
+        for (const ctrl of this._grayoutControllers) {
+            ctrl.dispose();
+        }
+        this._grayoutControllers = [];
         this.libraryTypeTrack = new Map<string,InfDsc>(); 
 
         
@@ -516,13 +536,18 @@ export class EdkWorkspace {
     
 
     private async _proccessDsc(document: vscode.TextDocument) {
+        
         DiagnosticManager.clearProblems(document.uri);
+
+
         gDebugLog.verbose(`_proccessDsc: ${document.fileName}`);
         // Add document to inactiveLines
         if (this.isDocumentInIndex(document)) {
             gDebugLog.warning(`_proccessDsc: ${document.fileName} already in inactiveLines`);
             return;
         }
+
+        let doucumentGrayoutRange = [];
 
         this.parsedDocuments.set(document.uri.fsPath, []);
         this.filesDsc.push(document);
@@ -586,13 +611,8 @@ export class EdkWorkspace {
 
             if (isRangeActive === true) {
                 isRangeActive = false;
-                let arr = this.parsedDocuments.get(document.uri.fsPath);
-                if (arr) {
-                    let lineIndexEnd = lineIndex-1;
-                    arr.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
-                } else {
-                    gDebugLog.error(`_proccessDsc: ${document.fileName} has no range for unuseRange`);
-                }
+                let lineIndexEnd = lineIndex-1;
+                doucumentGrayoutRange.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
             }
 
             let match = line.match(REGEX_DSC_SECTION);
@@ -695,6 +715,11 @@ export class EdkWorkspace {
             }
             
         }
+
+        this.updateGrayoutRange(document, doucumentGrayoutRange);
+
+
+
 
     }
 
@@ -982,23 +1007,6 @@ export class EdkWorkspace {
     }
 
 
-    async grayoutDocument(document: vscode.TextDocument) {
-
-        if (this.processComplete) {
-            // check if document is in index documents
-            if (this.isDocumentInIndex(document)) {
-                let grayoutRange = this.getGrayoutRange(document);
-                let grayoutController = this.grayoutControllers.get(document.uri);
-                if(!grayoutController){
-                    grayoutController = new GrayoutController(document, grayoutRange);
-                    this.grayoutControllers.set(document.uri, grayoutController);
-                }
-                grayoutController.grayoutRange(grayoutRange);
-                // grayoutController.doGrayOut();
-                return;
-            }
-        }
-    }
     async fdfPostProcces(document: vscode.TextDocument) {
         // preprocess fdf files
         if (this.processComplete) {

@@ -262,7 +262,6 @@ export class ConfigAgent {
     }
 
     getDelayToRefreshWorkspace() {
-        console.log(<number>this.get("delayToRefreshWorkspace"));
         return <number>this.get("delayToRefreshWorkspace");
     }
 
