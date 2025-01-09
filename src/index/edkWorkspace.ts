@@ -420,7 +420,7 @@ export class EdkWorkspace {
 
         this.parsedDocuments = new Map();
         let mainDscDocument = await vscode.workspace.openTextDocument(this.mainDsc);
-        await this._proccessDsc(mainDscDocument);
+        await this._processDocument(mainDscDocument, "DSC");
         for (const conditionOpen of this.conditionOpen) {
             DiagnosticManager.error(conditionOpen.uri,conditionOpen.lineNo,EdkDiagnosticCodes.conditionalMissform, "Condition block not closed");
         }
@@ -535,68 +535,60 @@ export class EdkWorkspace {
     }
     
 
-    private async _proccessDsc(document: vscode.TextDocument) {
-        
+    private async _processDocument(document: vscode.TextDocument, type: 'DSC' | 'FDF') {
         DiagnosticManager.clearProblems(document.uri);
+        gDebugLog.verbose(`_process${type}: ${document.fileName}`);
 
-
-        gDebugLog.verbose(`_proccessDsc: ${document.fileName}`);
-        // Add document to inactiveLines
         if (this.isDocumentInIndex(document)) {
-            gDebugLog.warning(`_proccessDsc: ${document.fileName} already in inactiveLines`);
+            gDebugLog.warning(`_process${type}: ${document.fileName} already in inactiveLines`);
             return;
         }
 
         let doucumentGrayoutRange = [];
-
         this.parsedDocuments.set(document.uri.fsPath, []);
-        this.filesDsc.push(document);
+        if (type === 'DSC') {
+            this.filesDsc.push(document);
+        } else {
+            this.filesFdf.push(document);
+        }
 
         let text = document.getText().split(/\r?\n/);
         let lineIndex = -1;
-
         let isRangeActive = false;
         let unuseRangeStart = 0;
 
-
-        gDebugLog.verbose(`# Parsing DSC Document: ${document.uri.fsPath}`);
+        gDebugLog.verbose(`# Parsing ${type} Document: ${document.uri.fsPath}`);
         for (let line of text) {
-            
             lineIndex++;
             gDebugLog.verbose(`\t\t${lineIndex}: ${line}`);
-
             line = this.stripComment(line);
-            // Skip comments
-            if(line.length === 0){continue;}
 
+            if (line.length === 0){continue;}
 
-
-            // Check PCDS
-            // find PCDS variables
-            if(line.match(REGEX_PCD_LINE)){
-                let [fullPcd, pcdValue] = split(line,"|",2);
+            if (line.match(REGEX_PCD_LINE)) {
+                let [fullPcd, pcdValue] = split(line, "|", 2);
                 pcdValue = pcdValue.split("|")[0].trim();
-                if(pcdValue.startsWith('L"')){
+                if (pcdValue.startsWith('L"')) {
                     pcdValue = pcdValue.slice(1);
                 }
                 let [pcdNamespace, pcdName] = split(fullPcd, ".", 2);
-                if(!this.pcdDefinitions.has(pcdNamespace)){
+                if (!this.pcdDefinitions.has(pcdNamespace)) {
                     this.pcdDefinitions.set(pcdNamespace, new Map());
                 }
                 this.pcdDefinitions.get(pcdNamespace)?.set(
                     pcdName,
                     {
-                        name:pcdName,
-                        value:pcdValue, 
-                        position: new vscode.Location(document.uri, new vscode.Position(lineIndex, 0))}
-                    );
+                        name: pcdName,
+                        value: pcdValue,
+                        position: new vscode.Location(document.uri, new vscode.Position(lineIndex, 0))
+                    }
+                );
             }
 
-            // replace definitions
             line = this.defines.replaceDefines(line);
             line = this.replacePcds(line);
-
             let isInActiveCode = this.processConditional(line, lineIndex, document.uri);
+
             if (!isInActiveCode) {
                 if (!isRangeActive) {
                     isRangeActive = true;
@@ -605,24 +597,22 @@ export class EdkWorkspace {
                 continue;
             }
 
-
-
-
-
-            if (isRangeActive === true) {
+            if (isRangeActive) {
                 isRangeActive = false;
-                let lineIndexEnd = lineIndex-1;
+                let lineIndexEnd = lineIndex - 1;
                 doucumentGrayoutRange.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
             }
 
-            let match = line.match(REGEX_DSC_SECTION);
-            if (match) {
-                const sectionType = match[0].split(".")[0];
-                if(!dscSectionTypes.includes(sectionType.toLowerCase())){
-                    DiagnosticManager.warning(document.uri,lineIndex,EdkDiagnosticCodes.unknownSectionType, sectionType);
+            if (type === 'DSC') {
+                let match = line.match(REGEX_DSC_SECTION);
+                if (match) {
+                    const sectionType = match[0].split(".")[0];
+                    if (!dscSectionTypes.includes(sectionType.toLowerCase())) {
+                        DiagnosticManager.warning(document.uri, lineIndex, EdkDiagnosticCodes.unknownSectionType, sectionType);
+                    }
+                    this.sectionsStack = [match[0]];
+                    continue;
                 }
-                this.sectionsStack = [match[0]];
-                continue;
             }
 
             if (line.match(REGEX_DEFINE)) {
@@ -632,88 +622,80 @@ export class EdkWorkspace {
                 if (value.includes(`$(${key})`)) {
                     gDebugLog.info(`Circular define: ${key}: ${value}`);
                 } else {
-                    this.defines.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex,0)));
+                    if (type === 'DSC') {
+                        this.defines.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)));
+                    } else {
+                        this.definesFdf.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)));
+                    }
                 }
                 continue;
             }
 
             if (line.match(REGEX_INCLUDE)) {
-
                 let value = line.replace(/!include/gi, "").trim();
                 let location = await gPathFind.findPath(value, document.uri.fsPath);
-
-                if(location.length > 0){
+                if (location.length > 0) {
                     let includedDocument = await openTextDocument(location[0].uri);
-                    await this._proccessDsc(includedDocument);
+                    if (type === 'DSC') {
+                        await this._processDocument(includedDocument, 'DSC');
+                    } else {
+                        this.filesFdf.push(includedDocument);
+                        await this._processDocument(includedDocument, 'FDF');
+                    }
                 }
-
-                
                 continue;
             }
 
-
-
-
-            // Libraries
-            match = line.match(REGEX_LIBRARY_PATH);
-            if (match) {
-                // get matched string 
-                let filePath = match[0].trim();
-                let results = await gPathFind.findPath(filePath, document.uri.fsPath);
-                if(results.length === 0){
-                    DiagnosticManager.error(document.uri,lineIndex,EdkDiagnosticCodes.missingPath, filePath);
-                }
-                let newLibDefinition = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[this.sectionsStack.length - 1], line);
-                const libName = newLibDefinition.text.split("|")[0].trim();
-                const libNameTag = libName +" - "+newLibDefinition.getModuleTypeStr();
-                
-                if(this.libraryTypeTrack.has(libNameTag) && (libName.toLocaleLowerCase() !== "null")){
-                    if(this.sectionsStack[this.sectionsStack.length-1].toLowerCase().endsWith(".inf")){
-                        // If parent its a module, the this is n overwrite so its ok.
-                        continue;
+            if (type === 'DSC') {
+                let match = line.match(REGEX_LIBRARY_PATH);
+                if (match) {
+                    let filePath = match[0].trim();
+                    let results = await gPathFind.findPath(filePath, document.uri.fsPath);
+                    if (results.length === 0) {
+                        DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.missingPath, filePath);
                     }
-
-                    let previousLibDefinition = this.libraryTypeTrack.get(libNameTag)!;
-                    DiagnosticManager.warning(previousLibDefinition.location.uri, previousLibDefinition.location.range.start.line,
-                        EdkDiagnosticCodes.duplicateStatement,
-                        `Library overwritten: ${libName}`,
-                        [vscode.DiagnosticTag.Unnecessary],
-                        [new vscode.DiagnosticRelatedInformation(newLibDefinition.location, "New definition")]);
-
-                    // Find and remove originalLibrary from this.filesLibraries
-                    const index = this.filesLibraries.indexOf(previousLibDefinition);
-                    if (index > -1) {
-                        this.filesLibraries[index] = newLibDefinition;
+                    let newLibDefinition = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[this.sectionsStack.length - 1], line);
+                    const libName = newLibDefinition.text.split("|")[0].trim();
+                    const libNameTag = libName + " - " + newLibDefinition.getModuleTypeStr();
+                    if (this.libraryTypeTrack.has(libNameTag) && (libName.toLocaleLowerCase() !== "null")) {
+                        if (this.sectionsStack[this.sectionsStack.length - 1].toLowerCase().endsWith(".inf")) {
+                            continue;
+                        }
+                        let previousLibDefinition = this.libraryTypeTrack.get(libNameTag)!;
+                        DiagnosticManager.warning(previousLibDefinition.location.uri, previousLibDefinition.location.range.start.line,
+                            EdkDiagnosticCodes.duplicateStatement,
+                            `Library overwritten: ${libName}`,
+                            [vscode.DiagnosticTag.Unnecessary],
+                            [new vscode.DiagnosticRelatedInformation(newLibDefinition.location, "New definition")]);
+                        const index = this.filesLibraries.indexOf(previousLibDefinition);
+                        if (index > -1) {
+                            this.filesLibraries[index] = newLibDefinition;
+                        }
+                    } else {
+                        this.filesLibraries.push(newLibDefinition);
                     }
-                }else{
-                    this.filesLibraries.push(newLibDefinition);
+                    this.libraryTypeTrack.set(libNameTag, newLibDefinition);
+                    continue;
                 }
-                this.libraryTypeTrack.set(libNameTag,newLibDefinition);
-                continue;
+
+                match = line.match(REGEX_MODULE_PATH);
+                if (match) {
+                    let filePath = match[0].trim();
+                    let results = await gPathFind.findPath(filePath, document.uri.fsPath);
+                    if (results.length === 0) {
+                        DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.missingPath, filePath);
+                    }
+                    let inf = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[0], line);
+                    if (filePath.toLowerCase().endsWith(".inf")) {
+                        if (this.sectionsStack[this.sectionsStack.length - 1].toLowerCase().endsWith(".inf")) {
+                            this.sectionsStack.pop();
+                        }
+                    }
+                    this.sectionsStack.push(filePath);
+                    this.filesModules.push(inf);
+                    continue;
+                }
             }
-
-            // Modules
-            match = line.match(REGEX_MODULE_PATH);
-            if (match) {
-
-                // get matched string 
-                let filePath = match[0].trim();
-                let results = await gPathFind.findPath(filePath, document.uri.fsPath);
-                if(results.length === 0){
-                    DiagnosticManager.error(document.uri,lineIndex,EdkDiagnosticCodes.missingPath, filePath);
-                }
-                let inf = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[0], line);
-                // If new module found. remove previous model from section stack
-                if(filePath.toLowerCase().endsWith(".inf")){
-                    if(this.sectionsStack[this.sectionsStack.length-1].toLowerCase().endsWith(".inf")){
-                        this.sectionsStack.pop();
-                    }
-                }
-                this.sectionsStack.push(filePath);
-                this.filesModules.push(inf);
-                continue;
-            }
-            
         }
 
         this.updateGrayoutRange(document, doucumentGrayoutRange);
@@ -891,7 +873,7 @@ export class EdkWorkspace {
         if (this.flashDefinitionDocument) {
             if (!this.isDocumentInIndex(this.flashDefinitionDocument)) {
                 this.filesFdf = [];
-                await this._proccessFdf(this.flashDefinitionDocument);
+                await this._processDocument(this.flashDefinitionDocument,"FDF");
             }
         }
         this.workInProgress = false;
@@ -900,106 +882,6 @@ export class EdkWorkspace {
     }
 
 
-    // TODO: Unifiy this function with _proccessDsc
-    private async _proccessFdf(document: vscode.TextDocument) {
-        gDebugLog.verbose(`findDefines Fdf: ${document.fileName}`);
-        DiagnosticManager.clearProblems(document.uri);
-        // Add document to inactiveLines
-        if (this.isDocumentInIndex(document)) {
-            gDebugLog.warning(`findDefines Fdf: ${document.fileName} already in inactiveLines`);
-            return;
-        }
-
-        let doucumentGrayoutRange = [];
-
-        this.parsedDocuments.set(document.uri.fsPath, []);
-        this.filesFdf.push(document);
-        let text = document.getText().split(/\r?\n/);
-        let lineIndex = -1;
-
-
-        let isRangeActive = false;
-        let unuseRangeStart = 0;
-
-        for (let line of text) {
-            lineIndex++;
-            line = this.stripComment(line);
-            
-            // Skip comments
-            if(line.startsWith("#")){continue;}
-
-
-            // find PCDS variables
-            if(line.match(REGEX_PCD_LINE)){
-                let [fullPcd, pcdValue] = split(line,"|",2);
-                pcdValue = pcdValue.split("|")[0].trim();
-                if(pcdValue.startsWith('L"')){
-                    pcdValue = pcdValue.slice(1);
-                }
-                let [pcdNamespace, pcdName] = split(fullPcd, ".", 2);
-                if(!this.pcdDefinitions.has(pcdNamespace)){
-                    this.pcdDefinitions.set(pcdNamespace, new Map());
-                }
-                this.pcdDefinitions.get(pcdNamespace)?.set(
-                    pcdName,
-                    {
-                        name:pcdName,
-                        value:pcdValue, 
-                        position: new vscode.Location(document.uri, new vscode.Position(lineIndex, 0))}
-                    );
-
-            }
-
-            // replace definitions
-            line = this.defines.replaceDefines(line);
-            line = this.replacePcds(line);
-
-            let isInActiveCode = this.processConditional(line, lineIndex, document.uri);
-
-
-            if (!isInActiveCode) {
-                if (!isRangeActive) {
-                    isRangeActive = true;
-                    unuseRangeStart = lineIndex;
-                }
-                continue;
-            }
-
-            if (isRangeActive === true) {
-                isRangeActive = false;
-                let lineIndexEnd = lineIndex-1;
-                doucumentGrayoutRange.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
-            }
-
-            if (line.match(/^define\s+(?:(?![=\!]).)*=.*/gi)) {
-                let key = line.replace(/define/gi, "").trim();
-                key = split(key, "=", 2)[0].trim();
-                let value = split(line, "=", 2)[1].trim();
-                if (value.includes(`$(${key})`)) {
-                    gDebugLog.info(`Circular define: ${key}: ${value}`);
-                } else {
-                    this.definesFdf.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex,0)));
-                }
-                continue;
-            }
-
-            if (line.match(REGEX_INCLUDE)) {
-
-                let value = line.replace(/!include/gi, "").trim();
-                let location = await gPathFind.findPath(value);
-                if(location.length > 0){
-                    let includedDocument = await openTextDocument(location[0].uri);
-                    this.filesFdf.push(includedDocument);
-                    await this._proccessFdf(includedDocument);
-                }
-                continue;
-            }
-        }
-        gDebugLog.verbose(`findDefines End: ${document.fileName}`);
-        this.updateGrayoutRange(document, doucumentGrayoutRange);
-
-
-    }
 
 
     async fdfPostProcces(document: vscode.TextDocument) {
