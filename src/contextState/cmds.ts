@@ -104,7 +104,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                     gConfigAgent.clearWpConfiguration();
                     await gConfigAgent.setBuildDefines(buildData.buildDefines);
                     await gConfigAgent.setBuildDscPaths(buildData.dscFiles);
-                    buildFolder.copyFilesToRoot();
+                    buildFolder.copyCompileInfoToRoot();
 
                     // If cscope.file is not generated, then calculate files based on dsc parsing
                     if(existsEdkCodeFolderFile(".missing")){

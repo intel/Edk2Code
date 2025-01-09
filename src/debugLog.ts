@@ -27,23 +27,23 @@ export class DebugLog {
     }
 
     public error(text:string){
-        this.out(`Error: ${text}`, LogLevel.error);
+        this.out(`[Edk2Code Error] ${text}`, LogLevel.error);
     }
 
     public info(text:string){
-        this.out(`Info: ${text}`, LogLevel.info);
+        this.out(`[Edk2Code Info] ${text}`, LogLevel.info);
     }
 
     public verbose(text:string){
-        this.out(`Verb: ${text}`, LogLevel.verbose);
+        this.out(`[Edk2Code Verb] ${text}`, LogLevel.verbose);
     }
 
     public warning(text:string){
-        this.out(`Warn: ${text}`, LogLevel.warning);
+        this.out(`[Edk2Code Warn] ${text}`, LogLevel.warning);
     }
 
     public debug(text:string){
-        this.out(`Debug: ${text}`, LogLevel.debug);
+        this.out(`[Edk2Code Debug] ${text}`, LogLevel.debug);
     }
 
 
