@@ -717,10 +717,6 @@ export class EdkWorkspace {
         }
 
         this.updateGrayoutRange(document, doucumentGrayoutRange);
-
-
-
-
     }
 
     private getLangId(uri:vscode.Uri){
@@ -913,6 +909,9 @@ export class EdkWorkspace {
             gDebugLog.warning(`findDefines Fdf: ${document.fileName} already in inactiveLines`);
             return;
         }
+
+        let doucumentGrayoutRange = [];
+
         this.parsedDocuments.set(document.uri.fsPath, []);
         this.filesFdf.push(document);
         let text = document.getText().split(/\r?\n/);
@@ -968,13 +967,8 @@ export class EdkWorkspace {
 
             if (isRangeActive === true) {
                 isRangeActive = false;
-                let arr = this.parsedDocuments.get(document.uri.fsPath);
-                if (arr) {
-                    let lineIndexEnd = lineIndex-1;
-                    arr.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
-                } else {
-                    gDebugLog.error(`findDefines: ${document.fileName} has no range for unuseRange`);
-                }
+                let lineIndexEnd = lineIndex-1;
+                doucumentGrayoutRange.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
             }
 
             if (line.match(/^define\s+(?:(?![=\!]).)*=.*/gi)) {
@@ -1002,6 +996,7 @@ export class EdkWorkspace {
             }
         }
         gDebugLog.verbose(`findDefines End: ${document.fileName}`);
+        this.updateGrayoutRange(document, doucumentGrayoutRange);
 
 
     }
