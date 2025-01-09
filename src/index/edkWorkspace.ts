@@ -565,6 +565,7 @@ export class EdkWorkspace {
 
             if (line.length === 0){continue;}
 
+            // PCDs
             if (line.match(REGEX_PCD_LINE)) {
                 let [fullPcd, pcdValue] = split(line, "|", 2);
                 pcdValue = pcdValue.split("|")[0].trim();
@@ -604,6 +605,7 @@ export class EdkWorkspace {
             }
 
             if (type === 'DSC') {
+                // Sections
                 let match = line.match(REGEX_DSC_SECTION);
                 if (match) {
                     const sectionType = match[0].split(".")[0];
@@ -615,6 +617,7 @@ export class EdkWorkspace {
                 }
             }
 
+            // Defines
             if (line.match(REGEX_DEFINE)) {
                 let key = line.replace(/define/gi, "").trim();
                 key = split(key, "=", 2)[0].trim();
@@ -631,6 +634,7 @@ export class EdkWorkspace {
                 continue;
             }
 
+            // Includes
             if (line.match(REGEX_INCLUDE)) {
                 let value = line.replace(/!include/gi, "").trim();
                 let location = await gPathFind.findPath(value, document.uri.fsPath);
@@ -647,6 +651,8 @@ export class EdkWorkspace {
             }
 
             if (type === 'DSC') {
+
+                // Libraries
                 let match = line.match(REGEX_LIBRARY_PATH);
                 if (match) {
                     let filePath = match[0].trim();
@@ -657,7 +663,7 @@ export class EdkWorkspace {
                     let newLibDefinition = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[this.sectionsStack.length - 1], line);
                     const libName = newLibDefinition.text.split("|")[0].trim();
                     const libNameTag = libName + " - " + newLibDefinition.getModuleTypeStr();
-                    if (this.libraryTypeTrack.has(libNameTag) && (libName.toLocaleLowerCase() !== "null")) {
+                    if (this.libraryTypeTrack.has(libNameTag) && (libName.toLocaleLowerCase() !== "null") && newLibDefinition.parent === undefined) {
                         if (this.sectionsStack[this.sectionsStack.length - 1].toLowerCase().endsWith(".inf")) {
                             continue;
                         }
@@ -678,6 +684,7 @@ export class EdkWorkspace {
                     continue;
                 }
 
+                // Modules
                 match = line.match(REGEX_MODULE_PATH);
                 if (match) {
                     let filePath = match[0].trim();
