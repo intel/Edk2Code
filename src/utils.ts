@@ -310,7 +310,6 @@ export async function copyToClipboard(data:string, message:string="Data copied t
 
 export function isWorkspacePath(p: string) {
     let x = gWorkspacePath;
-    console.log(path.relative(gWorkspacePath, p));
     const relativePath = path.relative(gWorkspacePath, p);
     return !relativePath.includes("..") && relativePath !== p;
 }
@@ -456,13 +455,13 @@ var profileStartTime: number;
 var profileEndTime: number;
 export function profileStart() {
     profileStartTime = new Date().getTime();
-    console.log("PROFILE START");
+    gDebugLog.debug("PROFILE START");
 }
 
 export function profileEnd() {
     profileEndTime = new Date().getTime();
     let diff = profileEndTime - profileStartTime;
-    console.log(`PROFILE END: ${diff}`);
+    gDebugLog.debug(`PROFILE END: ${diff}`);
 }
 
 

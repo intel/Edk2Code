@@ -4,53 +4,44 @@ import { getStaticPath, itsPcdSelected } from '../utils';
 import path = require('path');
 import { CompletionItemKind } from 'vscode';
 import { ParserFactory } from '../edkParser/parserFactory';
-import { gConfigAgent, gEdkWorkspaces } from '../extension';
+import { gConfigAgent, gEdkWorkspaces, gGrayOutController } from '../extension';
 import { Debouncer } from '../debouncer';
 
 
 export class EdkSymbolProvider implements vscode.DocumentSymbolProvider {
-  private _idUpdateNeeded: boolean = true;
 
   constructor() {
-    vscode.workspace.onDidChangeTextDocument(this.setFlag, this);
+    vscode.workspace.onDidSaveTextDocument(this.updateEdkWorkspace, this);
+    
   }
 
-  private setFlag(event: vscode.TextDocumentChangeEvent) {
-    const languageIds = ["edk2_dsc", "edk2_inf", "edk2_dec", "edk2_fdf"];
-    if (languageIds.includes(event.document.languageId)) {
-      this._idUpdateNeeded = true;
-    }
+  private async updateEdkWorkspace(document: vscode.TextDocument) {
+      if (document.languageId === 'edk2_dsc' || document.languageId === 'edk2_fdf') {
+        // create document from dscPath
+        let wp = await gEdkWorkspaces.getWorkspace(document.uri);
+        if(wp.length){
+
+            const debouncer = Debouncer.getInstance();
+            debouncer.debounce("updateDocumentSymbols",async () => {
+              await wp[0].proccessWorkspace();
+            }, gConfigAgent.getDelayToRefreshWorkspace());
+
+          if (document.languageId === 'edk2_fdf') {
+            await wp[0].fdfPostProcces(document);
+          }
+        }
+      }
+
   }
 
   public async provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken) {
 
     // Create a parser for the document
     let factory = new ParserFactory();
-
     let parser = factory.getParser(document);
     if (parser) {
 
       await parser.parseFile();
-      
-        if (document.languageId === 'edk2_dsc' || document.languageId === 'edk2_fdf') {
-          // create document from dscPath
-          let wp = await gEdkWorkspaces.getWorkspace(document.uri);
-          if(wp.length){
-            // By defautl use the first workspace to parse the dsc file
-            if(this._idUpdateNeeded){
-              const debouncer = Debouncer.getInstance();
-              debouncer.debounce("updateDocumentSymbols",async () => {
-                await wp[0].proccessWorkspace();
-                this._idUpdateNeeded = false;
-              }, gConfigAgent.getDelayToRefreshWorkspace());
-            }
-            if (document.languageId === 'edk2_fdf') {
-              await wp[0].fdfPostProcces(document);
-            }else{
-              await wp[0].grayoutDocument(document);
-            }
-          }
-        }
       return parser.symbolsTree;
     }
     return [];

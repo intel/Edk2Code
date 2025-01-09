@@ -27,8 +27,3 @@ export class Debouncer {
     }
 }
 
-// Usage
-const debouncer = Debouncer.getInstance();
-debouncer.debounce('log', () => {
-    console.log("Function executed after debounce delay");
-}, 300);
