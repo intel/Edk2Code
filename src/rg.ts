@@ -1,6 +1,6 @@
 import { CancellationToken, Location, Range, Uri } from "vscode";
 import { gDebugLog, gWorkspacePath } from "./extension";
-const { rgPath } = require('vscode-ripgrep');
+import {rgPath} from "@vscode/ripgrep";
 import { createRange, exec, makeRelativeToWs } from "./utils";
 import * as edkStatusBar from './statusBar';
 import path = require("path");

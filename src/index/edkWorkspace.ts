@@ -1068,7 +1068,7 @@ export class EdkWorkspace {
             result = eval(data);
         } catch (error) {
             gDebugLog.warning(`Evaluate conditional ${documentUri.fsPath}:${lineNo + 1} - ${(error as Error).message} - ${text}`);
-            DiagnosticManager.info(documentUri,lineNo,EdkDiagnosticCodes.edk2CodeUnsuported,`Edk2Code extension doesnt support this conditional yet: ${text}` );
+            DiagnosticManager.hint(documentUri,lineNo,EdkDiagnosticCodes.edk2CodeUnsuported,`Edk2Code extension doesnt support this condition. Expression is not evaluated: ${text}` );
 
             return false;
         }

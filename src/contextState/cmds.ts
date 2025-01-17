@@ -5,7 +5,6 @@ import { delay, getCurrentWord, gotoFile, isWorkspacePath, listFilesRecursive, o
 import path = require("path");
 import * as fs from 'fs';
 import { edkLensTreeDetailProvider, edkLensTreeDetailView, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gMapFileManager, gPathFind, gWorkspacePath } from "../extension";
-import { distance, closest } from 'fastest-levenshtein';
 import { glob } from "fast-glob";
 import { BuildFolder } from "../Languages/buildFolder";
 import { EdkWorkspace, InfDsc } from "../index/edkWorkspace";

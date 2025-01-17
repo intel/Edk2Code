@@ -95,6 +95,14 @@ export class DiagnosticManager {
         return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Information,"EDK2Code",edkDiagCode, tags, relatedInformation);
     }
 
+    public static hint(documentUri: vscode.Uri, line: number | vscode.Range, edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = [],
+        relatedInformation?: vscode.DiagnosticRelatedInformation[]|undefined) {
+        if(!edkErrorDescriptions.has(edkDiagCode)){
+            throw new Error(`Unknown EDK diagnostic code: ${edkDiagCode}`);
+        }
+        return DiagnosticManager.reportProblem(documentUri, line, edkErrorDescriptions.get(edkDiagCode)!+": "+detail, vscode.DiagnosticSeverity.Hint,"EDK2Code",edkDiagCode, tags, relatedInformation);
+    }
+
     public static error(documentUri: vscode.Uri, line: number | vscode.Range,  edkDiagCode: EdkDiagnosticCodes, detail:string, tags: vscode.DiagnosticTag[] = [],
         relatedInformation?: vscode.DiagnosticRelatedInformation[]|undefined) {
         if(!edkErrorDescriptions.has(edkDiagCode)){

@@ -27,47 +27,38 @@
       {
         "command": "edk2code.openConfigurationUi",
         "title": "EDK2: Workspace configuration (UI)"
-        
       },
       {
         "command": "edk2code.openConfigurationJson",
         "title": "EDK2: Workspace configuration (JSON)"
-      
       },
       {
         "command": "edk2code.rebuildIndex",
         "title": "EDK2: Rebuild index database"
-        
       },
       {
         "command": "edk2code.rescanIndex",
         "title": "EDK2: Rescan Index"
-        
       },
       {
         "command": "edk2code.gotoDefinition",
         "title": "EDK2: Go to Definition "
-        
       },
       {
         "command": "edk2code.gotoDefinitionInput",
         "title": "EDK2: Go to Definition Input"
-        
       },
       {
         "command": "edk2code.openFile",
         "title": "EDK2: Open EDK file"
-        
       },
       {
         "command": "edk2code.openLib",
         "title": "EDK2: Open Library"
-        
       },
       {
         "command": "edk2code.openModule",
         "title": "EDK2: Open Module "
-        
       },
       {
         "command": "edk2code.debugCommand",
@@ -114,7 +105,6 @@
         "title": "EDK2: Copy tree data",
         "icon": "$(copy)"
       },
-
       {
         "command": "edk2code.getItemTreePath",
         "title": "Copy tree node path"
@@ -300,8 +290,6 @@
           "command": "edk2code.NodeFocusBack",
           "when": "false"
         }
-
-        
       ],
       "editor/title": [],
       "view/title": [
@@ -315,7 +303,6 @@
           "when": "view == detailsView",
           "group": "navigation"
         }
-
       ],
       "editor/context": [
         {
@@ -370,7 +357,6 @@
           "group": "navigation",
           "when": "view == detailsView"
         }
-
       ]
     },
     "keybindings": [
@@ -517,8 +503,7 @@
     "@bendera/vscode-webview-elements": "^0.11.0",
     "@types/glob": "^8.1.0",
     "@vscode/codicons": "0.0.32",
-    "fast-glob": "^3.3.2",
-    "fastest-levenshtein": "^1.0.16",
-    "vscode-ripgrep": "1.13.2"
+    "@vscode/ripgrep": "^1.15.10",
+    "fast-glob": "^3.3.2"
   }
 }
