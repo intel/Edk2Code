@@ -6,11 +6,8 @@ export class TreeItem extends vscode.TreeItem {
     parent: TreeItem | undefined;
     visible:boolean = true;
     
-    private tempIcon: string | vscode.ThemeIcon | vscode.Uri | {
-      light: string | vscode.Uri;
-      dark: string | vscode.Uri;
-    } | undefined;
-
+    private tempIcon = this.iconPath;
+    
     getParent() {
       return this.parent;
     }
