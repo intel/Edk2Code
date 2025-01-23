@@ -1,5 +1,15 @@
 $(document).ready(function() {
 
+    function checkHidePanel() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('hidepanel') === 'TRUE') {
+        document.querySelector('.wy-nav-side').style.display = 'none';
+        document.querySelector('.rst-content').style.display = 'block';
+      }
+    }
+
+    checkHidePanel();    
+
     // Section copy button
     var headers = document.querySelectorAll('h1, h2, h3, h4');
     headers.forEach(function(header) {
