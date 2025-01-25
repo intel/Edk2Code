@@ -15,13 +15,14 @@ import { GuidProvider } from './Languages/guidProvider';
 import { PathFind } from './pathfind';
 import { EdkWorkspaces } from './index/edkWorkspace';
 import { Edk2CallHierarchyProvider } from './callHiearchy';
-import { copyToClipboard, getCurrentDocument, gotoFile, showVirtualFile } from './utils';
+import { copyToClipboard, getCurrentDocument, getDocsUrl, gotoFile, showVirtualFile } from './utils';
 import { ParserFactory } from './edkParser/parserFactory';
 import { TreeDetailsDataProvider } from './TreeDataProvider';
 import { DiagnosticManager } from './diagnostics';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
 import { TreeItem } from './treeElements/TreeItem';
+import { showReleaseNotes } from './newVersionMessage';
 
 
 // Global variables
@@ -77,7 +78,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('edk2code.openConfigurationUi', async ()=>{await cmds.openWpConfigGui();}),
 		vscode.commands.registerCommand('edk2code.openConfigurationJson', async ()=>{await cmds.openWpConfigJson();}),
 		vscode.commands.registerCommand('edk2code.rescanIndex', async ()=>{await cmds.rescanIndex();}),
+		vscode.commands.registerCommand('edk2code.help', async ()=>{
+			const docUrl = getDocsUrl();
+			await vscode.env.openExternal(vscode.Uri.parse(docUrl));
 
+		}),
 		vscode.commands.registerCommand('edk2code.openFile', async ()=>{await cmds.openFile();}),
 		vscode.commands.registerCommand('edk2code.openLib', async()=>{await cmds.openLib();}),
 		vscode.commands.registerCommand('edk2code.openModule', async ()=>{await cmds.openModule();}),
@@ -200,7 +205,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', false);
-	
+	void showReleaseNotes(context);
 
 	
 }

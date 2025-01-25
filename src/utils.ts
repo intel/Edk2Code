@@ -556,3 +556,14 @@ async function _walk(dir: string, baseDir: string, filelist: string[] = []) {
     return filelist;
 }
 
+export function getCurrentVersion(): string {
+    const packageJsonPath = path.join(__dirname, '..', 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    return packageJson.version;
+}
+
+export function getDocsUrl():string{
+    const packageJsonPath = path.join(__dirname, '..', 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    return packageJson.homepage;
+}

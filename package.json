@@ -25,6 +25,10 @@
   "contributes": {
     "commands": [
       {
+        "command": "edk2code.help",
+        "title": "EDK2: Help"
+      },
+      {
         "command": "edk2code.openConfigurationUi",
         "title": "EDK2: Workspace configuration (UI)"
       },

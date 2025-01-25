@@ -39,7 +39,7 @@ Ubuntu installation example: `sudo apt install cscope`
 
 ## Documentation
 
-Check full documentation including setup on [project wiki page](https://github.com/intel/Edk2Code/wiki)
+Check full documentation including setup on [project home page](https://intel.github.io/Edk2Code/)
 
 
 ## Contributing
