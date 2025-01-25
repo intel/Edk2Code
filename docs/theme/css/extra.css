@@ -1,0 +1,33 @@
+.clipboard {
+    position: relative;
+    display: block;
+    float: right;
+    right: 29px;
+    line-height: 0px;
+    width: 0px;
+    top: 10px;
+    font-size: x-small;
+    cursor: pointer;
+    color: rgb(0,0,0,0.5);
+}
+
+.header-link span.btn-clipboard-link {
+    display: none;
+}
+
+.header-link:hover span.btn-clipboard-link {
+    display: inline;
+}
+
+.clipboard:hover {
+  color: var(--md-accent-fg-color);
+  transition: color 125ms;
+}
+
+.btn-clipboard-link{
+    margin-left: 5px;
+    cursor: pointer;
+    color: rgb(0,0,0,0.5);
+
+}
+

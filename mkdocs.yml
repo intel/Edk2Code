@@ -1,0 +1,17 @@
+site_name: Edk2Code Vscode Extension
+theme:
+  name: readthedocs
+  locale: en
+
+extra:
+  generator: false
+
+extra_css:
+  - theme/css/extra.css
+  - theme/css/codicon.min.css
+extra_javascript:
+  - theme/js/popper.min.js
+  - theme/js/tippy-bundle.umd.min.js
+  - theme/js/clipboard.min.js
+  - theme/js/extra.js
+  - https://buttons.github.io/buttons.js
