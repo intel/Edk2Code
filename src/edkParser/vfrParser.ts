@@ -117,8 +117,8 @@ class BlockNumericSection extends BlockParser {
 class BlockGotoSection extends BlockParser {
     name = "Goto";
     tag = /\bgoto\b/gi;
-    start =  undefined;
-    end =  undefined;
+    start = undefined;
+    end = undefined;
     type = Edk2SymbolType.vfrGoto;
     visible:boolean = true;
     context: BlockParser[] = [
@@ -141,7 +141,7 @@ export class VfrParser extends DocumentParser {
         new BlockStringSection(),
         new BlockPasswordSection(),
         new BlockNumericSection(),
-        new BlockGotoSection(),
+        new BlockGotoSection(true),
 
 ];
 }

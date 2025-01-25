@@ -445,7 +445,7 @@ addSymbol(symbol: EdkSymbol) {
             this.decrementLineIndex();
             let parserResult = block.parse(this);
             if (parserResult) {
-                if (block.isRoot) { continue; }
+                if (block.isRoot || (block.start === undefined && block.end === undefined)) { continue; }
                 parseIndex = -1; // reset index
                 if (this.lineIndex >= this.document.lineCount) {
                     return;
