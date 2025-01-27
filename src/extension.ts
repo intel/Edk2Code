@@ -22,7 +22,7 @@ import { DiagnosticManager } from './diagnostics';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
 import { TreeItem } from './treeElements/TreeItem';
-import { showReleaseNotes } from './newVersionMessage';
+import { showReleaseNotes } from './newVersionPage/newVersionMessage';
 
 
 // Global variables

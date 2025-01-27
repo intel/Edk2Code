@@ -1,4 +1,4 @@
-import { getCurrentVersion } from "./utils";
+import { getCurrentVersion } from "../utils";
 import * as vscode from 'vscode';
 
 
