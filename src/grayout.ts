@@ -26,13 +26,13 @@ export class GrayoutController {
 
     
     grayoutRange(unusdedRanges:vscode.Range[]) {
-            gDebugLog.verbose("grayoutRange()");
+            gDebugLog.trace("grayoutRange()");
             let activeEditor = vscode.window.activeTextEditor;
             
             if(!activeEditor){return;}
             if(activeEditor.document !== this.document){return;}
 
-            gDebugLog.verbose(`Unused Ranges: ${JSON.stringify(unusdedRanges)}`);
+            gDebugLog.trace(`Unused Ranges: ${JSON.stringify(unusdedRanges)}`);
             
             this.disposeDecoration();
 

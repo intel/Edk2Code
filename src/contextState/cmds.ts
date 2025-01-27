@@ -25,7 +25,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
 
     export async function rebuildIndexDatabase() {
 
-        gDebugLog.verbose("rebuildIndexDatabase()");
+        gDebugLog.trace("rebuildIndexDatabase()");
 
         // Pick build folder
         let buildPath = await vscode.window.showOpenDialog({
@@ -92,12 +92,12 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                 }
 
 
-                gDebugLog.verbose("Loading from build");
+                gDebugLog.trace("Loading from build");
 
                 let buildFolder = new BuildFolder(selectedFolders);
                 let buildData = await buildFolder.getBuildOptions();
                 if (buildData) {
-                    gDebugLog.verbose("Delete workspace files");
+                    gDebugLog.trace("Delete workspace files");
                     // await gEdkDatabase.clearWorkspace();
                     deleteEdkCodeFolder();
                     gConfigAgent.clearWpConfiguration();

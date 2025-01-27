@@ -16,7 +16,7 @@ export class EdkDeclarationProvider implements vscode.DeclarationProvider {
             await parser.parseFile();
             let selectedSymbol = parser.getSelectedSymbol(position);
             if (!selectedSymbol) { return []; }
-            gDebugLog.verbose(`Definition for: ${selectedSymbol.toString()}`);
+            gDebugLog.trace(`Definition for: ${selectedSymbol.toString()}`);
             if (selectedSymbol.onDeclaration !== undefined) {
                 let temp = await selectedSymbol.onDeclaration();
                 return temp;

@@ -11,11 +11,11 @@ export enum LogLevel {
   }
 
 export class DebugLog {
-    outConsole: vscode.OutputChannel;
+    outConsole: vscode.LogOutputChannel;
 
     public constructor() {
 
-        this.outConsole = vscode.window.createOutputChannel("EDK2Code");
+        this.outConsole = vscode.window.createOutputChannel("EDK2Code", {log:true});
     }
 
     public show(){
@@ -27,51 +27,28 @@ export class DebugLog {
     }
 
     public error(text:string){
-        this.out(`[Edk2Code Error] ${text}`, LogLevel.error);
+        this.outConsole.error(text);
         let callStack = (new Error()).stack || '';
-        this.out(`[Edk2Code Stack]\n${callStack}`, LogLevel.error);
+        this.outConsole.error(`[Stack]\n${callStack}`);
     }
 
     public info(text:string){
-        this.out(`[Edk2Code Info] ${text}`, LogLevel.info);
+        this.outConsole.info(text);
     }
 
-    public verbose(text:string){
-        this.out(`[Edk2Code Verb] ${text}`, LogLevel.verbose);
+    public trace(text:string){
+        this.outConsole.trace(text);
     }
 
     public warning(text:string){
-        this.out(`[Edk2Code Warn] ${text}`, LogLevel.warning);
+        this.outConsole.warn(text);
     }
 
     public debug(text:string){
-        this.out(`[Edk2Code Debug] ${text}`, LogLevel.debug);
+        this.outConsole.debug(text);
     }
 
 
 
-    public out(text:string, level:LogLevel|undefined = undefined){
-        if(level === undefined){
-            this.outConsole.appendLine(text);
-            return;
-        }
-
-        if(gConfigAgent === undefined){
-            this.outConsole.appendLine(text);
-            console.log(text);
-            return;
-        }
-
-        if (level <= gConfigAgent.getLogLevel()){
-            this.outConsole.appendLine(text);
-            if(level === LogLevel.error){
-                console.error(text);
-            }else if(level===LogLevel.warning){
-                console.warn(text);
-            }else{
-                console.info(text);
-            }
-        }
-    }
 
 }

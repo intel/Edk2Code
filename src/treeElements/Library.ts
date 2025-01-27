@@ -132,7 +132,7 @@ export class EdkInfNodeLibrary extends EdkInfNode{
                 this.setDuplicatedLibrary();
             }else{
                 librarySet.add(uri.fsPath);
-                gDebugLog.verbose(`${uri.fsPath}`);
+                gDebugLog.trace(`${uri.fsPath}`);
             }
         }
     }

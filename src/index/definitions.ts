@@ -58,7 +58,7 @@ export class WorkspaceDefinitions {
     }
 
     setDefinition(key:string, value:string, location:vscode.Location|undefined){
-        gDebugLog.verbose(`setDefinition: ${key} = ${value}`);
+        gDebugLog.trace(`setDefinition: ${key} = ${value}`);
         this.defines.set(key, {name: key, value:value, location:location});
     }
 

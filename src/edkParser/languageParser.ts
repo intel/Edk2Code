@@ -45,7 +45,7 @@ export abstract class BlockParser {
         }
 
         if (textLine.match(this.tag)) {
-            gDebugLog.verbose(`New block ${this.name} (${this.tag.toString()} -> ${textLine})`);
+            gDebugLog.trace(`New block ${this.name} (${this.tag.toString()} -> ${textLine})`);
 
             // Check if symbol is root definition
             if (this.isRoot && !docParser.isInRoot()) {
@@ -111,12 +111,12 @@ export abstract class BlockParser {
                 const contextLength = this.context.length;
                 for (let i = 0; i < contextLength; i++) {
                     const blockContext = this.context[i];
-                    gDebugLog.verbose(`Parse block: ${blockContext.name}`);
+                    gDebugLog.trace(`Parse block: ${blockContext.name}`);
                     // decrement line index as parser will get next line by default
                     docParser.decrementLineIndex();
                     const isSymbolAdded = blockContext.parse(docParser);
                     if (isSymbolAdded) {
-                        gDebugLog.verbose("Added symbol");
+                        gDebugLog.trace("Added symbol");
                         if (blockContext.exclusive) {
                             break;
                         }

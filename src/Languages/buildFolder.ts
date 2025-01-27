@@ -30,7 +30,7 @@ export class BuildFolder {
     */
     async getBuildOptions() {
         try {
-            gDebugLog.verbose("getBuildOptions()");
+            gDebugLog.trace("getBuildOptions()");
             // todo: change for multiple build folders
             let buildDefines: Map<string, string> = new Map();
             let dscFiles:Set<string> = new Set();
@@ -43,7 +43,7 @@ export class BuildFolder {
 
                         for (const buildOption of l.split(",")) {
                             let [val, data] = split(buildOption, ":", 2);
-                            gDebugLog.verbose(`Define: ${val}: ${data}`);
+                            gDebugLog.trace(`Define: ${val}: ${data}`);
                             buildDefines.set(val.trim(), data.trim());
                         }
                     }
@@ -60,7 +60,7 @@ export class BuildFolder {
                                     const newBuildActivePlatform = path.normalize(buildActivePlatform).replace(oldWorkspacePath, gWorkspacePath);
                                     if (fs.existsSync(newBuildActivePlatform)) {
                                         buildActivePlatform = newBuildActivePlatform;
-                                        gDebugLog.verbose(`Corrected Active platform: ${buildActivePlatform}`);
+                                        gDebugLog.trace(`Corrected Active platform: ${buildActivePlatform}`);
                                         if(this.replaceWorkspacePath !== undefined && this.replaceWorkspacePath !== oldWorkspacePath){
                                             gDebugLog.error(`Multiple original workspace paths found: ${this.replaceWorkspacePath} and ${oldWorkspacePath}`);
                                         }
@@ -77,7 +77,7 @@ export class BuildFolder {
 
 
                         buildActivePlatform = getRealPathRelative(buildActivePlatform);
-                        gDebugLog.verbose(`Active platform: ${buildActivePlatform}`);
+                        gDebugLog.trace(`Active platform: ${buildActivePlatform}`);
                         dscFiles.add(buildActivePlatform);
                     }
                 }
@@ -100,7 +100,7 @@ export class BuildFolder {
             }
             const part = wrongPathParts.shift();
             oldPathWorkspace.push(part);
-            gDebugLog.verbose(`Removed part: ${part}`);
+            gDebugLog.trace(`Removed part: ${part}`);
         }
         return undefined;
     }

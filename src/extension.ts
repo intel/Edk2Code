@@ -55,6 +55,7 @@ export var gMapFileManager: MapFilesManager;
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
 
+	const logger = vscode.window.createOutputChannel('grepc', { log: true });
 
 
 

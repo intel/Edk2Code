@@ -63,7 +63,7 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
         if(parent){
             this.sectionProperties = parent.sectionProperties;
         }
-        gDebugLog.verbose(`Symbol Created: ${location.range.start.line}: ${this.toString()}`);
+        gDebugLog.trace(`Symbol Created: ${location.range.start.line}: ${this.toString()}`);
     }
 
     toString() {

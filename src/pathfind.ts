@@ -42,7 +42,7 @@ export class PathFind{
     async findPath(pathArg: string, relativePath: string|undefined = "") {
         pathArg = pathArg.replaceAll(/(\\+|\/+)/gi, path.sep);
         let ws = gWorkspacePath;
-        gDebugLog.verbose(`Looking for: ${pathArg}`);
+        gDebugLog.trace(`Looking for: ${pathArg}`);
         
         // Restrict path characters
         if (pathArg.match(/[\[\]\#\%\&\{\}\<\>\*\?\!\'\@\|\‘\`\“,'"'\^]/gi)) {

@@ -63,7 +63,7 @@ export class EdkDefinitionProvider implements vscode.DefinitionProvider {
             await parser.parseFile();
             let selectedSymbol = parser.getSelectedSymbol(position);
             if (!selectedSymbol) { return []; }
-            gDebugLog.verbose(`Definition for: ${selectedSymbol.toString()}`);
+            gDebugLog.trace(`Definition for: ${selectedSymbol.toString()}`);
             if (selectedSymbol.onDefinition !== undefined) {
                 let temp = await selectedSymbol.onDefinition(parser);
                 return temp;

@@ -16,7 +16,7 @@ export class EdkCompletionProvider implements vscode.CompletionItemProvider {
             await parser.parseFile();
             let selectedSymbol = parser.getSelectedSymbol(position);
             if (!selectedSymbol) { return []; }
-            gDebugLog.verbose(`Completion for: ${selectedSymbol.toString()}`);
+            gDebugLog.trace(`Completion for: ${selectedSymbol.toString()}`);
 
             if (selectedSymbol.onCompletion !== undefined) {
                 let temp = await selectedSymbol.onCompletion(document, position, token, context);

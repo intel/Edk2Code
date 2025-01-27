@@ -72,7 +72,7 @@ export class ConfigAgent {
 
     private readWpConfig(){
         let settingsPath = getEdkCodeFolderFilePath(this.settingsFileName);
-        gDebugLog.verbose(`Loading configuration from ${settingsPath}`);
+        gDebugLog.trace(`Loading configuration from ${settingsPath}`);
         if(existsEdkCodeFolderFile(this.settingsFileName)){
 
             try {

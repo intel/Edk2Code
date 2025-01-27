@@ -274,11 +274,11 @@ async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
 
     async loadConfig() {
         this.workspaces = [];
-        gDebugLog.verbose("Loading Configuration");
+        gDebugLog.trace("Loading Configuration");
         // TODO: enable to get more commands available
         //await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', false);
         let dscPaths = gConfigAgent.getBuildDscPaths();
-        gDebugLog.verbose(`dscPaths = ${dscPaths}`);
+        gDebugLog.trace(`dscPaths = ${dscPaths}`);
         for (const dscPath of dscPaths) {
             let dscDocument = await openTextDocument(vscode.Uri.file(path.join(gWorkspacePath, dscPath)));
             let edkWorkspace = new EdkWorkspace(dscDocument);
@@ -393,7 +393,7 @@ export class EdkWorkspace {
         }
         // reset conditional stack
         this.workInProgress = true;
-        gDebugLog.verbose(`Start finding defines in ${this.mainDsc.fsPath}`);
+        gDebugLog.trace(`Start finding defines in ${this.mainDsc.fsPath}`);
         this.conditionalStack = [];
 
         this.defines.resetDefines();
@@ -425,7 +425,7 @@ export class EdkWorkspace {
             DiagnosticManager.error(conditionOpen.uri,conditionOpen.lineNo,EdkDiagnosticCodes.conditionalMissform, "Condition block not closed");
         }
         this.workInProgress = false;
-        gDebugLog.verbose("Finding done.");
+        gDebugLog.trace("Finding done.");
 
         // Populate workspace definitions
         this.platformName = this.defines.getDefinition("PLATFORM_NAME") || undefined;
@@ -537,7 +537,7 @@ export class EdkWorkspace {
 
     private async _processDocument(document: vscode.TextDocument, type: 'DSC' | 'FDF') {
         DiagnosticManager.clearProblems(document.uri);
-        gDebugLog.verbose(`_process${type}: ${document.fileName}`);
+        gDebugLog.trace(`_process${type}: ${document.fileName}`);
 
         if (this.isDocumentInIndex(document)) {
             gDebugLog.warning(`_process${type}: ${document.fileName} already in inactiveLines`);
@@ -557,10 +557,10 @@ export class EdkWorkspace {
         let isRangeActive = false;
         let unuseRangeStart = 0;
 
-        gDebugLog.verbose(`# Parsing ${type} Document: ${document.uri.fsPath}`);
+        gDebugLog.trace(`# Parsing ${type} Document: ${document.uri.fsPath}`);
         for (let line of text) {
             lineIndex++;
-            gDebugLog.verbose(`\t\t${lineIndex}: ${line}`);
+            gDebugLog.trace(`\t\t${lineIndex}: ${line}`);
             line = this.stripComment(line);
 
             if (line.length === 0){continue;}
@@ -874,7 +874,7 @@ export class EdkWorkspace {
         }
         // reset conditional stack
         this.workInProgress = true;
-        gDebugLog.verbose(`Start finding defines fdf`);
+        gDebugLog.trace(`Start finding defines fdf`);
         this.conditionalStack = [];
         
         if (this.flashDefinitionDocument) {
@@ -884,7 +884,7 @@ export class EdkWorkspace {
             }
         }
         this.workInProgress = false;
-        gDebugLog.verbose("Finding fdf done.");
+        gDebugLog.trace("Finding fdf done.");
         return true;
     }
 

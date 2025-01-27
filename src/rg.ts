@@ -32,18 +32,18 @@ export async function rgSearch(text:string, includeExt:string[]=[], filesPath:st
             command +=  " -- ./";
         }
 
-        gDebugLog.verbose(command);
+        gDebugLog.trace(command);
         let textResult="";
         try {
             edkStatusBar.setWorking();
             textResult = await exec(command, gWorkspacePath);    
             edkStatusBar.clearWorking();
         } catch (error) {
-            gDebugLog.verbose(`rgSearch: ${error}`);
+            gDebugLog.trace(`rgSearch: ${error}`);
             resolve([]);
         }
         
-        gDebugLog.verbose(textResult);
+        gDebugLog.trace(textResult);
         let locations:Location[] = [];
         for (const jsonData of textResult.split('\n')) {
             if(jsonData===""){continue;}
@@ -82,18 +82,18 @@ export async function rgSearchText(text:string, includeExt:string[]=[], filesPat
             command +=  " -- ./";
         }
 
-        gDebugLog.verbose(command);
+        gDebugLog.trace(command);
         let textResult="";
         try {
             edkStatusBar.setWorking();
             textResult = await exec(command, gWorkspacePath);    
             edkStatusBar.clearWorking();
         } catch (error) {
-            gDebugLog.verbose(`rgSearch: ${error}`);
+            gDebugLog.trace(`rgSearch: ${error}`);
             resolve([]);
         }
         
-        gDebugLog.verbose(textResult);
+        gDebugLog.trace(textResult);
         let textMatches:string[] = [];
         for (const jsonData of textResult.split('\n')) {
             if(jsonData===""){continue;}
