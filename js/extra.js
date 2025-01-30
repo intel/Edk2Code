@@ -5,6 +5,9 @@ $(document).ready(function() {
       if (urlParams.get('hidepanel') === 'TRUE') {
         document.querySelector('.wy-nav-side').style.display = 'none';
         document.querySelector('.rst-content').style.display = 'block';
+        document.querySelectorAll('.rst-content a').forEach(function(link) {
+          link.setAttribute('target', '_blank');
+        });
       }
     }
 

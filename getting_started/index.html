@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Getting Started - Edk2Code Vscode Extension</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../css/extra.css" rel="stylesheet" />
+        <link href="../css/codicon.min.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Getting Started";
+        var mkdocs_page_input_path = "getting_started.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Edk2Code Vscode Extension
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../introduction/">Introduction</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Getting Started</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#installation-requirements">Installation Requirements</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#visual-studio-code">Visual Studio Code</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cscope-installation-windowslinux">Cscope Installation (Windows/Linux)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#initial-setup">Initial Setup</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#installing-the-extension">Installing the Extension</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#basic-functions">Basic Functions</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#syntax-highlight">Syntax Highlight</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#outline">Outline</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#go-to-definition">Go to Definition</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#go-to-include">Go to include</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#go-to-inf">Go to INF</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../advance_features/">Advanced Features</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../configuration/">Configuration</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../troubleshooting/">Troubleshooting</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Edk2Code Vscode Extension</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Getting Started</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="getting-started">Getting Started</h1>
+<h2 id="installation-requirements">Installation Requirements</h2>
+<h3 id="visual-studio-code">Visual Studio Code</h3>
+<p>To get started with the EDK2Code extension, you first need to have Visual Studio Code installed on your system. You can download it from the official <a href="https://code.visualstudio.com/download">Visual Studio Code website</a>. Ensure you have version <code>^1.77.0</code> or later to be compatible with the EDK2Code extension.</p>
+<h3 id="cscope-installation-windowslinux">Cscope Installation (Windows/Linux)</h3>
+<p>Cscope is a required tool for some C-related functionalities of the EDK2Code extension. </p>
+<ul>
+<li><strong>Windows</strong>: Cscope comes included with the EDK2Code extension, so no additional installation is needed.</li>
+<li><strong>Linux</strong>: You need to install Cscope manually. For Ubuntu, you can install it using the following command:
+<pre class="highlight"><code class="language-sh">sudo apt install cscope</code></pre></li>
+</ul>
+<p>Additionally, if you have a preferred installation path for Cscope, you can set it using the <code>edk2code.cscopeOverwritePath</code> setting in Visual Studio Code.</p>
+<h2 id="initial-setup">Initial Setup</h2>
+<h3 id="installing-the-extension">Installing the Extension</h3>
+<p>To install the EDK2Code extension:</p>
+<ol>
+<li>Open Visual Studio Code.</li>
+<li>Go to the Extensions view by clicking on the Extensions icon in the Activity Bar on the side of the window or by pressing <code>Ctrl+Shift+X</code>.</li>
+<li>Search for <code>EDK2Code</code>.</li>
+<li>Click on the <code>Install</code> button next to the EDK2Code extension from Intel Corporation.</li>
+</ol>
+<p>Alternatively, you can manually install the extension using the <code>.vsix</code> file:</p>
+<ol>
+<li>Download the latest <code>.vsix</code> file from the <a href="https://github.com/intel/Edk2Code/releases">EDK2Code releases page</a>.</li>
+<li>Open Visual Studio Code.</li>
+<li>Go to the Extensions view by clicking on the Extensions icon in the Activity Bar on the side of the window or by pressing <code>Ctrl+Shift+X</code>.</li>
+<li>Click on the three-dot menu in the upper right corner of the Extensions view and select <code>Install from VSIX...</code>.</li>
+<li>Browse to the location where you downloaded the <code>.vsix</code> file and select it to install the extension.</li>
+</ol>
+<h2 id="basic-functions">Basic Functions</h2>
+<p>The EDK2Code extension provides several basic functions to enhance the coding experience. These functionalities are inferred based on the source code without knowing the actual compilation arguments. However, once the build index is generated, the results of these actions should be accurate.</p>
+<p>Here is a table summarizing the key functions and the types of files that support each command:</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Supported File Types</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Syntax Highlight</td>
+<td>INF, DSC, DEC, VFR, ACPI</td>
+</tr>
+<tr>
+<td>Outline</td>
+<td>INF, DSC, DEC, VFR, ACPI</td>
+</tr>
+<tr>
+<td>Go to Definition</td>
+<td>INF, DSC, C</td>
+</tr>
+<tr>
+<td>Go to include</td>
+<td>DSC</td>
+</tr>
+<tr>
+<td>Go to INF</td>
+<td>C</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>To utilize the <strong>advanced features</strong> of the EDK2Code extension, you need to index the database. This indexing process enables capabilities such as fast code navigation, accurate code completion, and error detection. For more details, please refer to the <a href="../advance_features/">Advanced Features</a> section.</p>
+</div>
+<h3 id="syntax-highlight">Syntax Highlight</h3>
+<p>Provides syntax highlighting for various EDK2 file types to improve readability and code comprehension.</p>
+<p><img alt="syntax" src="../images/syntax.png" /></p>
+<h3 id="outline">Outline</h3>
+<p>Displays an outline tree for the supported file types, helping developers to navigate through the sections of the file easily.</p>
+<p><img alt="Outline tree" src="../images/online_tree.gif" /></p>
+<h3 id="go-to-definition">Go to Definition</h3>
+<p>Allows you to right-click on a symbol (function, variable, etc.) and select <code>Go to Definition</code> (F12) to open the symbol definition. </p>
+<p>Example on INF file:
+<img alt="Go to Definition" src="../images/go_to_definition.gif" /></p>
+<p>Example on DSC file:
+<img alt="" src="../images/goto_definition_inf.gif" /></p>
+<h3 id="go-to-include">Go to include</h3>
+<p>Enables you to right-click within a DSC file and select <code>Go to include</code> to see if the DSC file was included (<code>!Include</code>) in another DSC file.</p>
+<p><img alt="" src="../images/include.gif" /></p>
+<h3 id="go-to-inf">Go to INF</h3>
+<p>When working in a C file, you can right-click and select <code>Go to INF</code> to open the .inf file that compiled the C file.</p>
+<p><img alt="" src="../images/goto_inf.gif" /></p>
+<p>By leveraging these basic functions, the EDK2Code extension enhances navigation and readability, making the development process more efficient.</p>
+              
+            </div>
+          </div><footer>
+      <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+          <a href="../introduction/" class="btn btn-neutral float-left" title="Introduction"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+          <a href="../advance_features/" class="btn btn-neutral float-right" title="Advanced Features">Next <span class="icon icon-circle-arrow-right"></span></a>
+      </div>
+  
+    <hr/>
+  
+    <div role="contentinfo">
+      <!-- Copyright etc -->
+    </div>
+
+    <ul>
+        <li><a href="https://github.com/intel/Edk2Code"><span class="codicon codicon-github-inverted" title="Copy to clipboard"></span> Github</a></li>
+        <li><a href="https://marketplace.visualstudio.com/items?itemName=intel-corporation.edk2code">Visual Studio Code Marketplace</a></li>
+        <li><a href="https://github.com/tianocore/tianocore.github.io/wiki/EDK-II">EDK2</a></li>
+    </ul>
+
+
+  </footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../introduction/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../advance_features/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../js/popper.min.js"></script>
+      <script src="../js/tippy-bundle.umd.min.js"></script>
+      <script src="../js/clipboard.min.js"></script>
+      <script src="../js/extra.js"></script>
+      <script src="https://buttons.github.io/buttons.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
