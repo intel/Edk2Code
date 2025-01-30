@@ -4,6 +4,9 @@ theme:
   locale: en
   custom_dir: theme/
 
+markdown_extensions: 
+  - admonition # https://squidfunk.github.io/mkdocs-material/reference/admonitions/#+type:note
+
 extra:
   generator: false
 
@@ -21,7 +24,6 @@ nav:
   - Home: index.md
   - Introduction: introduction.md
   - Getting Started: getting_started.md
-  - Basic Usage: basic_usage.md
   - Advanced Features: advance_features.md
   - Configuration: configuration.md
   - Troubleshooting: troubleshooting.md

@@ -31,3 +31,15 @@
 
 }
 
+blockquote{
+    border-left: 5px solid var(--md-accent-fg-color);
+    padding-left: 10px;
+    margin-left: 0px;
+    margin-right: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    border-left: 5px solid lightskyblue;
+    background-color: beige;
+}
+
+
