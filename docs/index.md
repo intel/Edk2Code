@@ -10,5 +10,4 @@ Additionally, the extension supports various EDK2-specific commands accessible v
 
 Check YouTube video presentation on **UEFI Forum** Channel
 
-[![YouTube presentation](https://img.youtube.com/vi/2Js9nSPKtd8/0.jpg)](https://www.youtube.com/watch?v=2Js9nSPKtd8)
-
+<iframe width="560" height="315" src="https://www.youtube.com/embed/2Js9nSPKtd8?si=OfHLR3a0qOX1FzNb&amp;start=84" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
