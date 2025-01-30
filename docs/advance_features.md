@@ -84,6 +84,30 @@ Mouse hover over DSC definitions and PCD's can display the current values of def
 ### Error Detection
 The DSC analysis can identify potential issues within the DSC files, such incorrect paths, duplicated libraries, etc. These issues are highlighted and shown in the Visual Studio Code "Problems" window.
 
+!!! abstract "Current support" 
+    * [ ] Section is empty
+    * [ ] Mixed section types are not allowed
+    * [ ] Unknown section type
+    * [ ] Syntax error
+    * [ ] Statement has no key
+    * [x] Duplicate statement
+    * [ ] Undefined token space GUID
+    * [x] Include path not found
+    * [ ] Nested packages are not allowed
+    * [x] Duplicate declaration
+    * [ ] Duplicate include path
+    * [ ] Duplicate GUID
+    * [ ] Undefined library class
+    * [ ] Syntax error in path
+    * [ ] Duplicate include file
+    * [x] Missing path
+    * [x] Conditional block missform
+    * [ ] Unused symbol
+    * [ ] Empty file
+    * [x] Inactive code
+    * [x] Edk2Code unsupported
+
+
 ![55e73504-3e8b-4b58-a9fa-5fc64a89614f](images/55e73504-3e8b-4b58-a9fa-5fc64a89614f.png)
 
 ## Module Map
