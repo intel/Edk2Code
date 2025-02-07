@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Configuration - Edk2Code Vscode Extension</title>
+    <title>Settings - Edk2Code Vscode Extension</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -14,8 +14,8 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Configuration";
-        var mkdocs_page_input_path = "configuration.md";
+        var mkdocs_page_name = "Settings";
+        var mkdocs_page_input_path = "settings.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -58,9 +58,11 @@
                 </li>
               </ul>
               <ul class="current">
-                <li class="toctree-l1 current"><a class="reference internal current" href="#">Configuration</a>
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Settings</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#edk2code-configuration">Edk2Code Configuration</a>
+    <li class="toctree-l2"><a class="reference internal" href="#accessing-edk2code-extension-settings">Accessing EDK2Code Extension Settings</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#edk2code-settings_1">Edk2Code Settings</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#edk2codeloglevel">edk2code.logLevel</a>
     </li>
@@ -103,7 +105,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Configuration</li>
+      <li class="breadcrumb-item active">Settings</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -112,9 +114,16 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h2 id="vscode-settings">VSCode Settings</h2>
-<p>The following settings are described in the <code>package.json</code> file of the <code>Edk2Code</code> extension:</p>
-<h3 id="edk2code-configuration">Edk2Code Configuration</h3>
+                <h2 id="edk2code-settings">EDK2Code Settings</h2>
+<p>In Visual Studio Code, settings allow you to customize various aspects of the editor to suit your workflow and preferences. These settings can be configured globally or at the workspace level, providing flexibility in how you manage your development environment.</p>
+<h3 id="accessing-edk2code-extension-settings">Accessing EDK2Code Extension Settings</h3>
+<ol>
+<li>Open the Command Palette by pressing F1 or Ctrl + Shift + P.</li>
+<li>Type Preferences: Open Settings (UI) and select it.</li>
+<li>In the search bar at the top, type <code>intel-corporation.edk2code</code> to filter the settings specific to the EDK2Code extension.</li>
+<li>Browse through the filtered settings to customize the extension according to your preferences.</li>
+</ol>
+<h3 id="edk2code-settings_1">Edk2Code Settings</h3>
 <h4 id="edk2codeloglevel"><code>edk2code.logLevel</code></h4>
 <ul>
 <li><strong>Type</strong>: <code>string</code></li>
