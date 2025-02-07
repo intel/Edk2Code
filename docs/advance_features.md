@@ -110,6 +110,9 @@ The DSC analysis can identify potential issues within the DSC files, such incorr
 
 ![55e73504-3e8b-4b58-a9fa-5fc64a89614f](images/55e73504-3e8b-4b58-a9fa-5fc64a89614f.png)
 
+!!! Note
+    You can disable this using the `edk2code.enableDiagnostics` setting
+
 ## Commands
 This commands are only accessible using the command palette `F1` or `Ctrl + Shift + P`
 
@@ -131,10 +134,21 @@ Shows a list of all libraries compiled
 ![library-list](images/library-list.png)
 
 
-## Module Map
-### Viewing Library and Source File Trees
-### Copying Paths from Module Map
-## Compilation Database
-### Generating and Using compile_commands.json
-## Cscope Integration
-### Using cscope.files
+### Module Map
+You can right click on a compiled INF file and select `EDK2: Show Module Map`
+
+![module-map-context-menu](images/module-map-context-menu.png)
+
+This will open the EDK2 submenu showing the libraries and source files that were used to compile that INF. 
+
+![module-map](images/module-map.png)
+
+This feature is helpful in visualizing how a module includes various libraries. It also provides insights into how C files within the module include header files. By understanding these relationships, developers can better manage dependencies.
+
+### Show Reference Tree
+
+This option illustrates how DSC and INF files are included and referenced within the project. By visualizing this inclusion hierarchy, developers can gain a clearer understanding of the relationships between different DSC and INF files and how they contribute to the overall project structure.
+
+In EDK2 projects, this feature is particularly useful for managing complex configurations and ensuring that all necessary files are correctly referenced. It helps developers identify how modules and libraries are interconnected, which can be crucial for debugging and maintaining the project.
+
+![referecen-tree](images/referecen-tree.png)
