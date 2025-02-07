@@ -389,7 +389,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                 }else{
                     
                     // list all modules and ask for context
-                    void vscode.window.showWarningMessage("This INF is a library. This command only works with EDK Modules for now");
+                    void vscode.window.showWarningMessage("EDK2Code couldn't find a module that uses this library");
                     return;
                 }
             }
