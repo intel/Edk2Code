@@ -62,7 +62,7 @@
       },
       {
         "command": "edk2code.openModule",
-        "title": "EDK2: Open Module "
+        "title": "EDK2: Open Module"
       },
       {
         "command": "edk2code.debugCommand",

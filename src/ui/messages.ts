@@ -17,7 +17,7 @@ export function askReloadFiles(){
 export function infoMissingCompileInfo(){
     void vscode.window.showInformationMessage("EDK2 Compile Information folder is missing.", "How to enable?").then(async selection => {
         if (selection === "How to enable?"){
-            void vscode.env.openExternal(vscode.Uri.parse("https://github.com/intel/Edk2Code/wiki/Index-source-code#enable-compile-information"));
+            void vscode.env.openExternal(vscode.Uri.parse("https://intel.github.io/Edk2Code/advance_features/#how-to-enable-compile-information"));
         }
     });
 }

@@ -120,7 +120,7 @@ export class Cscope {
          void vscode.window.showErrorMessage("Cscope not available in the system. Check help for install", "Help").then(async selection => {
             if (selection === "Help"){
                 await vscode.env.openExternal(vscode.Uri.parse(
-                    'https://intel.github.io/Edk2Code/requirements/#cscope'));
+                    'https://intel.github.io/Edk2Code/getting_started/#cscope-installation-windowslinux'));
             }
         });
     }

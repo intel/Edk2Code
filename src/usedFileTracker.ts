@@ -28,7 +28,7 @@ export class FileUseWarning {
         if(langId===undefined){return;}
         if(!["c","cpp","edk2_dsc","edk2_inf","edk2_dec","asl","edk2_vfr","edk2_fdf", "edk2_uni"].includes(langId)){
             edkStatusBar.setColor('statusBarItem.activeBackground');
-            edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki");
+            edkStatusBar.setHelpUrl("https://intel.github.io/Edk2Code/");
             edkStatusBar.setText(`No EDK file`);
             return;
         }
@@ -42,11 +42,6 @@ export class FileUseWarning {
         //
         // Notify user if file is in use
         //
-
-        // edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki");
-        // edkStatusBar.setText("");
-        // edkStatusBar.setText(`$(check) ${path.basename(document.fileName)}`);
-        
         if(gEdkWorkspaces.isConfigured()){
             let wps = await gEdkWorkspaces.getWorkspace(editor.document.uri);
             let wpFound = [];
@@ -58,7 +53,7 @@ export class FileUseWarning {
             }
 
             if(wpFound.length){
-                edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki");
+                edkStatusBar.setHelpUrl("https://intel.github.io/Edk2Code/");
                 edkStatusBar.setColor('statusBarItem.activeBackground');
                 edkStatusBar.setText(`${wpFound.join("|")}`);
                 edkStatusBar.setToolTip("");
@@ -67,20 +62,19 @@ export class FileUseWarning {
 
             // If file is an H file, then check in cscope.files
             if(gCscope.includesFile(editor.document.uri)){
-                edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki");
+                edkStatusBar.setHelpUrl("https://intel.github.io/Edk2Code/");
                 edkStatusBar.setColor('statusBarItem.activeBackground');
                 edkStatusBar.setText(`(Included Path) ${path.basename(document.fileName)}`);
                 edkStatusBar.setToolTip("");
                 return;
             }
-
             edkStatusBar.setColor('statusBarItem.warningBackground');
-            edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki/Functionality#status-bar");
+            edkStatusBar.setHelpUrl("https://intel.github.io/Edk2Code/getting_started/#status-bar");
             edkStatusBar.setText(`$(warning) ${path.basename(document.fileName)}`);
             edkStatusBar.setToolTip("This file is not used by any loaded workspace");
             return;
         }else{
-            edkStatusBar.setHelpUrl("https://github.com/intel/Edk2Code/wiki/Index-source-code");
+            edkStatusBar.setHelpUrl("https://intel.github.io/Edk2Code/advance_features/#indexing-source-code");
             edkStatusBar.setColor('statusBarItem.activeBackground');
             edkStatusBar.setText(`Workspace not found`);
             edkStatusBar.setToolTip("No workspace is configured");
