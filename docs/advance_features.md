@@ -110,6 +110,27 @@ The DSC analysis can identify potential issues within the DSC files, such incorr
 
 ![55e73504-3e8b-4b58-a9fa-5fc64a89614f](images/55e73504-3e8b-4b58-a9fa-5fc64a89614f.png)
 
+## Commands
+This commands are only accessible using the command palette `F1` or `Ctrl + Shift + P`
+
+### Open Module
+
+Shows a list of all modules compiled 
+```
+> EDK2: Open Module
+```
+
+![open_modules](images/open_modules.png)
+
+### Open Library
+
+Shows a list of all libraries compiled 
+```
+> EDK2: Open Library
+``` 
+![library-list](images/library-list.png)
+
+
 ## Module Map
 ### Viewing Library and Source File Trees
 ### Copying Paths from Module Map

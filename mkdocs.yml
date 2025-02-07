@@ -3,9 +3,26 @@ theme:
   name: readthedocs
   locale: en
   custom_dir: theme/
+  icon:
+    admonition:
+      note: fontawesome/solid/note-sticky
+      abstract: fontawesome/solid/book
+      info: fontawesome/solid/circle-info
+      tip: fontawesome/solid/bullhorn
+      success: fontawesome/solid/check
+      question: fontawesome/solid/circle-question
+      warning: fontawesome/solid/triangle-exclamation
+      failure: fontawesome/solid/bomb
+      danger: fontawesome/solid/skull
+      bug: fontawesome/solid/robot
+      example: fontawesome/solid/flask
+      quote: fontawesome/solid/quote-left
 
 markdown_extensions: 
   - admonition # https://squidfunk.github.io/mkdocs-material/reference/admonitions/#+type:note
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tasklist
 
 extra:
   generator: false

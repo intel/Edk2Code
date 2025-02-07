@@ -83,3 +83,9 @@ When working in a C file, you can right-click and select `Go to INF` to open the
 
 By leveraging these basic functions, the EDK2Code extension enhances navigation and readability, making the development process more efficient.
 
+## User interface
+
+### Status bar
+When you open a file in the editor, the status bar will display a warning if the file you are viewing has not been compiled. This feature helps you quickly identify whether the current file has been successfully compiled. As EDK2 projects usually contain different implementations of the same modules, this feature helps to identify files that are actually in use.
+
+![](images/262088939-893be801-0977-48cc-98b3-1f119d9f7679.gif)
