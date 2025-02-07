@@ -1,8 +1,15 @@
-## VSCode Settings
+## EDK2Code Settings
 
-The following settings are described in the `package.json` file of the `Edk2Code` extension:
+In Visual Studio Code, settings allow you to customize various aspects of the editor to suit your workflow and preferences. These settings can be configured globally or at the workspace level, providing flexibility in how you manage your development environment.
 
-### Edk2Code Configuration
+### Accessing EDK2Code Extension Settings
+
+1. Open the Command Palette by pressing F1 or Ctrl + Shift + P.
+2. Type Preferences: Open Settings (UI) and select it.
+3. In the search bar at the top, type `intel-corporation.edk2code` to filter the settings specific to the EDK2Code extension.
+4. Browse through the filtered settings to customize the extension according to your preferences.
+
+### Edk2Code Settings
 
 #### `edk2code.logLevel`
 - **Type**: `string`
