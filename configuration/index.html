@@ -60,17 +60,27 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Configuration</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#extension-settings">Extension Settings</a>
+    <li class="toctree-l2"><a class="reference internal" href="#edk2code-configuration">Edk2Code Configuration</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#log-level">Log Level</a>
+    <li class="toctree-l3"><a class="reference internal" href="#edk2codeloglevel">edk2code.logLevel</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#generate-ignore-file">Generate Ignore File</a>
+    <li class="toctree-l3"><a class="reference internal" href="#edk2codegenerateignorefile">edk2code.generateIgnoreFile</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#cscope-overwrite-path">Cscope Overwrite Path</a>
+    <li class="toctree-l3"><a class="reference internal" href="#edk2codedelaytorefreshworkspace">edk2code.delayToRefreshWorkspace</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#edk2codewarningaboutcppextension">edk2code.warningAboutCppExtension</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#edk2codeenablediagnostics">edk2code.enableDiagnostics</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#edk2codeuseedkcallhierarchy">edk2code.useEdkCallHierarchy</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#edk2codeexpandcircularorduplicatelibraries">edk2code.ExpandCircularOrDuplicateLibraries</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#edk2codecscopeoverwritepath">edk2code.cscopeOverwritePath</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#edk2codeextraignorepatterns">edk2code.extraIgnorePatterns</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#workspace-settings">Workspace Settings</a>
     </li>
     </ul>
                 </li>
@@ -102,12 +112,76 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="configuration">Configuration</h1>
-<h2 id="extension-settings">Extension Settings</h2>
-<h3 id="log-level">Log Level</h3>
-<h3 id="generate-ignore-file">Generate Ignore File</h3>
-<h3 id="cscope-overwrite-path">Cscope Overwrite Path</h3>
-<h2 id="workspace-settings">Workspace Settings</h2>
+                <h2 id="vscode-settings">VSCode Settings</h2>
+<p>The following settings are described in the <code>package.json</code> file of the <code>Edk2Code</code> extension:</p>
+<h3 id="edk2code-configuration">Edk2Code Configuration</h3>
+<h4 id="edk2codeloglevel"><code>edk2code.logLevel</code></h4>
+<ul>
+<li><strong>Type</strong>: <code>string</code></li>
+<li><strong>Default</strong>: <code>None</code></li>
+<li><strong>Description</strong>: Debug log level</li>
+<li><strong>Options</strong>:</li>
+<li><code>None</code></li>
+<li><code>Error</code></li>
+<li><code>Warning</code></li>
+<li><code>Info</code></li>
+<li><code>Verbose</code></li>
+<li><code>Debug</code></li>
+</ul>
+<h4 id="edk2codegenerateignorefile"><code>edk2code.generateIgnoreFile</code></h4>
+<ul>
+<li><strong>Type</strong>: <code>boolean</code></li>
+<li><strong>Default</strong>: <code>false</code></li>
+<li><strong>Description</strong>: Generate <code>.ignore</code> file. This file reduces the scope of files consumed by VS Code commands such as <code>search</code> or <code>open file</code>.</li>
+</ul>
+<h4 id="edk2codedelaytorefreshworkspace"><code>edk2code.delayToRefreshWorkspace</code></h4>
+<ul>
+<li><strong>Type</strong>: <code>number</code></li>
+<li><strong>Default</strong>: <code>5000</code></li>
+<li><strong>Description</strong>: Delay to refresh the EDK2 workspace after a file change, in milliseconds.</li>
+</ul>
+<h4 id="edk2codewarningaboutcppextension"><code>edk2code.warningAboutCppExtension</code></h4>
+<ul>
+<li><strong>Type</strong>: <code>boolean</code></li>
+<li><strong>Default</strong>: <code>true</code></li>
+<li><strong>Description</strong>: Show warning about the need for the C++ extension.</li>
+</ul>
+<h4 id="edk2codeenablediagnostics"><code>edk2code.enableDiagnostics</code></h4>
+<ul>
+<li><strong>Type</strong>: <code>boolean</code></li>
+<li><strong>Default</strong>: <code>true</code></li>
+<li><strong>Description</strong>: Experimental diagnostics for EDK2. It will show EDK2 errors in the VS Code Problem window.</li>
+</ul>
+<h4 id="edk2codeuseedkcallhierarchy"><code>edk2code.useEdkCallHierarchy</code></h4>
+<ul>
+<li><strong>Type</strong>: <code>boolean</code></li>
+<li><strong>Default</strong>: <code>true</code></li>
+<li><strong>Description</strong>: Use EDK2 call hierarchy (cscope) instead of VS Code's native one. (Requires reload of VS Code after setup)</li>
+</ul>
+<h4 id="edk2codeexpandcircularorduplicatelibraries"><code>edk2code.ExpandCircularOrDuplicateLibraries</code></h4>
+<ul>
+<li><strong>Type</strong>: <code>boolean</code></li>
+<li><strong>Default</strong>: <code>false</code></li>
+<li><strong>Description</strong>: Expand circular include or duplicated libraries in the Edk2 Map view.</li>
+</ul>
+<h4 id="edk2codecscopeoverwritepath"><code>edk2code.cscopeOverwritePath</code></h4>
+<ul>
+<li><strong>Type</strong>: <code>string</code></li>
+<li><strong>Default</strong>: ``</li>
+<li><strong>Description</strong>: Overwrites the path to the cscope executable. (Requires reload of VS Code after setup)</li>
+</ul>
+<h4 id="edk2codeextraignorepatterns"><code>edk2code.extraIgnorePatterns</code></h4>
+<ul>
+<li><strong>Type</strong>: <code>array</code></li>
+<li><strong>Default</strong>: </li>
+<li><code>*.log</code></li>
+<li><code>.ignore</code></li>
+<li><code>.gitignore</code></li>
+<li><code>.edkCode/**/*</code></li>
+<li><strong>Description</strong>: Patterns to append to the <code>.ignore</code> file.</li>
+<li><strong>Items</strong>:</li>
+<li><strong>Type</strong>: <code>string</code></li>
+</ul>
               
             </div>
           </div><footer>
