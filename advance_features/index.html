@@ -88,25 +88,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#open-library">Open Library</a>
     </li>
-        </ul>
+    <li class="toctree-l3"><a class="reference internal" href="#module-map">Module Map</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#module-map">Module Map</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#viewing-library-and-source-file-trees">Viewing Library and Source File Trees</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#copying-paths-from-module-map">Copying Paths from Module Map</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#compilation-database">Compilation Database</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#generating-and-using-compile_commandsjson">Generating and Using compile_commands.json</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#cscope-integration">Cscope Integration</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#using-cscopefiles">Using cscope.files</a>
+    <li class="toctree-l3"><a class="reference internal" href="#show-reference-tree">Show Reference Tree</a>
     </li>
         </ul>
     </li>
@@ -236,13 +220,16 @@
 <p>Shows a list of all libraries compiled 
 <pre class="highlight"><code>&gt; EDK2: Open Library</code></pre>
 <img alt="library-list" src="../images/library-list.png" /></p>
-<h2 id="module-map">Module Map</h2>
-<h3 id="viewing-library-and-source-file-trees">Viewing Library and Source File Trees</h3>
-<h3 id="copying-paths-from-module-map">Copying Paths from Module Map</h3>
-<h2 id="compilation-database">Compilation Database</h2>
-<h3 id="generating-and-using-compile_commandsjson">Generating and Using compile_commands.json</h3>
-<h2 id="cscope-integration">Cscope Integration</h2>
-<h3 id="using-cscopefiles">Using cscope.files</h3>
+<h3 id="module-map">Module Map</h3>
+<p>You can right click on a compiled INF file and select <code>EDK2: Show Module Map</code></p>
+<p><img alt="module-map-context-menu" src="../images/module-map-context-menu.png" /></p>
+<p>This will open the EDK2 submenu showing the libraries and source files that were used to compile that INF. </p>
+<p><img alt="module-map" src="../images/module-map.png" /></p>
+<p>This feature is helpful in visualizing how a module includes various libraries. It also provides insights into how C files within the module include header files. By understanding these relationships, developers can better manage dependencies.</p>
+<h3 id="show-reference-tree">Show Reference Tree</h3>
+<p>This option illustrates how DSC and INF files are included and referenced within the project. By visualizing this inclusion hierarchy, developers can gain a clearer understanding of the relationships between different DSC and INF files and how they contribute to the overall project structure.</p>
+<p>In EDK2 projects, this feature is particularly useful for managing complex configurations and ensuring that all necessary files are correctly referenced. It helps developers identify how modules and libraries are interconnected, which can be crucial for debugging and maintaining the project.</p>
+<p><img alt="referecen-tree" src="../images/referecen-tree.png" /></p>
               
             </div>
           </div><footer>
