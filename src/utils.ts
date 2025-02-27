@@ -190,9 +190,6 @@ export function getRealPath(inputPath: string) {
         return "";
     }
     let fullRealPath = fs.realpathSync.native(fullPath);
-
-    // In case user is using subst. Replace workspace path
-    // fullRealPath = path.join(gWorkspacePath, fullRealPath.slice(fullRealPath.length - path.relative(gWorkspacePath, fullPath).length));
     return fullRealPath;
 }
 
@@ -309,9 +306,15 @@ export async function copyToClipboard(data:string, message:string="Data copied t
 
 
 export function isWorkspacePath(p: string) {
-    let x = gWorkspacePath;
-    const relativePath = path.relative(gWorkspacePath, p);
-    return !relativePath.includes("..") && relativePath !== p;
+    for (const folder of vscode.workspace.workspaceFolders!) {
+        const relativePath = path.relative(folder.uri.fsPath, p);
+
+        if(!relativePath.includes("..") && relativePath !== p){
+            return true;
+        }
+    }
+    return false;
+
 }
 
 export function trimSpaces(text: string) {
@@ -566,4 +569,36 @@ export function getDocsUrl():string{
     const packageJsonPath = path.join(__dirname, '..', 'package.json');
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     return packageJson.homepage;
+}
+
+
+export function findClosestCommonDirectory(paths: string[]): string {
+    if (paths.length === 0){
+        return "";  
+    } 
+
+    let commonPath = paths[0];
+    for (let i = 1; i < paths.length; i++) {
+        commonPath = getCommonPath(commonPath, paths[i]);
+        if (commonPath === ''){
+            break;
+        }
+    }
+    return commonPath;
+}
+
+export function getCommonPath(path1: string, path2: string): string {
+    const path1Parts = path1.split(path.sep);
+    const path2Parts = path2.split(path.sep);
+    const length = Math.min(path1Parts.length, path2Parts.length);
+
+    let commonParts = [];
+    for (let i = 0; i < length; i++) {
+        if (path1Parts[i] === path2Parts[i]) {
+            commonParts.push(path1Parts[i]);
+        } else {
+            break;
+        }
+    }
+    return commonParts.join(path.sep);
 }

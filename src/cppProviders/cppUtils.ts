@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { gDebugLog, gWorkspacePath } from '../extension';
+import { gDebugLog } from '../extension';
 import * as fs from 'fs';
 import { infoMissingCppExtension } from '../ui/messages';
 import { closeFileIfOpened, delay } from '../utils';

@@ -15,7 +15,7 @@ import { GuidProvider } from './Languages/guidProvider';
 import { PathFind } from './pathfind';
 import { EdkWorkspaces } from './index/edkWorkspace';
 import { Edk2CallHierarchyProvider } from './callHiearchy';
-import { copyToClipboard, getCurrentDocument, getDocsUrl, gotoFile, showVirtualFile } from './utils';
+import { copyToClipboard, findClosestCommonDirectory, getCurrentDocument, getDocsUrl, gotoFile, showVirtualFile } from './utils';
 import { ParserFactory } from './edkParser/parserFactory';
 import { TreeDetailsDataProvider } from './TreeDataProvider';
 import { DiagnosticManager } from './diagnostics';
@@ -55,12 +55,10 @@ export var gMapFileManager: MapFilesManager;
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
 
-	const logger = vscode.window.createOutputChannel('grepc', { log: true });
-
-
-
 	if (vscode.workspace.workspaceFolders !== undefined) {
-        gWorkspacePath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+		let workspacePaths = vscode.workspace.workspaceFolders.map(folder => folder.uri.fsPath);
+        gWorkspacePath = findClosestCommonDirectory(workspacePaths);
+        console.log(gWorkspacePath);
     }else{
         return;
     }
@@ -89,10 +87,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('edk2code.openModule', async ()=>{await cmds.openModule();}),
 		vscode.commands.registerCommand('edk2code.gotoDefinition', async (fileUri)=>{ await cmds.gotoDefinitionCscope(fileUri);}),
 		vscode.commands.registerCommand('edk2code.gotoDefinitionInput', ()=>{cmds.gotoDefinitionInput();}),
-
-		// wrong
-		// vscode.commands.registerCommand('edk2code.searchCcode', ()=>{throw new Error("ContextState not initialized");}),
-
 
 		vscode.commands.registerCommand('edk2code.gotoInf',async (fileUri)=>{await cmds.gotoInf(fileUri);}),
 		vscode.commands.registerCommand('edk2code.dscUsage', async (fileUri)=>{await cmds.gotoDscDeclaration(fileUri);}),
@@ -186,8 +180,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	gCscopeAgent = new CscopeAgent();
 	
 	if(gCscope.existCscopeFile()){
-		// eslint-disable-next-line @typescript-eslint/no-floating-promises
-		gCscope.reload().then(()=>{
+		void gCscope.reload().then(()=>{
 			if(gConfigAgent.getUseEdkCallHiearchy()){
 				gEdk2CallHierarchyProvider = new Edk2CallHierarchyProvider();
 			}
@@ -206,8 +199,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', false);
+	
 	void showReleaseNotes(context);
-
 	
 }
 

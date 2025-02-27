@@ -1,5 +1,5 @@
 import path = require("path");
-import { gModuleReport, gWorkspacePath } from "./extension";
+import { gModuleReport } from "./extension";
 import * as fs from 'fs';
 import { assert } from "console";
 import { normalizePath, pathCompare } from "./utils";

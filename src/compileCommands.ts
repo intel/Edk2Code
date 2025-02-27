@@ -1,7 +1,6 @@
 
 
 import path = require("path");
-import { gWorkspacePath } from "./extension";
 import * as fs from 'fs';
 import { readEdkCodeFolderFile, writeEdkCodeFolderFile } from "./edk2CodeFolder";
 import { normalizePath } from "./utils";

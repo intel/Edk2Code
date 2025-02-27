@@ -1,7 +1,7 @@
 import path = require('path');
 import * as vscode from 'vscode';
 import { TreeItemLabel } from 'vscode';
-import { edkLensTreeDetailProvider, gCompileCommands, gEdkWorkspaces, gMapFileManager, gPathFind, gWorkspacePath } from './extension';
+import { edkLensTreeDetailProvider, gCompileCommands, gEdkWorkspaces, gMapFileManager, gPathFind } from './extension';
 import { InfParser } from './edkParser/infParser';
 import { getParser } from './edkParser/parserFactory';
 import { Edk2SymbolType } from './symbols/symbolsType';
