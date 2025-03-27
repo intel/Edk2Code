@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { CppProvider } from './cppProvider';
 import * as fs from 'fs';
-import { closeFileIfOpened, delay } from '../utils';
+import {closeFileIfOpened, delay } from '../utils';
 import { gDebugLog, gWorkspacePath } from '../extension';
 import path = require("path");
 import { updateCompilesCommandCpp } from '../ui/messages';
@@ -24,8 +24,13 @@ export class MsCppProvider extends CppProvider {
 
     async validateConfiguration(): Promise<boolean> {
 
+        if (vscode.workspace.workspaceFile !== undefined){
+            // Don't try to fix CPP if the workspace is not a folder
+            return true;
+        }
+
         if(!this.isCppPropertiesFile()){
-            if(! await this.isFixFile()){
+            if(!await this.isFixFile()){
                 return true;
             }
             await this.touchCppPropertiesFile(); // Asks CPP extension to create the file
