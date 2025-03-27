@@ -13,6 +13,40 @@ import { EdkSymbolInfLibrary } from '../symbols/infSymbols';
 import { DiagnosticManager, EdkDiagnosticCodes } from '../diagnostics';
 import { PathFind } from '../pathfind';
 
+const OPERATORS = {
+    'or': { precedence: 1, fn: (x: boolean, y: boolean) => x || y },
+    'OR': { precedence: 1, fn: (x: boolean, y: boolean) => x || y },
+    '||': { precedence: 1, fn: (x: boolean, y: boolean) => x || y },
+    'and': { precedence: 2, fn: (x: boolean, y: boolean) => x && y },
+    'AND': { precedence: 2, fn: (x: boolean, y: boolean) => x && y },
+    '&&': { precedence: 2, fn: (x: boolean, y: boolean) => x && y },
+    '|': { precedence: 3, fn: (x: number, y: number) => x | y },
+    '^': { precedence: 4, fn: (x: number, y: number) => x ^ y },
+    '&': { precedence: 5, fn: (x: number, y: number) => x & y },
+    '==': { precedence: 6, fn: (x: any, y: any) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x === y },
+    '!=': { precedence: 6, fn: (x: any, y: any) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x !== y },
+    'EQ': { precedence: 6, fn: (x: any, y: any) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x === y },
+    'NE': { precedence: 6, fn: (x: any, y: any) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x !== y },
+    '<=': { precedence: 7, fn: (x: number, y: number) => x <= y },
+    '>=': { precedence: 7, fn: (x: number, y: number) => x >= y },
+    '<': { precedence: 7, fn: (x: number, y: number) => x < y },
+    '>': { precedence: 7, fn: (x: number, y: number) => x > y },
+    '+': { precedence: 8, fn: (x: number, y: number) => x + y },
+    '-': { precedence: 8, fn: (x: number, y: number) => x - y },
+    '*': { precedence: 9, fn: (x: number, y: number) => x * y },
+    '/': { precedence: 9, fn: (x: number, y: number) => x / y },
+    '%': { precedence: 9, fn: (x: number, y: number) => x % y },
+    '!': { precedence: 10, fn: (y:any, x: boolean) => !x },
+    'not': { precedence: 10, fn: (y:any, x: boolean) => !x },
+    'NOT': { precedence: 10, fn: (y:any, x: boolean) => !x },
+    '~': { precedence: 10, fn: (y:any, x: number) => ~x },
+    '<<': { precedence: 11, fn: (x: number, y: number) => x << y },
+    '>>': { precedence: 11, fn: (x: number, y: number) => x >> y },
+    'in': { precedence: 12, fn: (x: string, y: string) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x.includes(y) },
+    'IN': { precedence: 12, fn: (x: string, y: string) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x.includes(y) },
+};
+
+
 
 const dscSectionTypes = ['defines','packages','buildoptions','skuids','libraryclasses','components','userextensions','defaultstores','pcdsfeatureflag','pcdsfixedatbuild','pcdspatchableinmodule','pcdsdynamicdefault','pcdsdynamichii','pcdsdynamicvpd','pcdsdynamicexdefault','pcdsdynamicexhii','pcdsdynamicexvpd'];
 
@@ -598,9 +632,14 @@ export class EdkWorkspace {
                 continue;
             }
 
+            if(line.startsWith("!error ")){
+                DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.errorMessage, line.replace("!error ",""));
+            }
+
             if (isRangeActive) {
                 isRangeActive = false;
                 let lineIndexEnd = lineIndex - 1;
+                gDebugLog.debug(`New grayout ${document.fileName} -> unuseRangeStart: ${unuseRangeStart} lineIndexEnd: ${lineIndexEnd}`);
                 doucumentGrayoutRange.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
             }
 
@@ -703,6 +742,13 @@ export class EdkWorkspace {
                     continue;
                 }
             }
+        }
+
+        if (isRangeActive) {
+            isRangeActive = false;
+            let lineIndexEnd = lineIndex - 1;
+            gDebugLog.debug(`New grayout ${document.fileName} -> unuseRangeStart: ${unuseRangeStart} lineIndexEnd: ${lineIndexEnd}`);
+            doucumentGrayoutRange.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
         }
 
         this.updateGrayoutRange(document, doucumentGrayoutRange);
@@ -939,13 +985,13 @@ export class EdkWorkspace {
                 this.conditionOpen.push({uri:documentUri, lineNo:lineIndex});
                 switch(tokens[0].toLowerCase()){
                     case "!if":
-                        conditionValue = this.evaluateConditional(conditionStr.replaceAll(UNDEFINED_VARIABLE,'FALSE'), documentUri, lineIndex);
+                        conditionValue = this.evaluateConditional(conditionStr, documentUri, lineIndex);
                         break;
                     case "!ifdef":
-                        conditionValue = this.pushConditional((tokens[1] !== UNDEFINED_VARIABLE));
+                        conditionValue = this.pushConditional(this.defines.isDefined(tokens[1]));
                         break;
                     case "!ifndef":
-                        conditionValue = this.pushConditional((tokens[1] === UNDEFINED_VARIABLE));
+                        conditionValue = this.pushConditional(!this.defines.isDefined(tokens[1]));
                         break;
                 }
                 
@@ -964,7 +1010,7 @@ export class EdkWorkspace {
                     DiagnosticManager.error(documentUri, lineIndex, EdkDiagnosticCodes.conditionalMissform, "!elseif without !if");
                     return true;
                 }
-                conditionValue = this.evaluateConditional(conditionStr.replaceAll(UNDEFINED_VARIABLE,'FALSE'), documentUri, lineIndex);
+                conditionValue = this.evaluateConditional(conditionStr, documentUri, lineIndex);
                 parentActive = this.conditionStack.length <= 1 || this.conditionStack[this.conditionStack.length - 2].active;
 
                 // Update the top of the stack
@@ -1039,36 +1085,91 @@ export class EdkWorkspace {
         this.conditionalStack.push(v);
         return v;
     }
+    
+    evaluateExpression(expression: string): any {
+        const originalExpression = expression;
+        if(expression.includes(UNDEFINED_VARIABLE)){
+            gDebugLog.debug(`Evaluate expression: ${expression} -> ${false}`);
+            return false;
+        }
+        // add space to parenteses
+        expression = expression.replaceAll(/\(/g, " ( ");
+        expression = expression.replaceAll(/\)/g, " ) ");
+        expression = expression.replaceAll(/\s+/g, " ");
+
+
+        let tokens = expression.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+        let outputQueue = [];
+        let operatorStack: string[] = [];
+        let parentesisBalance = 0;
+        for (const token of tokens) {
+            if (!isNaN(Number(token))) {
+                outputQueue.push(Number(token));
+            } else if (token.toLowerCase() === 'true' || token.toLowerCase() === 'false') {
+                outputQueue.push(token.toLowerCase() === 'true');
+            } else if(token.trim().startsWith('"') && token.trim().endsWith('"')){
+                outputQueue.push(token.trim().slice(1,-1));
+            } else if (token in OPERATORS) {
+                while (operatorStack.length && operatorStack[operatorStack.length - 1] in OPERATORS &&
+                    OPERATORS[token as keyof typeof OPERATORS].precedence <= OPERATORS[operatorStack[operatorStack.length - 1] as keyof typeof OPERATORS].precedence) {
+                    outputQueue.push(operatorStack.pop());
+                }
+                operatorStack.push(token);
+            } else if (token === '(') {
+                parentesisBalance++;
+                operatorStack.push(token);
+            } else if (token === ')') {
+                parentesisBalance--;
+                while (operatorStack.length && operatorStack[operatorStack.length - 1] !== '(') {
+                    outputQueue.push(operatorStack.pop());
+                }
+                operatorStack.pop();
+            } else{
+                throw new Error(`Error evaluating expression: ${originalExpression} - bad Operand ${token}`);
+            }
+        }
+
+        if(parentesisBalance !== 0){
+            throw new Error(`Error evaluating expression: ${originalExpression} - Parenthesis balance error`);
+        }
+    
+        while (operatorStack.length) {
+            outputQueue.push(operatorStack.pop());
+        }
+    
+        let stack: any[] = [];
+        for (const token of outputQueue) {
+           if (token! as keyof typeof OPERATORS in OPERATORS) {
+                let y = stack.pop() as never;
+                let x = stack.pop() as never;
+                stack.push(OPERATORS[token! as keyof typeof OPERATORS].fn(x, y));
+            }else{
+                stack.push(token);
+            }
+        }
+
+        if(stack.length > 1){
+            throw new Error(`Error evaluating expression: ${originalExpression}`);
+        }
+
+        const retValue = (stack[0]===UNDEFINED_VARIABLE)? false : stack[0];
+        gDebugLog.debug(`Evaluate expression: ${originalExpression} -> ${retValue}`);
+        return retValue;
+    }
 
     private evaluateConditional(text: string, documentUri:vscode.Uri, lineNo:number): any {
 
-        let data = text.replaceAll(/"true"/gi, "true"); // replace booleans
-        data = data.replaceAll(/"false"/gi, "false");
-        data = data.replaceAll(/ and /gi, " && ");
-        data = data.replaceAll(/ or /gi, " || ");
-        data = data.replace(/ not /gi, " ! ");
-        data = data.replaceAll(/(?<![\!"])\b(\w+)\b(?!")/gi, '"$1"'); // convert words to string
-        data = data.replace(/^\!\w+/gi, "");  // remove conditional keyword
 
-
-        while (data.match(/"in"/gi)) {
-            let inIndex = data.search(/"in"/i);
-            let last = data.slice(inIndex + '"in"'.length).replace(/("\w+")/i, '$1)').trim();
-            let beging = data.slice(0, inIndex).trim();
-            data = beging + ".includes(" + last;
-        }
-
-
+        // let data = text.replaceAll(/(?<![\!"])\b(\w+)\b(?!")/gi, '"$1"'); // convert words to string
+        let data = text.replace(/^\!\w+/gi, "");  // remove conditional keyword
+        gDebugLog.debug(`Evaluate conditional ${documentUri.fsPath}:${lineNo + 1} - ${text}`);
 
         let result = false;
         try {
-            if(data.includes(UNDEFINED_VARIABLE)){
-                return false;
-            }
-            result = eval(data);
+            result = this.evaluateExpression(data);
         } catch (error) {
             gDebugLog.warning(`Evaluate conditional ${documentUri.fsPath}:${lineNo + 1} - ${(error as Error).message} - ${text}`);
-            DiagnosticManager.hint(documentUri,lineNo,EdkDiagnosticCodes.edk2CodeUnsuported,`Edk2Code extension doesnt support this condition. Expression is not evaluated: ${text}` );
+            DiagnosticManager.error(documentUri,lineNo,EdkDiagnosticCodes.edk2CodeUnsuported,`${(error as Error).message}` );
 
             return false;
         }

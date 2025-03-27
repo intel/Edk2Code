@@ -66,6 +66,10 @@ export class WorkspaceDefinitions {
         this.defines = new Map();
     }
 
+    isDefined(text:string){
+        return this.defines.has(text);
+    }
+
     replaceDefines(text: string) {
         let replaced = false;
         let maxIterations = 10;
@@ -82,7 +86,19 @@ export class WorkspaceDefinitions {
             for (const [key,value] of this.defines.entries()) {
                 if(text.includes(`$(${key})`)){
                     replaced = true;
-                    text = text.replaceAll(`$(${key})`, value.value);
+                    let replacement;
+                    if(value.value.toLowerCase() === "true"){
+                        replacement = "TRUE";
+                    }else if(value.value.toLowerCase() === "false"){
+                        replacement = "FALSE";
+                    }else if(isNaN(parseInt(value.value))){
+                        replacement = `"${value.value}"`;
+                    }else{
+                        replacement = value.value;
+                    }
+                    
+
+                    text = text.replaceAll(`$(${key})`, replacement);
                 }
             }
 

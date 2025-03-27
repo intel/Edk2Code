@@ -45,7 +45,7 @@ export class DebugLog {
     }
 
     public debug(text:string){
-        this.outConsole.debug(text);
+        this.outConsole.trace(text);
     }
 
 
