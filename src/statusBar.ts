@@ -43,7 +43,7 @@ export function pushText(text:string){
 
 export function popText(){
     let text = textStack.pop();
-    myStatusBarItem.text = text? text:"EDK2: Started*";
+    myStatusBarItem.text = text? text:"EDK2Code";
     myStatusBarItem.show();
     myStatusBarItem.tooltip = "";
 }

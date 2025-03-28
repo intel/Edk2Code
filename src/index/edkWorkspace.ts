@@ -12,40 +12,8 @@ import { Edk2SymbolType } from '../symbols/symbolsType';
 import { EdkSymbolInfLibrary } from '../symbols/infSymbols';
 import { DiagnosticManager, EdkDiagnosticCodes } from '../diagnostics';
 import { PathFind } from '../pathfind';
-
-const OPERATORS = {
-    'or': { precedence: 1, fn: (x: boolean, y: boolean) => x || y },
-    'OR': { precedence: 1, fn: (x: boolean, y: boolean) => x || y },
-    '||': { precedence: 1, fn: (x: boolean, y: boolean) => x || y },
-    'and': { precedence: 2, fn: (x: boolean, y: boolean) => x && y },
-    'AND': { precedence: 2, fn: (x: boolean, y: boolean) => x && y },
-    '&&': { precedence: 2, fn: (x: boolean, y: boolean) => x && y },
-    '|': { precedence: 3, fn: (x: number, y: number) => x | y },
-    '^': { precedence: 4, fn: (x: number, y: number) => x ^ y },
-    '&': { precedence: 5, fn: (x: number, y: number) => x & y },
-    '==': { precedence: 6, fn: (x: any, y: any) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x === y },
-    '!=': { precedence: 6, fn: (x: any, y: any) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x !== y },
-    'EQ': { precedence: 6, fn: (x: any, y: any) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x === y },
-    'NE': { precedence: 6, fn: (x: any, y: any) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x !== y },
-    '<=': { precedence: 7, fn: (x: number, y: number) => x <= y },
-    '>=': { precedence: 7, fn: (x: number, y: number) => x >= y },
-    '<': { precedence: 7, fn: (x: number, y: number) => x < y },
-    '>': { precedence: 7, fn: (x: number, y: number) => x > y },
-    '+': { precedence: 8, fn: (x: number, y: number) => x + y },
-    '-': { precedence: 8, fn: (x: number, y: number) => x - y },
-    '*': { precedence: 9, fn: (x: number, y: number) => x * y },
-    '/': { precedence: 9, fn: (x: number, y: number) => x / y },
-    '%': { precedence: 9, fn: (x: number, y: number) => x % y },
-    '!': { precedence: 10, fn: (y:any, x: boolean) => !x },
-    'not': { precedence: 10, fn: (y:any, x: boolean) => !x },
-    'NOT': { precedence: 10, fn: (y:any, x: boolean) => !x },
-    '~': { precedence: 10, fn: (y:any, x: number) => ~x },
-    '<<': { precedence: 11, fn: (x: number, y: number) => x << y },
-    '>>': { precedence: 11, fn: (x: number, y: number) => x >> y },
-    'in': { precedence: 12, fn: (x: string, y: string) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x.includes(y) },
-    'IN': { precedence: 12, fn: (x: string, y: string) => (x===UNDEFINED_VARIABLE||y===UNDEFINED_VARIABLE)?false:x.includes(y) },
-};
-
+import { OPERATORS } from './operations';
+import * as edkStatusBar from '../statusBar';
 
 
 const dscSectionTypes = ['defines','packages','buildoptions','skuids','libraryclasses','components','userextensions','defaultstores','pcdsfeatureflag','pcdsfixedatbuild','pcdspatchableinmodule','pcdsdynamicdefault','pcdsdynamichii','pcdsdynamicvpd','pcdsdynamicexdefault','pcdsdynamicexhii','pcdsdynamicexvpd'];
@@ -422,59 +390,72 @@ export class EdkWorkspace {
     
 
     async proccessWorkspace() {
-        if (this.workInProgress) {
-            return false;
-        }
-        // reset conditional stack
-        this.workInProgress = true;
-        gDebugLog.trace(`Start finding defines in ${this.mainDsc.fsPath}`);
-        this.conditionalStack = [];
-
-        this.defines.resetDefines();
-        this.definesFdf.resetDefines();
-
-        this.filesLibraries = [];
-        this.filesModules = [];
-        this.filesDsc = [];
-        for (const ctrl of this._grayoutControllers) {
-            ctrl.dispose();
-        }
-        this._grayoutControllers = [];
-        this.libraryTypeTrack = new Map<string,InfDsc>(); 
-
-        
-        this.conditionStack = [];
-        this.result = [];
-        this.conditionOpen = [];
-
-        
-
-
-        
-
-        this.parsedDocuments = new Map();
-        let mainDscDocument = await vscode.workspace.openTextDocument(this.mainDsc);
-        await this._processDocument(mainDscDocument, "DSC");
-        for (const conditionOpen of this.conditionOpen) {
-            DiagnosticManager.error(conditionOpen.uri,conditionOpen.lineNo,EdkDiagnosticCodes.conditionalMissform, "Condition block not closed");
-        }
-        this.workInProgress = false;
-        gDebugLog.trace("Finding done.");
-
-        // Populate workspace definitions
-        this.platformName = this.defines.getDefinition("PLATFORM_NAME") || undefined;
-        let flashDefinitionString = this.defines.getDefinition("FLASH_DEFINITION") || undefined;
-        if (flashDefinitionString) {
-            let flashDefinitionPath = await gPathFind.findPath(flashDefinitionString);
-            if(flashDefinitionPath.length>0){
-                this.flashDefinitionDocument = await openTextDocument(flashDefinitionPath[0].uri);
+        try{
+            if(this.platformName !== undefined){
+                edkStatusBar.pushText(`Parsing ${this.platformName}`);
+            }else{
+                edkStatusBar.pushText(`Loading ${this.mainDsc.fsPath}`);
             }
+
+            edkStatusBar.setWorking();
+            if (this.workInProgress) {
+                return false;
+            }
+            // reset conditional stack
+            this.workInProgress = true;
+            gDebugLog.trace(`Start finding defines in ${this.mainDsc.fsPath}`);
+            this.conditionalStack = [];
+    
+            this.defines.resetDefines();
+            this.definesFdf.resetDefines();
+    
+            this.filesLibraries = [];
+            this.filesModules = [];
+            this.filesDsc = [];
+            for (const ctrl of this._grayoutControllers) {
+                ctrl.dispose();
+            }
+            this._grayoutControllers = [];
+            this.libraryTypeTrack = new Map<string,InfDsc>(); 
+    
+            
+            this.conditionStack = [];
+            this.result = [];
+            this.conditionOpen = [];
+    
+            
+    
+    
+            
+    
+            this.parsedDocuments = new Map();
+            let mainDscDocument = await vscode.workspace.openTextDocument(this.mainDsc);
+            await this._processDocument(mainDscDocument, "DSC");
+            for (const conditionOpen of this.conditionOpen) {
+                DiagnosticManager.error(conditionOpen.uri,conditionOpen.lineNo,EdkDiagnosticCodes.conditionalMissform, "Condition block not closed");
+            }
+            this.workInProgress = false;
+            gDebugLog.trace("Finding done.");
+    
+            // Populate workspace definitions
+            this.platformName = this.defines.getDefinition("PLATFORM_NAME") || undefined;
+            let flashDefinitionString = this.defines.getDefinition("FLASH_DEFINITION") || undefined;
+            if (flashDefinitionString) {
+                let flashDefinitionPath = await gPathFind.findPath(flashDefinitionString);
+                if(flashDefinitionPath.length>0){
+                    this.flashDefinitionDocument = await openTextDocument(flashDefinitionPath[0].uri);
+                }
+            }
+    
+            await this.findDefinesFdf();
+    
+            this.processComplete = true;
+            return true;
+        }finally{
+            edkStatusBar.popText();
+            edkStatusBar.clearWorking();
         }
-
-        await this.findDefinesFdf();
-
-        this.processComplete = true;
-        return true;
+        
     }
 
     async getInfReference(uri: vscode.Uri) {
@@ -570,188 +551,194 @@ export class EdkWorkspace {
     
 
     private async _processDocument(document: vscode.TextDocument, type: 'DSC' | 'FDF') {
-        DiagnosticManager.clearProblems(document.uri);
-        gDebugLog.trace(`_process${type}: ${document.fileName}`);
 
-        if (this.isDocumentInIndex(document)) {
-            gDebugLog.warning(`_process${type}: ${document.fileName} already in inactiveLines`);
-            return;
-        }
-
-        let doucumentGrayoutRange = [];
-        this.parsedDocuments.set(document.uri.fsPath, []);
-        if (type === 'DSC') {
-            this.filesDsc.push(document);
-        } else {
-            this.filesFdf.push(document);
-        }
-
-        let text = document.getText().split(/\r?\n/);
-        let lineIndex = -1;
-        let isRangeActive = false;
-        let unuseRangeStart = 0;
-
-        gDebugLog.trace(`# Parsing ${type} Document: ${document.uri.fsPath}`);
-        for (let line of text) {
-            lineIndex++;
-            gDebugLog.trace(`\t\t${lineIndex}: ${line}`);
-            line = this.stripComment(line);
-
-            if (line.length === 0){continue;}
-
-            // PCDs
-            if (line.match(REGEX_PCD_LINE)) {
-                let [fullPcd, pcdValue] = split(line, "|", 2);
-                pcdValue = pcdValue.split("|")[0].trim();
-                if (pcdValue.startsWith('L"')) {
-                    pcdValue = pcdValue.slice(1);
-                }
-                let [pcdNamespace, pcdName] = split(fullPcd, ".", 2);
-                if (!this.pcdDefinitions.has(pcdNamespace)) {
-                    this.pcdDefinitions.set(pcdNamespace, new Map());
-                }
-                this.pcdDefinitions.get(pcdNamespace)?.set(
-                    pcdName,
-                    {
-                        name: pcdName,
-                        value: pcdValue,
-                        position: new vscode.Location(document.uri, new vscode.Position(lineIndex, 0))
+            DiagnosticManager.clearProblems(document.uri);
+            gDebugLog.trace(`_process${type}: ${document.fileName}`);
+    
+            if (this.isDocumentInIndex(document)) {
+                gDebugLog.warning(`_process${type}: ${document.fileName} already in inactiveLines`);
+                return;
+            }
+    
+            let doucumentGrayoutRange = [];
+            this.parsedDocuments.set(document.uri.fsPath, []);
+            if (type === 'DSC') {
+                this.filesDsc.push(document);
+            } else {
+                this.filesFdf.push(document);
+            }
+    
+            let text = document.getText().split(/\r?\n/);
+            let lineIndex = -1;
+            let isRangeActive = false;
+            let unuseRangeStart = 0;
+    
+            gDebugLog.trace(`# Parsing ${type} Document: ${document.uri.fsPath}`);
+            for (let line of text) {
+                lineIndex++;
+                gDebugLog.trace(`\t\t${lineIndex}: ${line}`);
+                line = this.stripComment(line);
+    
+                if (line.length === 0){continue;}
+    
+                // PCDs
+                if (line.match(REGEX_PCD_LINE)) {
+                    let [fullPcd, pcdValue] = split(line, "|", 2);
+                    pcdValue = pcdValue.split("|")[0].trim();
+                    if (pcdValue.startsWith('L"')) {
+                        pcdValue = pcdValue.slice(1);
                     }
-                );
-            }
-
-            line = this.defines.replaceDefines(line);
-            line = this.replacePcds(line);
-            let isInActiveCode = this.processConditional(line, lineIndex, document.uri);
-
-            if (!isInActiveCode) {
-                if (!isRangeActive) {
-                    isRangeActive = true;
-                    unuseRangeStart = lineIndex;
+                    let [pcdNamespace, pcdName] = split(fullPcd, ".", 2);
+                    if (!this.pcdDefinitions.has(pcdNamespace)) {
+                        this.pcdDefinitions.set(pcdNamespace, new Map());
+                    }
+                    this.pcdDefinitions.get(pcdNamespace)?.set(
+                        pcdName,
+                        {
+                            name: pcdName,
+                            value: pcdValue,
+                            position: new vscode.Location(document.uri, new vscode.Position(lineIndex, 0))
+                        }
+                    );
                 }
-                continue;
+    
+                line = this.defines.replaceDefines(line);
+                line = this.replacePcds(line);
+                let isInActiveCode = this.processConditional(line, lineIndex, document.uri);
+    
+                if (!isInActiveCode) {
+                    if (!isRangeActive) {
+                        isRangeActive = true;
+                        unuseRangeStart = lineIndex;
+                    }
+                    continue;
+                }
+    
+                if(line.startsWith("!error ")){
+                    DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.errorMessage, line.replace("!error ",""));
+                }
+    
+                if (isRangeActive) {
+                    isRangeActive = false;
+                    let lineIndexEnd = lineIndex - 1;
+                    gDebugLog.debug(`New grayout ${document.fileName} -> unuseRangeStart: ${unuseRangeStart} lineIndexEnd: ${lineIndexEnd}`);
+                    doucumentGrayoutRange.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
+                }
+    
+                if (type === 'DSC') {
+                    // Sections
+                    let match = line.match(REGEX_DSC_SECTION);
+                    if (match) {
+                        const sectionType = match[0].split(".")[0];
+                        if (!dscSectionTypes.includes(sectionType.toLowerCase())) {
+                            DiagnosticManager.warning(document.uri, lineIndex, EdkDiagnosticCodes.unknownSectionType, sectionType);
+                        }
+                        this.sectionsStack = [match[0]];
+                        continue;
+                    }
+                }
+    
+                // Defines
+                if (line.match(REGEX_DEFINE)) {
+                    let key = line.replace(/define/gi, "").trim();
+                    key = split(key, "=", 2)[0].trim();
+                    let value = split(line, "=", 2)[1].trim();
+                    if (value.includes(`$(${key})`)) {
+                        gDebugLog.info(`Circular define: ${key}: ${value}`);
+                    } else {
+                        if (type === 'DSC') {
+                            this.defines.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)));
+                        } else {
+                            this.definesFdf.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)));
+                        }
+                    }
+                    continue;
+                }
+    
+                // Includes
+                if (line.match(REGEX_INCLUDE)) {
+                    let value = line.replace(/!include/gi, "").trim();
+                    let location = await gPathFind.findPath(value, document.uri.fsPath);
+                    if (location.length > 0) {
+                        gDebugLog.trace(`START Including: ${location[0].uri.fsPath}`);
+                        let includedDocument = await openTextDocument(location[0].uri);
+                        if (type === 'DSC') {
+                            await this._processDocument(includedDocument, 'DSC');
+                        } else {
+                            this.filesFdf.push(includedDocument);
+                            await this._processDocument(includedDocument, 'FDF');
+                        }
+                        gDebugLog.trace(`END Including: ${location[0].uri.fsPath}`);
+                    }
+                    continue;
+                }
+    
+                if (type === 'DSC') {
+    
+                    // Libraries
+                    let match = line.match(REGEX_LIBRARY_PATH);
+                    if (match) {
+                        let filePath = match[0].trim();
+                        let results = await gPathFind.findPath(filePath, document.uri.fsPath);
+                        if (results.length === 0) {
+                            DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.missingPath, filePath);
+                        }
+                        let newLibDefinition = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[this.sectionsStack.length - 1], line);
+                        const libName = newLibDefinition.text.split("|")[0].trim();
+                        const libNameTag = libName + " - " + newLibDefinition.getModuleTypeStr();
+                        if (this.libraryTypeTrack.has(libNameTag) && (libName.toLocaleLowerCase() !== "null") && newLibDefinition.parent === undefined) {
+                            if (this.sectionsStack[this.sectionsStack.length - 1].toLowerCase().endsWith(".inf")) {
+                                continue;
+                            }
+                            let previousLibDefinition = this.libraryTypeTrack.get(libNameTag)!;
+                            DiagnosticManager.warning(previousLibDefinition.location.uri, previousLibDefinition.location.range.start.line,
+                                EdkDiagnosticCodes.duplicateStatement,
+                                `Library overwritten: ${libName}`,
+                                [vscode.DiagnosticTag.Unnecessary],
+                                [new vscode.DiagnosticRelatedInformation(newLibDefinition.location, "New definition")]);
+                            const index = this.filesLibraries.indexOf(previousLibDefinition);
+                            if (index > -1) {
+                                this.filesLibraries[index] = newLibDefinition;
+                            }
+                        } else {
+                            this.filesLibraries.push(newLibDefinition);
+                        }
+                        this.libraryTypeTrack.set(libNameTag, newLibDefinition);
+                        continue;
+                    }
+    
+                    // Modules
+                    match = line.match(REGEX_MODULE_PATH);
+                    if (match) {
+                        let filePath = match[0].trim();
+                        let results = await gPathFind.findPath(filePath, document.uri.fsPath);
+                        if (results.length === 0) {
+                            DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.missingPath, filePath);
+                        }
+                        let inf = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[0], line);
+                        if (filePath.toLowerCase().endsWith(".inf")) {
+                            if (this.sectionsStack[this.sectionsStack.length - 1].toLowerCase().endsWith(".inf")) {
+                                this.sectionsStack.pop();
+                            }
+                        }
+                        this.sectionsStack.push(filePath);
+                        this.filesModules.push(inf);
+                        continue;
+                    }
+                }
             }
-
-            if(line.startsWith("!error ")){
-                DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.errorMessage, line.replace("!error ",""));
-            }
-
+    
             if (isRangeActive) {
                 isRangeActive = false;
                 let lineIndexEnd = lineIndex - 1;
                 gDebugLog.debug(`New grayout ${document.fileName} -> unuseRangeStart: ${unuseRangeStart} lineIndexEnd: ${lineIndexEnd}`);
                 doucumentGrayoutRange.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
             }
+    
+            this.updateGrayoutRange(document, doucumentGrayoutRange);
+            
 
-            if (type === 'DSC') {
-                // Sections
-                let match = line.match(REGEX_DSC_SECTION);
-                if (match) {
-                    const sectionType = match[0].split(".")[0];
-                    if (!dscSectionTypes.includes(sectionType.toLowerCase())) {
-                        DiagnosticManager.warning(document.uri, lineIndex, EdkDiagnosticCodes.unknownSectionType, sectionType);
-                    }
-                    this.sectionsStack = [match[0]];
-                    continue;
-                }
-            }
-
-            // Defines
-            if (line.match(REGEX_DEFINE)) {
-                let key = line.replace(/define/gi, "").trim();
-                key = split(key, "=", 2)[0].trim();
-                let value = split(line, "=", 2)[1].trim();
-                if (value.includes(`$(${key})`)) {
-                    gDebugLog.info(`Circular define: ${key}: ${value}`);
-                } else {
-                    if (type === 'DSC') {
-                        this.defines.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)));
-                    } else {
-                        this.definesFdf.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)));
-                    }
-                }
-                continue;
-            }
-
-            // Includes
-            if (line.match(REGEX_INCLUDE)) {
-                let value = line.replace(/!include/gi, "").trim();
-                let location = await gPathFind.findPath(value, document.uri.fsPath);
-                if (location.length > 0) {
-                    let includedDocument = await openTextDocument(location[0].uri);
-                    if (type === 'DSC') {
-                        await this._processDocument(includedDocument, 'DSC');
-                    } else {
-                        this.filesFdf.push(includedDocument);
-                        await this._processDocument(includedDocument, 'FDF');
-                    }
-                }
-                continue;
-            }
-
-            if (type === 'DSC') {
-
-                // Libraries
-                let match = line.match(REGEX_LIBRARY_PATH);
-                if (match) {
-                    let filePath = match[0].trim();
-                    let results = await gPathFind.findPath(filePath, document.uri.fsPath);
-                    if (results.length === 0) {
-                        DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.missingPath, filePath);
-                    }
-                    let newLibDefinition = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[this.sectionsStack.length - 1], line);
-                    const libName = newLibDefinition.text.split("|")[0].trim();
-                    const libNameTag = libName + " - " + newLibDefinition.getModuleTypeStr();
-                    if (this.libraryTypeTrack.has(libNameTag) && (libName.toLocaleLowerCase() !== "null") && newLibDefinition.parent === undefined) {
-                        if (this.sectionsStack[this.sectionsStack.length - 1].toLowerCase().endsWith(".inf")) {
-                            continue;
-                        }
-                        let previousLibDefinition = this.libraryTypeTrack.get(libNameTag)!;
-                        DiagnosticManager.warning(previousLibDefinition.location.uri, previousLibDefinition.location.range.start.line,
-                            EdkDiagnosticCodes.duplicateStatement,
-                            `Library overwritten: ${libName}`,
-                            [vscode.DiagnosticTag.Unnecessary],
-                            [new vscode.DiagnosticRelatedInformation(newLibDefinition.location, "New definition")]);
-                        const index = this.filesLibraries.indexOf(previousLibDefinition);
-                        if (index > -1) {
-                            this.filesLibraries[index] = newLibDefinition;
-                        }
-                    } else {
-                        this.filesLibraries.push(newLibDefinition);
-                    }
-                    this.libraryTypeTrack.set(libNameTag, newLibDefinition);
-                    continue;
-                }
-
-                // Modules
-                match = line.match(REGEX_MODULE_PATH);
-                if (match) {
-                    let filePath = match[0].trim();
-                    let results = await gPathFind.findPath(filePath, document.uri.fsPath);
-                    if (results.length === 0) {
-                        DiagnosticManager.error(document.uri, lineIndex, EdkDiagnosticCodes.missingPath, filePath);
-                    }
-                    let inf = new InfDsc(filePath, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)), this.sectionsStack[0], line);
-                    if (filePath.toLowerCase().endsWith(".inf")) {
-                        if (this.sectionsStack[this.sectionsStack.length - 1].toLowerCase().endsWith(".inf")) {
-                            this.sectionsStack.pop();
-                        }
-                    }
-                    this.sectionsStack.push(filePath);
-                    this.filesModules.push(inf);
-                    continue;
-                }
-            }
-        }
-
-        if (isRangeActive) {
-            isRangeActive = false;
-            let lineIndexEnd = lineIndex - 1;
-            gDebugLog.debug(`New grayout ${document.fileName} -> unuseRangeStart: ${unuseRangeStart} lineIndexEnd: ${lineIndexEnd}`);
-            doucumentGrayoutRange.push(new vscode.Range(new vscode.Position(unuseRangeStart, 0), new vscode.Position(lineIndexEnd, 0)));
-        }
-
-        this.updateGrayoutRange(document, doucumentGrayoutRange);
+        
     }
 
     private getLangId(uri:vscode.Uri){
@@ -1088,10 +1075,16 @@ export class EdkWorkspace {
     
     evaluateExpression(expression: string): any {
         const originalExpression = expression;
-        if(expression.includes(UNDEFINED_VARIABLE)){
-            gDebugLog.debug(`Evaluate expression: ${expression} -> ${false}`);
-            return false;
-        }
+
+        // EDK sets undefined values as false
+        expression = expression.replaceAll(`"???"`, "FALSE");
+        
+        // 
+        // if(expression.includes(UNDEFINED_VARIABLE)){
+        //     gDebugLog.debug(`Evaluate expression: ${expression} -> ${false}`);
+        //     return false;
+        // }
+
         // add space to parenteses
         expression = expression.replaceAll(/\(/g, " ( ");
         expression = expression.replaceAll(/\)/g, " ) ");
@@ -1104,28 +1097,36 @@ export class EdkWorkspace {
         let parentesisBalance = 0;
         for (const token of tokens) {
             if (!isNaN(Number(token))) {
+                // Numbers
                 outputQueue.push(Number(token));
             } else if (token.toLowerCase() === 'true' || token.toLowerCase() === 'false') {
+                // Boolean values
                 outputQueue.push(token.toLowerCase() === 'true');
             } else if(token.trim().startsWith('"') && token.trim().endsWith('"')){
-                outputQueue.push(token.trim().slice(1,-1));
+                // String values
+                outputQueue.push(token);
             } else if (token in OPERATORS) {
+                // Operators
                 while (operatorStack.length && operatorStack[operatorStack.length - 1] in OPERATORS &&
                     OPERATORS[token as keyof typeof OPERATORS].precedence <= OPERATORS[operatorStack[operatorStack.length - 1] as keyof typeof OPERATORS].precedence) {
                     outputQueue.push(operatorStack.pop());
                 }
                 operatorStack.push(token);
             } else if (token === '(') {
+                // Parentesis
                 parentesisBalance++;
                 operatorStack.push(token);
             } else if (token === ')') {
+                // Parentesis
                 parentesisBalance--;
                 while (operatorStack.length && operatorStack[operatorStack.length - 1] !== '(') {
                     outputQueue.push(operatorStack.pop());
                 }
                 operatorStack.pop();
             } else{
-                throw new Error(`Error evaluating expression: ${originalExpression} - bad Operand ${token}`);
+                // Strings without quotes
+                outputQueue.push(`"${token}"`);
+                // throw new Error(`Error evaluating expression: ${originalExpression} - bad Operand ${token}`);
             }
         }
 

@@ -57,7 +57,15 @@ export class WorkspaceDefinitions {
         return undefined;
     }
 
+    isBoolean(value:string){
+        value = value.toLowerCase();
+        return value === "true" || value === "false";
+    }
+
     setDefinition(key:string, value:string, location:vscode.Location|undefined){
+
+
+
         gDebugLog.trace(`setDefinition: ${key} = ${value}`);
         this.defines.set(key, {name: key, value:value, location:location});
     }
@@ -91,8 +99,6 @@ export class WorkspaceDefinitions {
                         replacement = "TRUE";
                     }else if(value.value.toLowerCase() === "false"){
                         replacement = "FALSE";
-                    }else if(isNaN(parseInt(value.value))){
-                        replacement = `"${value.value}"`;
                     }else{
                         replacement = value.value;
                     }
