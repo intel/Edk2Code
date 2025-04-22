@@ -20,6 +20,7 @@ export abstract class BlockParser {
     abstract visible: boolean; // Indicates if the block is visible or hidden
     exclusive: boolean = true; // Indicates if other blocks should parse this line
     isRoot: boolean = false; // Indicates if this block is in the root block of the document
+    diagnostic: undefined | ((docParser:DocumentParser, symbol:EdkSymbol) => Promise<void>) = undefined;
 
     constructor(isRoot: boolean = false) {
         this.isRoot = isRoot;
@@ -44,6 +45,8 @@ export abstract class BlockParser {
             return false;
         }
 
+
+        
         if (textLine.match(this.tag)) {
             gDebugLog.trace(`New block ${this.name} (${this.tag.toString()} -> ${textLine})`);
 
@@ -70,6 +73,11 @@ export abstract class BlockParser {
 
             docParser.addSymbol(symbol);
             docParser.pushSymbolStack(symbol);
+            if(this.diagnostic){
+                void this.diagnostic(docParser, symbol);
+            }
+            
+            
 
             // look for block start
             if (this.start) {

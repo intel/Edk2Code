@@ -491,7 +491,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "draft-release": "node create_draft_release.js"
+    "draft-release": "node scripts/create_draft_release.js"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.1",

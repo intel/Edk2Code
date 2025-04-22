@@ -1,8 +1,13 @@
 
-import { Edk2SymbolType } from "../symbols/symbolsType";
+import { debuglog } from "util";
+import { Edk2SymbolType, typeToStr } from "../symbols/symbolsType";
 import { createRange, split } from "../utils";
 import { REGEX_ANY_BUT_SECTION, REGEX_DEFINE } from "./commonParser";
 import { BlockParser, DocumentParser } from "./languageParser";
+import { EdkSymbol } from "../symbols/edkSymbols";
+import { ParserFactory } from "./parserFactory";
+import * as vscode from 'vscode';
+import { DiagnosticManager, EdkDiagnosticCodes } from "../diagnostics";
 
 class BlockModuleType extends BlockParser {
     name= "ModuleType";
@@ -163,6 +168,11 @@ class BlockGuid extends BlockParser {
     end =  undefined;
     type = Edk2SymbolType.infGuid;
     visible:boolean = true;
+    diagnostic = async (docParser:DocumentParser, symbol:EdkSymbol)=>{
+        if(!await symbol.isInDec(Edk2SymbolType.decGuid)){
+            DiagnosticManager.error(docParser.document.uri, symbol.range, EdkDiagnosticCodes.statementNoKey, `No ${typeToStr.get(this.type)} found for ${symbol.name} in .dec files`);
+        }
+    };    
 }
 
 class BlockDepex extends BlockParser {
@@ -196,6 +206,11 @@ class BlockProtocol extends BlockParser {
     end =  undefined;
     type = Edk2SymbolType.infProtocol;
     visible:boolean = true;
+    diagnostic = async (docParser:DocumentParser, symbol:EdkSymbol)=>{
+        if(!await symbol.isInDec(Edk2SymbolType.decProtocol)){
+            DiagnosticManager.error(docParser.document.uri, symbol.range, EdkDiagnosticCodes.statementNoKey, `No ${typeToStr.get(this.type)} found for ${symbol.name} in .dec files`);
+        }
+    };    
 }
 
 class BlockProtocolsSection extends BlockParser {
@@ -218,6 +233,11 @@ class BlockPpi extends BlockParser {
     end =  undefined;
     type = Edk2SymbolType.infPpi;
     visible:boolean = true;
+    diagnostic = async (docParser:DocumentParser, symbol:EdkSymbol)=>{
+        if(!await symbol.isInDec(Edk2SymbolType.decPpi)){
+            DiagnosticManager.error(docParser.document.uri, symbol.range, EdkDiagnosticCodes.statementNoKey, `No ${typeToStr.get(this.type)} found for ${symbol.name} in .dec files`);
+        }
+    };    
 }
 
 class BlockPpisSection extends BlockParser {
@@ -239,6 +259,11 @@ class BlockPcd extends BlockParser {
     end =  undefined;
     type = Edk2SymbolType.infPcd;
     visible:boolean = true;
+    diagnostic = async (docParser:DocumentParser, symbol:EdkSymbol)=>{
+        if(!await symbol.isInDec(Edk2SymbolType.decPcd)){
+            DiagnosticManager.error(docParser.document.uri, symbol.range, EdkDiagnosticCodes.statementNoKey, `No ${typeToStr.get(this.type)} found for ${symbol.name} in .dec files`);
+        }
+    };
 }
 
 class BlockPcdSection extends BlockParser {

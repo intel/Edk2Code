@@ -3,6 +3,8 @@ import { gDebugLog } from '../extension';
 import { Edk2SymbolType, typeToStr } from './symbolsType';
 import { DocumentParser } from '../edkParser/languageParser';
 import { SectionProperties } from '../index/edkWorkspace';
+import { ParserFactory } from '../edkParser/parserFactory';
+import path = require('path');
 
 
 
@@ -27,6 +29,8 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
     guid:string = "";
     parser:DocumentParser;
     
+
+
 
     protected _textLine: string;
     public get textLine(): string {
@@ -65,6 +69,49 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
         }
         gDebugLog.trace(`Symbol Created: ${location.range.start.line}: ${this.toString()}`);
     }
+
+    async decCompletion(type:Edk2SymbolType, completionKind:vscode.CompletionItemKind=vscode.CompletionItemKind.File){
+        let retData = [];
+        let factory = new ParserFactory();
+        let decs = this.parser.getSymbolsType(Edk2SymbolType.infPackage);
+        for (const dec of decs) {
+            let decTextPath = await dec.getValue();
+            let document = await vscode.workspace.openTextDocument(vscode.Uri.file(decTextPath));
+            let decParser = factory.getParser(document);
+            if(decParser){
+                await decParser.parseFile();
+                let decPpis = decParser.getSymbolsType(type);
+                for (const decPpi of decPpis) {
+                    let decPpiValue = await decPpi.getKey();
+                    retData.push(new vscode.CompletionItem({label:decPpiValue, detail:" " + path.basename(decPpi.location.uri.fsPath), description:""}, completionKind));
+                }
+            }
+        }
+        return retData;
+    }
+
+    async isInDec(type:Edk2SymbolType){
+        let factory = new ParserFactory();
+        let decs = this.parser.getSymbolsType(Edk2SymbolType.infPackage);
+        const testKey = await this.getKey();
+        for (const dec of decs) {
+            let decTextPath = await dec.getValue();
+            let document = await vscode.workspace.openTextDocument(vscode.Uri.file(decTextPath));
+            let decParser = factory.getParser(document);
+            if(decParser){
+                await decParser.parseFile();
+                let decSymbols = decParser.getSymbolsType(type);
+                for (const decSymbol of decSymbols) {
+                    const symbolKey = await decSymbol.getKey();
+                    if(symbolKey === testKey){
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 
     toString() {
         return `(${this.range.start.line + 1},${this.range.start.character}),(${this.range.end.line + 1},${this.range.end.character})(${this.typeToString()}): ${this.name}`;
