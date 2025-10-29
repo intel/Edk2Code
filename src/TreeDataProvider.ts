@@ -62,17 +62,18 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
   }
 
   getHierarchy(item: TreeItem, level: number = 0, isLast: boolean = true, prefix: string = ''): string {
-    const connector = level === 0 ? '' : (isLast ? '└── ' : '├── ');
     const itemText = item.toString();
     const vscodeLink = this.getVscodeLink(item);
     const displayText = vscodeLink ? `[${itemText}](${vscodeLink})` : itemText;
-    let result = prefix + connector + displayText + '\n';
+    
+    // Use markdown list syntax with proper indentation
+    const indent = '  '.repeat(level); // 2 spaces per level for markdown lists
+    let result = `${indent}- ${displayText}\n`;
     
     const children = item.children;
     for (let i = 0; i < children.length; i++) {
       const isLastChild = i === children.length - 1;
-      const childPrefix = prefix + (level === 0 ? '' : (isLast ? '    ' : '│   '));
-      result += this.getHierarchy(children[i], level + 1, isLastChild, childPrefix);
+      result += this.getHierarchy(children[i], level + 1, isLastChild, '');
     }
     return result;
   }

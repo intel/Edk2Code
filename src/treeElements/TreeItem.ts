@@ -36,13 +36,13 @@ export class TreeItem extends vscode.TreeItem {
     toString(){
       let result = "";
       if(typeof this.label === 'string'){
-        result = this.label;
+        result =  `**${this.label}**`;
       }
       if(typeof this.label === 'object' && 'label' in this.label){
-        result = this.label.label;
+        result = `**${this.label.label}**`;
       }
   
-      result += this.description ? ` *${this.description}*` : '';
+      result += this.description ? `   -  *${this.description}*` : '';
       return result;
     }
 
