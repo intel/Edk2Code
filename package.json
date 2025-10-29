@@ -196,6 +196,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "edk2code.addVscodeLinksToReferences": {
+            "order": 2,
+            "type": "boolean",
+            "markdownDescription": "Add VSCode links to copied references. When enabled, the tree output will include clickable markdown links that open files at specific line numbers when pasted in markdown documents.",
+            "default": false
           }
         }
       }

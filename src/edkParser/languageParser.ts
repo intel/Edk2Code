@@ -73,9 +73,13 @@ export abstract class BlockParser {
 
             docParser.addSymbol(symbol);
             docParser.pushSymbolStack(symbol);
-            if(this.diagnostic){
-                void this.diagnostic(docParser, symbol);
-            }
+
+
+            if (this.diagnostic) {
+                setTimeout(async () => {
+                    await this.diagnostic!(docParser, symbol);
+                }, 1); // Adjust the delay (in milliseconds) as needed
+            }            
             
             
 

@@ -14,6 +14,7 @@ import { DiagnosticManager, EdkDiagnosticCodes } from '../diagnostics';
 import { PathFind } from '../pathfind';
 import { OPERATORS } from './operations';
 import * as edkStatusBar from '../statusBar';
+import { debuglog } from 'util';
 
 
 const dscSectionTypes = ['defines','packages','buildoptions','skuids','libraryclasses','components','userextensions','defaultstores','pcdsfeatureflag','pcdsfixedatbuild','pcdspatchableinmodule','pcdsdynamicdefault','pcdsdynamichii','pcdsdynamicvpd','pcdsdynamicexdefault','pcdsdynamicexhii','pcdsdynamicexvpd'];
@@ -333,19 +334,19 @@ export class EdkWorkspace {
     public set filesModules(value: InfDsc[]) {
         this._filesModules = value;
     }
-    private _filesDsc: vscode.TextDocument[] = [];
-    private _filesFdf: vscode.TextDocument[] = [];
+    private _filesDsc: Set<vscode.TextDocument> = new Set();
+    private _filesFdf: Set<vscode.TextDocument> = new Set();
 
-    public get filesDsc(): vscode.TextDocument[] {
+    public get filesDsc(): Set<vscode.TextDocument> {
         return this._filesDsc;
     }
-    public set filesDsc(value: vscode.TextDocument[]) {
+    public set filesDsc(value: Set<vscode.TextDocument>) {
         this._filesDsc = value;
     }
-    public get filesFdf(): vscode.TextDocument[] {
+    public get filesFdf(): Set<vscode.TextDocument> {
         return this._filesFdf;
     }
-    public set filesFdf(value: vscode.TextDocument[]) {
+    public set filesFdf(value: Set<vscode.TextDocument>) {
         this._filesFdf = value;
     }
 
@@ -367,11 +368,11 @@ export class EdkWorkspace {
     }
 
     public dscList(){
-        return this.filesDsc.map(x=>x.uri.fsPath);
+        return Array.from(this.filesDsc).map(x=>x.uri.fsPath);
     }
 
     public fdfList(){
-        return this.filesFdf.map(x=>x.uri.fsPath);
+        return Array.from(this.filesFdf).map(x=>x.uri.fsPath);
     }
 
     public getFilesList(){
@@ -411,7 +412,7 @@ export class EdkWorkspace {
     
             this.filesLibraries = [];
             this.filesModules = [];
-            this.filesDsc = [];
+            this.filesDsc = new Set();
             for (const ctrl of this._grayoutControllers) {
                 ctrl.dispose();
             }
@@ -556,16 +557,16 @@ export class EdkWorkspace {
             gDebugLog.trace(`_process${type}: ${document.fileName}`);
     
             if (this.isDocumentInIndex(document)) {
-                gDebugLog.warning(`_process${type}: ${document.fileName} already in inactiveLines`);
+                gDebugLog.trace(`_process${type}: ${document.fileName} already in inactiveLines`);
                 return;
             }
     
             let doucumentGrayoutRange = [];
             this.parsedDocuments.set(document.uri.fsPath, []);
             if (type === 'DSC') {
-                this.filesDsc.push(document);
+                this.filesDsc.add(document);
             } else {
-                this.filesFdf.push(document);
+                this.filesFdf.add(document);
             }
     
             let text = document.getText().split(/\r?\n/);
@@ -665,7 +666,7 @@ export class EdkWorkspace {
                         if (type === 'DSC') {
                             await this._processDocument(includedDocument, 'DSC');
                         } else {
-                            this.filesFdf.push(includedDocument);
+                            this.filesFdf.add(includedDocument);
                             await this._processDocument(includedDocument, 'FDF');
                         }
                         gDebugLog.trace(`END Including: ${location[0].uri.fsPath}`);
@@ -788,21 +789,23 @@ export class EdkWorkspace {
             
             switch (this.getLangId(uri)) {
                 case "edk2_dsc":
+                case "edk2_fdf":
+                    // fdf files can be included in dsc files
                     for (const dsc of this.filesDsc) {
                         
                         if(uri.fsPath === dsc.fileName) {
                             return true;
                         }
                     }
-                    return false;
                     
-                case "edk2_fdf":
+                    
+                
                     for (const fdf of this.filesFdf) {
                         if(uri.fsPath === fdf.fileName){
                             return true;
                         }
                     }
-                    break;
+                    return false;
                 case "edk2_dec":
                     break;
                 case "edk2_inf":
@@ -876,7 +879,9 @@ export class EdkWorkspace {
                         let value = line.replace(/!include/gi, "").trim();
                         let location = await gPathFind.findPath(value);
                         if (!location.length){continue;}
+                        gDebugLog.trace(`Looking include: ${location[0].uri.fsPath}`);
                         if(location[0].uri.fsPath === uri.fsPath){
+                            gDebugLog.trace(`Include found: ${location[0].uri.fsPath} in ${document.uri.fsPath} line ${lineIndex}`);
                             retLocations.push(new vscode.Location(document.uri, createRange(lineIndex,lineIndex,0)));
                         }
                     }
@@ -912,7 +917,7 @@ export class EdkWorkspace {
         
         if (this.flashDefinitionDocument) {
             if (!this.isDocumentInIndex(this.flashDefinitionDocument)) {
-                this.filesFdf = [];
+                this.filesFdf = new Set();
                 await this._processDocument(this.flashDefinitionDocument,"FDF");
             }
         }

@@ -5,8 +5,10 @@ import { DocumentParser } from '../edkParser/languageParser';
 import { SectionProperties } from '../index/edkWorkspace';
 import { ParserFactory } from '../edkParser/parserFactory';
 import path = require('path');
+import { debuglog } from 'util';
+import { log } from 'console';
 
-
+let decSymbolCache = new Map<string, string>();
 
 
 export abstract class EdkSymbol extends vscode.DocumentSymbol {
@@ -94,15 +96,25 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
         let factory = new ParserFactory();
         let decs = this.parser.getSymbolsType(Edk2SymbolType.infPackage);
         const testKey = await this.getKey();
+
+
         for (const dec of decs) {
             let decTextPath = await dec.getValue();
+            if(decSymbolCache.has(testKey)){
+                let cachedPath = decSymbolCache.get(testKey);
+                if(cachedPath === decTextPath){
+                    return true;
+                }
+            }
             let document = await vscode.workspace.openTextDocument(vscode.Uri.file(decTextPath));
             let decParser = factory.getParser(document);
             if(decParser){
                 await decParser.parseFile();
                 let decSymbols = decParser.getSymbolsType(type);
                 for (const decSymbol of decSymbols) {
+                    
                     const symbolKey = await decSymbol.getKey();
+                    decSymbolCache.set(symbolKey, decTextPath);
                     if(symbolKey === testKey){
                         return true;
                     }
@@ -123,12 +135,12 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
     }
 
     async getValue(){
-        gDebugLog.error(`getValue not implemented for ${this.type}`);
+        // gDebugLog.warning(`getValue not implemented for ${this.type}`);
         return this.textLine;
     }
 
     async getKey(){
-        gDebugLog.error(`getKey not implemented for ${this.type}`);
+        // gDebugLog.warning(`getKey not implemented for ${this.type}`);
         return this.textLine;
     }
 

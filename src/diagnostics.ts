@@ -142,6 +142,8 @@ export class DiagnosticManager {
                                 relatedInformation?: vscode.DiagnosticRelatedInformation[]|undefined) 
         {
 
+        
+
         if(gConfigAgent.isDiagnostics() === false){
             this.clearAllProblems();
             return undefined;
@@ -153,6 +155,18 @@ export class DiagnosticManager {
             range = line;
         }else{
             range = new vscode.Range(line as number, 0, line as number, Number.MAX_VALUE);
+        }
+
+        // Check if the diagnostic already exists
+        const existingDiagnostics = DiagnosticManager.getDiagnostic(documentUri);
+        const isDuplicate = existingDiagnostics.some(diagnostic => 
+            diagnostic.range.isEqual(range) &&
+            diagnostic.message === message &&
+            diagnostic.severity === severity
+        );
+
+        if (isDuplicate) {
+            return undefined; // Skip adding duplicate diagnostic
         }
         
 

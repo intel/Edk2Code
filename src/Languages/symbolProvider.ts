@@ -6,6 +6,7 @@ import { CompletionItemKind } from 'vscode';
 import { ParserFactory } from '../edkParser/parserFactory';
 import { gConfigAgent, gEdkWorkspaces, gGrayOutController } from '../extension';
 import { Debouncer } from '../debouncer';
+import { DiagnosticManager } from '../diagnostics';
 
 
 export class EdkSymbolProvider implements vscode.DocumentSymbolProvider {
@@ -37,6 +38,8 @@ export class EdkSymbolProvider implements vscode.DocumentSymbolProvider {
   public async provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken) {
 
     // Create a parser for the document
+    DiagnosticManager.clearProblems(document.uri);
+    
     let factory = new ParserFactory();
     let parser = factory.getParser(document);
     if (parser) {

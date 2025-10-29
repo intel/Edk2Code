@@ -1,7 +1,7 @@
 import path = require('path');
 import * as vscode from 'vscode';
 import { TreeItemLabel } from 'vscode';
-import { edkLensTreeDetailProvider, gCompileCommands, gEdkWorkspaces, gMapFileManager, gPathFind } from './extension';
+import { edkLensTreeDetailProvider, gCompileCommands, gConfigAgent, gEdkWorkspaces, gMapFileManager, gPathFind } from './extension';
 import { InfParser } from './edkParser/infParser';
 import { getParser } from './edkParser/parserFactory';
 import { Edk2SymbolType } from './symbols/symbolsType';
@@ -61,18 +61,61 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
     await view.reveal(node);
   }
 
-  getHierarchy(item: TreeItem, level: number = 0): string {
-    let result = '  '.repeat(level) +`- ${item.toString()}\n`;// Indentation based on level
-    for (const child of item.children) {
-      result += this.getHierarchy(child, level + 1); // Recurse for each child, increasing the level
+  getHierarchy(item: TreeItem, level: number = 0, isLast: boolean = true, prefix: string = ''): string {
+    const connector = level === 0 ? '' : (isLast ? '└── ' : '├── ');
+    const itemText = item.toString();
+    const vscodeLink = this.getVscodeLink(item);
+    const displayText = vscodeLink ? `[${itemText}](${vscodeLink})` : itemText;
+    let result = prefix + connector + displayText + '\n';
+    
+    const children = item.children;
+    for (let i = 0; i < children.length; i++) {
+      const isLastChild = i === children.length - 1;
+      const childPrefix = prefix + (level === 0 ? '' : (isLast ? '    ' : '│   '));
+      result += this.getHierarchy(children[i], level + 1, isLastChild, childPrefix);
     }
     return result;
   }
 
+  private getVscodeLink(item: TreeItem): string | null {
+    if (!gConfigAgent.isAddVscodeLinksToReferences()) {
+      return null;
+    }
+
+    // Type guards and link generation for different tree item types
+    if ('uri' in item && item.uri) {
+      const uri = item.uri as vscode.Uri;
+      
+      // For SourceSymbolTreeItem - has range property
+      if ('range' in item && item.range) {
+        const range = item.range as vscode.Range;
+        const line = range.start.line + 1; // VSCode uses 1-based line numbers in links
+        const char = range.start.character + 1; // VSCode uses 1-based character numbers in links
+        return `vscode://file${uri.path}:${line}:${char}`;
+      }
+      
+      // For other tree items that might have position in their command arguments
+      if (item.command && item.command.arguments && item.command.arguments.length >= 2) {
+        const position = item.command.arguments[1] as vscode.Position;
+        if (position && typeof position.line === 'number') {
+          const line = position.line + 1;
+          const char = position.character + 1;
+          return `vscode://file${uri.path}:${line}:${char}`;
+        }
+      }
+      
+      // Fallback - just link to the file without specific line
+      return `vscode://file${uri.path}`;
+    }
+    
+    return null;
+  }
+
   toString(){
     let result = '';
-    for (const item of this.data) {
-      result += this.getHierarchy(item);
+    for (let i = 0; i < this.data.length; i++) {
+      const isLast = i === this.data.length - 1;
+      result += this.getHierarchy(this.data[i], 0, isLast, '');
     }
     return result;
   }

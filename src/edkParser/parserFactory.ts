@@ -8,6 +8,7 @@ import { VfrParser } from './vfrParser';
 import { AslParser } from './aslParser';
 import { openTextDocument } from '../utils';
 import { DiagnosticManager } from '../diagnostics';
+import { Debouncer } from '../debouncer';
 
 export async function getParser(uri:vscode.Uri){
     let infDocument = await openTextDocument(uri);
@@ -23,7 +24,7 @@ export class ParserFactory {
 
     getParser(document: vscode.TextDocument) {
         let languageId = document.languageId;
-        DiagnosticManager.clearProblems(document.uri);
+        
         switch (languageId) {
             case "asl":
                 return new AslParser(document);
