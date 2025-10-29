@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { Edk2SymbolType } from "./symbolsType";
 import { WorkspaceDefinitions } from "../index/definitions";
 import { DocumentParser } from "../edkParser/languageParser";
+import * as path from 'path';
 
 export class EdkSymbolDscSection extends EdkSymbol {
     type = Edk2SymbolType.dscSection;
@@ -33,8 +34,9 @@ export class EdkSymbolFdfInf extends EdkSymbol {
     onCompletion: undefined;
 
     onDefinition = async (parser:DocumentParser)=>{
-        let path = await this.getValue();
-        return await gPathFind.findPath(path);
+        let pathValue = await this.getValue();
+        let relPath = path.dirname(parser.document.uri.fsPath);
+        return await gPathFind.findPath(pathValue, relPath);
     };
 
     async getValue(){
@@ -75,8 +77,9 @@ export class EdkSymbolFdfInclude extends EdkSymbol {
     onCompletion: undefined;
 
     onDefinition = async (parser:DocumentParser)=>{
-        let path = await this.getValue();
-        return await gPathFind.findPath(path);
+        let pathValue = await this.getValue();
+        let relPath = path.dirname(parser.document.uri.fsPath);
+        return await gPathFind.findPath(pathValue, relPath);
     };
 
     async getValue(){

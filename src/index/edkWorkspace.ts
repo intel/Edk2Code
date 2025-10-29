@@ -442,7 +442,7 @@ export class EdkWorkspace {
             this.platformName = this.defines.getDefinition("PLATFORM_NAME") || undefined;
             let flashDefinitionString = this.defines.getDefinition("FLASH_DEFINITION") || undefined;
             if (flashDefinitionString) {
-                let flashDefinitionPath = await gPathFind.findPath(flashDefinitionString);
+                let flashDefinitionPath = await gPathFind.findPath(flashDefinitionString, path.dirname(this.mainDsc.fsPath));
                 if(flashDefinitionPath.length>0){
                     this.flashDefinitionDocument = await openTextDocument(flashDefinitionPath[0].uri);
                 }
@@ -837,16 +837,16 @@ export class EdkWorkspace {
                         }
                     }
                     for (const inf of relativeInf) {
-                        let location = await gPathFind.findPath(inf);
+                        let infLocation = await gPathFind.findPath(inf);
                         
-                        if (location.length === 0){continue;}
+                        if (infLocation.length === 0){continue;}
 
-                        let parser = await getParser(location[0].uri);
+                        let parser = await getParser(infLocation[0].uri);
                         if (parser) {
                             let sources = parser.getSymbolsType(Edk2SymbolType.infSource);
                             for (const source of sources) {
-                                let location = await gPathFind.findPath(await source.getValue());
-                                if(location[0].uri.fsPath === uri.fsPath){
+                                let sourceLocation = await gPathFind.findPath(await source.getValue(), path.dirname(infLocation[0].uri.fsPath));
+                                if(sourceLocation[0].uri.fsPath === uri.fsPath){
                                     return true;
                                 }
                             }
@@ -877,7 +877,7 @@ export class EdkWorkspace {
                     if(line.match(/\!include\s/gi)){
                         line = this.defines.replaceDefines(line);
                         let value = line.replace(/!include/gi, "").trim();
-                        let location = await gPathFind.findPath(value);
+                        let location = await gPathFind.findPath(value, path.dirname(document.uri.fsPath));
                         if (!location.length){continue;}
                         gDebugLog.trace(`Looking include: ${location[0].uri.fsPath}`);
                         if(location[0].uri.fsPath === uri.fsPath){
