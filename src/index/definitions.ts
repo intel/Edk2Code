@@ -64,7 +64,8 @@ export class WorkspaceDefinitions {
 
     setDefinition(key:string, value:string, location:vscode.Location|undefined){
 
-
+        // Expand any existing definitions referenced in the value
+        value = this.replaceDefines(value);
 
         gDebugLog.trace(`setDefinition: ${key} = ${value}`);
         this.defines.set(key, {name: key, value:value, location:location});
