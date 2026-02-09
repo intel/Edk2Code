@@ -656,9 +656,34 @@ export class EdkWorkspace {
                     let key = line.replace(/define/gi, "").trim();
                     key = split(key, "=", 2)[0].trim();
                     let value = split(line, "=", 2)[1].trim();
-                    if (value.includes(`$(${key})`)) {
+                    let originalValue = split(originalLine, "=", 2)[1].trim();
+
+                    if (value.includes(`$(${key})`) || originalValue.includes(`$(${key})`)) {
                         gDebugLog.info(`Circular define: ${key}: ${value}`);
                     } else {
+                        // Warn if DEFINE is being redefined without referencing itself
+                        let defines = type === 'DSC' ? this.defines : this.definesFdf;
+                        if (defines.isDefined(key)) {
+                            let previousLocation = defines.getDefinitionLocation(key);
+                            let relatedInfo: vscode.DiagnosticRelatedInformation[] | undefined;
+                            if (previousLocation) {
+                                relatedInfo = [
+                                    new vscode.DiagnosticRelatedInformation(
+                                        previousLocation,
+                                        `Previous definition of '${key}'`
+                                    )
+                                ];
+                            }
+                            DiagnosticManager.warning(
+                                document.uri,
+                                lineIndex,
+                                EdkDiagnosticCodes.duplicateDefine,
+                                `'${key}' is redefined without referencing its previous value. Use $(${key}) to extend it.`,
+                                [],
+                                relatedInfo
+                            );
+                        }
+
                         if (type === 'DSC') {
                             this.defines.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)));
                         } else {
@@ -666,7 +691,7 @@ export class EdkWorkspace {
                         }
 
                         // Warn about undefined variables directly referenced in the raw value
-                        let originalValue = split(originalLine, "=", 2)[1].trim();
+                        
                         let unresolvedVars = originalValue.match(REGEX_VAR_USAGE);
                         if (unresolvedVars) {
                             let defines = type === 'DSC' ? this.defines : this.definesFdf;

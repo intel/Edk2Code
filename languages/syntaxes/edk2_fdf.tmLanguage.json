@@ -13,6 +13,10 @@
           "//": "TO-DO: Too much specific keywords in FDF, should revisit for finding better way of color syntax."
         },
         {
+          "name": "variable.language.edk2_dsc",
+          "match": "\\$\\(.*?\\)"
+        },
+        {
           "name": "variable.language.edk2_fdf",
           "match": "((?<!\\w)(FD|BaseAddress|Size|ErasePolarity|BlockSize|NumBlocks|RuleOverride|FV|SET|INF|USE|FILE|DATA))(?!\\w)"
         },
@@ -22,7 +26,7 @@
         },
         {
           "name": "variable.language.edk2_fdf",
-          "match": "((?<!\\w)(MEMORY_MAPPED|LOCK_CAP|LOCK_STATUS|WRITE_LOCK_CAP|WRITE_LOCK_STATUS|WRITE_ENABLED_CAP|WRITE_DISABLED_CAP|WRITE_STATUS|STICKY_WRITE|WRITE_POLICY_RELIABLE|READ_LOCK_CAP|READ_LOCK_STATUS|READ_ENABLED_CAP|READ_DISABLED_CAP|READ_STATUS|ERASE_POLARITY))(?!\\w)"
+          "match": "((?<!\\w)(DEFINE|MEMORY_MAPPED|LOCK_CAP|LOCK_STATUS|WRITE_LOCK_CAP|WRITE_LOCK_STATUS|WRITE_ENABLED_CAP|WRITE_DISABLED_CAP|WRITE_STATUS|STICKY_WRITE|WRITE_POLICY_RELIABLE|READ_LOCK_CAP|READ_LOCK_STATUS|READ_ENABLED_CAP|READ_DISABLED_CAP|READ_STATUS|ERASE_POLARITY))(?!\\w)"
         },
         {
           "name": "support.type.edk2_fdf",

@@ -30,7 +30,8 @@ circularDependency,
 inactiveCode,
 edk2CodeUnsuported,
 errorMessage,
-undefinedVariable
+    undefinedVariable,
+    duplicateDefine
 }
 
 export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
@@ -62,6 +63,7 @@ export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
     [EdkDiagnosticCodes.edk2CodeUnsuported, "Edk2Code unsupported"],
     [EdkDiagnosticCodes.errorMessage, "Error message"],
     [EdkDiagnosticCodes.undefinedVariable, "Undefined variable"],
+    [EdkDiagnosticCodes.duplicateDefine, "Duplicate DEFINE overrides previous value"],
   ]);
 
 export class DiagnosticManager {
