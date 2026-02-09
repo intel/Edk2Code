@@ -29,7 +29,8 @@ emptyFile,
 circularDependency,
 inactiveCode,
 edk2CodeUnsuported,
-errorMessage
+errorMessage,
+undefinedVariable
 }
 
 export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
@@ -60,6 +61,7 @@ export const edkErrorDescriptions: Map<EdkDiagnosticCodes, string> = new Map([
     [EdkDiagnosticCodes.inactiveCode, "Inactive code"],
     [EdkDiagnosticCodes.edk2CodeUnsuported, "Edk2Code unsupported"],
     [EdkDiagnosticCodes.errorMessage, "Error message"],
+    [EdkDiagnosticCodes.undefinedVariable, "Undefined variable"],
   ]);
 
 export class DiagnosticManager {

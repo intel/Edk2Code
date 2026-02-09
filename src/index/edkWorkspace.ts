@@ -19,6 +19,13 @@ import { debuglog } from 'util';
 
 const dscSectionTypes = ['defines','packages','buildoptions','skuids','libraryclasses','components','userextensions','defaultstores','pcdsfeatureflag','pcdsfixedatbuild','pcdspatchableinmodule','pcdsdynamicdefault','pcdsdynamichii','pcdsdynamicvpd','pcdsdynamicexdefault','pcdsdynamicexhii','pcdsdynamicexvpd'];
 
+// EDK2 built-in macros that should not trigger undefined variable warnings
+const EDK2_BUILTIN_MACROS = new Set([
+    "WORKSPACE", "EDK_SOURCE", "EFI_SOURCE", "TARGET", "TOOL_CHAIN_TAG",
+    "ARCH", "MODULE_NAME", "OUTPUT_DIRECTORY", "BUILD_NUMBER", "INF_VERSION",
+    "NAMED_GUID", "INF_OUTPUT"
+]);
+
 type ConditionBlock = {
     active: boolean;      // Whether the block is active or not
     satisfied: boolean;   // Whether the condition has been satisfied
@@ -581,6 +588,7 @@ export class EdkWorkspace {
             gDebugLog.trace(`# Parsing ${type} Document: ${document.uri.fsPath}`);
             for (let line of text) {
                 lineIndex++;
+                let originalLine = line;
                 gDebugLog.trace(`\t\t${lineIndex}: ${line}`);
                 line = this.stripComment(line);
     
@@ -655,6 +663,19 @@ export class EdkWorkspace {
                             this.defines.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)));
                         } else {
                             this.definesFdf.setDefinition(key, value, new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)));
+                        }
+
+                        // Warn about undefined variables directly referenced in the raw value
+                        let originalValue = split(originalLine, "=", 2)[1].trim();
+                        let unresolvedVars = originalValue.match(REGEX_VAR_USAGE);
+                        if (unresolvedVars) {
+                            let defines = type === 'DSC' ? this.defines : this.definesFdf;
+                            for (const unresolved of new Set<string>(unresolvedVars)) {
+                                let varName = unresolved.replace(/\$\(\s*/, '').replace(/\s*\)/, '');
+                                if (!defines.isDefined(varName) && !EDK2_BUILTIN_MACROS.has(varName.toUpperCase())) {
+                                    DiagnosticManager.warning(document.uri, lineIndex, EdkDiagnosticCodes.undefinedVariable, `${unresolved}`);
+                                }
+                            }
                         }
                     }
                     continue;

@@ -38,12 +38,9 @@ export class EdkSymbolProvider implements vscode.DocumentSymbolProvider {
   public async provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken) {
 
     // Create a parser for the document
-    DiagnosticManager.clearProblems(document.uri);
-    
     let factory = new ParserFactory();
     let parser = factory.getParser(document);
     if (parser) {
-
       await parser.parseFile();
       return parser.symbolsTree;
     }
