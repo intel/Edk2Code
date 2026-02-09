@@ -12,6 +12,7 @@ import { EdkSymbol } from './symbols/edkSymbols';
 import { DiagnosticManager, EdkDiagnosticCodes } from './diagnostics';
 import { CompileCommandsEntry } from './compileCommands';
 import { TreeItem } from './treeElements/TreeItem';
+import { DefinesRootItem } from './treeElements/DefinesTreeItem';
 
 
 export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem> {
@@ -20,6 +21,7 @@ export class TreeDetailsDataProvider implements vscode.TreeDataProvider<TreeItem
 
   data: TreeItem[];
   private lastChildren:TreeItem|undefined = undefined;
+
 
   constructor() {
     this.data = [];

@@ -21,12 +21,27 @@ import { EdkInfNode, EdkInfNodeLibrary } from "../treeElements/Library";
 import { TreeItem } from "../treeElements/TreeItem";
 import { EdkModule, ModuleReport } from "../moduleReport";
 import { infoMissingCompileInfo } from "../ui/messages";
+import { DefinesRootItem } from "../treeElements/DefinesTreeItem";
 import { checkCppConfiguration } from "../cppProviders/cppUtils";
 
-    export async function rebuildIndexDatabase() {
 
-        gDebugLog.trace("rebuildIndexDatabase()");
+    export async function showDefines() {
+        edkLensTreeDetailProvider.clear();
+        edkLensTreeDetailView.title = "EDK2 Defines";
+        edkLensTreeDetailView.description = "";
 
+        let definesRoot = new DefinesRootItem("DEFINES");
+        let pcdsRoot = new DefinesRootItem("PCDs");
+
+        edkLensTreeDetailProvider.addChildren(definesRoot);
+        edkLensTreeDetailProvider.addChildren(pcdsRoot);
+        
+        edkLensTreeDetailProvider.refresh();
+        await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
+    }
+
+    export async function rebuildIndexDatabase(){
+        gDebugLog.trace("Rebuilding index database");
         // Pick build folder
         let buildPath = await vscode.window.showOpenDialog({
             defaultUri: vscode.Uri.file(gWorkspacePath), canSelectFiles: false, canSelectFolders: true, canSelectMany: false,
@@ -125,6 +140,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                     void vscode.window.showInformationMessage("Build data loaded");
 
                     await gEdkWorkspaces.loadConfig();
+                    await showDefines();
                 }
 
             } else {
@@ -137,6 +153,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
     export async function rescanIndex() {
         gConfigAgent.reloadConfigFile();
         await reloadSymbols();
+        await showDefines();
         // Generate .ignore if setting is set and .ignore doesnt exists
         if (gConfigAgent.getIsGenIgnoreFile()) {
             await genIgnoreFile();

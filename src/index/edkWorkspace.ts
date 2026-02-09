@@ -29,7 +29,7 @@ type ConditonOpenBlock = {
     lineNo:number;
 };
 
-interface Pcd {
+export interface Pcd {
     name:string;
     value:string
     position:vscode.Location
@@ -514,6 +514,10 @@ export class EdkWorkspace {
 
     getPcds(namespace: any) {
         return this.pcdDefinitions.get(namespace);
+    }
+
+    getAllPcds() {
+        return this.pcdDefinitions;
     }
 
 

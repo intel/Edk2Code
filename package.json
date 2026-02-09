@@ -121,6 +121,11 @@
         "command": "edk2code.NodeFocusBack",
         "title": "Node Focus Back",
         "icon": "$(arrow-left)"
+      },
+      {
+        "command": "edk2code.showWorkspaceDefines",
+        "title": "EDK2: Show workspace Defines",
+        "icon": "$(refresh)"
       }
     ],
     "configuration": [
@@ -209,6 +214,7 @@
     "views": {
       "explorer": [
         {
+          "icon": "assets/icon.png",
           "id": "detailsView",
           "name": "Edk2",
           "type": "tree"
@@ -299,6 +305,10 @@
         {
           "command": "edk2code.NodeFocusBack",
           "when": "false"
+        },
+        {
+          "command": "edk2code.showWorkspaceDefines",
+          "when": "true"
         }
       ],
       "editor/title": [],
@@ -310,6 +320,11 @@
         },
         {
           "command": "edk2code.copyTreeData",
+          "when": "view == detailsView",
+          "group": "navigation"
+        },
+        {
+          "command": "edk2code.showWorkspaceDefines",
           "when": "view == detailsView",
           "group": "navigation"
         }

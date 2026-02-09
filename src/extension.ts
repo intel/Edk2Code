@@ -18,6 +18,7 @@ import { Edk2CallHierarchyProvider } from './callHiearchy';
 import { copyToClipboard, findClosestCommonDirectory, getCurrentDocument, getDocsUrl, gotoFile, showVirtualFile } from './utils';
 import { ParserFactory } from './edkParser/parserFactory';
 import { TreeDetailsDataProvider } from './TreeDataProvider';
+// import { DefinesTreeDataProvider } from './definesPanel';
 import { DiagnosticManager } from './diagnostics';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
@@ -47,6 +48,8 @@ export var gDiagnosticManager:DiagnosticManager;
 
 export var edkLensTreeDetailProvider: TreeDetailsDataProvider;
 export var edkLensTreeDetailView: vscode.TreeView<vscode.TreeItem>;
+
+// export var edkDefinesTreeProvider: DefinesTreeDataProvider;
 
 export var gMapFileManager: MapFilesManager;
 
@@ -156,11 +159,12 @@ export async function activate(context: vscode.ExtensionContext) {
 			void copyToClipboard(path, "Path copied to clipboard");
 		  }),
 
-
-
+		vscode.commands.registerCommand('edk2code.showWorkspaceDefines', async ()=>{await cmds.showDefines();})
 	];
 
-	context.subscriptions.concat(commands);
+	// We need to concat custom commands, because they are not in the list of commands
+	// because they are added after the extension is activated
+	context.subscriptions.push(...commands);
 	gExtensionContext = context;
 	edkStatusBar.init(context);
 
@@ -170,7 +174,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	gMapFileManager = new MapFilesManager();
 	gCompileCommands = new CompileCommands();
 
+	edkLensTreeDetailProvider = new TreeDetailsDataProvider();
+	edkLensTreeDetailView = vscode.window.createTreeView('detailsView', { treeDataProvider: edkLensTreeDetailProvider, showCollapseAll:true });
+
+	// edkDefinesTreeProvider = new DefinesTreeDataProvider();
+	// vscode.window.createTreeView('definesView', { treeDataProvider: edkDefinesTreeProvider, showCollapseAll: true });
+
+
 	await gEdkWorkspaces.loadConfig();
+	// edkDefinesTreeProvider.refresh();
 	gFileUseWarning = new FileUseWarning();
 
 
@@ -187,11 +199,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		});
 	}
 
-
-	edkLensTreeDetailProvider = new TreeDetailsDataProvider();
-	edkLensTreeDetailView = vscode.window.createTreeView('detailsView', { treeDataProvider: edkLensTreeDetailProvider, showCollapseAll:true });
 	
-	edkLensTreeDetailProvider.refresh();
 	edkLensTreeDetailView.onDidExpandElement(async event => {
 		let node = event.element as TreeItem;
 		await node.expand();
