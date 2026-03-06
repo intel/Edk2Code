@@ -145,6 +145,11 @@
       {
         "command": "edk2code.copyWorkspaceNodePath",
         "title": "Copy path"
+      },
+      {
+        "command": "edk2code.refreshWorkspaceConfig",
+        "title": "EDK2: Refresh workspace config",
+        "icon": "$(refresh)"
       }
     ],
     "configuration": [
@@ -357,6 +362,10 @@
         {
           "command": "edk2code.copyWorkspaceNodePath",
           "when": "false"
+        },
+        {
+          "command": "edk2code.refreshWorkspaceConfig",
+          "when": "true"
         }
       ],
       "editor/title": [],
@@ -378,6 +387,11 @@
         },
         {
           "command": "edk2code.filterWorkspaceSymbols",
+          "group": "navigation",
+          "when": "view == workspaceView"
+        },
+        {
+          "command": "edk2code.refreshWorkspaceConfig",
           "group": "navigation",
           "when": "view == workspaceView"
         },

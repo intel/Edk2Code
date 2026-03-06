@@ -185,6 +185,11 @@ export async function activate(context: vscode.ExtensionContext) {
 			await edkWorkspaceTreeProvider.showFilterPicker();
 		}),
 
+		vscode.commands.registerCommand('edk2code.refreshWorkspaceConfig', async () => {
+			await gEdkWorkspaces.loadConfig();
+			edkWorkspaceTreeProvider.refresh();
+		}),
+
 		vscode.commands.registerCommand('edk2code.selectWorkspaceView', async () => {
 			const workspaces = gEdkWorkspaces.workspaces;
 			if (workspaces.length === 0) {
