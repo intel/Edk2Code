@@ -4,7 +4,7 @@ import { EdkWorkspace, IncludeNode } from '../index/edkWorkspace';
 import { getParser } from '../edkParser/parserFactory';
 import { EdkSymbol } from '../symbols/edkSymbols';
 import { Edk2SymbolType } from '../symbols/symbolsType';
-import { gConfigAgent, gEdkWorkspaces } from '../extension';
+import { edkWorkspaceTreeView, gConfigAgent, gEdkWorkspaces } from '../extension';
 
 // ─── DSC symbol types available for filtering ─────────────────────────────────
 
@@ -237,10 +237,97 @@ function findDeepestSymbolAt(
 
 // ─── Tree data provider ───────────────────────────────────────────────────────
 
-export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceTreeNode> {
+export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceTreeNode>, vscode.TreeDragAndDropController<WorkspaceTreeNode> {
     private _onDidChangeTreeData =
         new vscode.EventEmitter<WorkspaceTreeNode | undefined | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
+    // ─── Drag & Drop ──────────────────────────────────────────────────────────
+    readonly dropMimeTypes: string[] = ['application/vnd.code.tree.workspaceview'];
+    readonly dragMimeTypes: string[] = ['application/vnd.code.tree.workspaceview'];
+
+    /** Stashed source info from the last drag operation. */
+    private _draggedSource: { fileUri: vscode.Uri; range: vscode.Range } | undefined;
+
+    handleDrag(
+        source: readonly WorkspaceTreeNode[],
+        _dataTransfer: vscode.DataTransfer,
+        _token: vscode.CancellationToken
+    ): void {
+        const item = source.find(
+            (s): s is DocumentSymbolItem => s instanceof DocumentSymbolItem
+        );
+        if (!item) {
+            this._draggedSource = undefined;
+            return;
+        }
+        this._draggedSource = { fileUri: item.fileUri, range: item.symbol.range };
+    }
+
+    async handleDrop(
+        target: WorkspaceTreeNode | undefined,
+        _dataTransfer: vscode.DataTransfer,
+        _token: vscode.CancellationToken
+    ): Promise<void> {
+        const source = this._draggedSource;
+        this._draggedSource = undefined;
+        if (!source || !target) { return; }
+        if (!(target instanceof DocumentSymbolItem)) { return; }
+
+        const targetRange = target.symbol.range;
+
+        // Skip dropping onto itself
+        if (
+            source.fileUri.fsPath === target.fileUri.fsPath &&
+            source.range.isEqual(targetRange)
+        ) {
+            return;
+        }
+
+        const sourceDoc = await vscode.workspace.openTextDocument(source.fileUri);
+
+        // Read full lines of the source symbol
+        const srcStart = source.range.start.line;
+        const srcEnd = source.range.end.line;
+        let textToMove = '';
+        for (let i = srcStart; i <= srcEnd; i++) {
+            textToMove += sourceDoc.lineAt(i).text + '\n';
+        }
+
+        // Delete range: whole lines
+        const deleteRange = srcEnd + 1 < sourceDoc.lineCount
+            ? new vscode.Range(srcStart, 0, srcEnd + 1, 0)
+            : new vscode.Range(
+                  srcStart === 0 ? 0 : srcStart - 1,
+                  srcStart === 0 ? 0 : sourceDoc.lineAt(srcStart - 1).text.length,
+                  srcEnd,
+                  sourceDoc.lineAt(srcEnd).text.length
+              );
+
+        // Insert right after the target symbol's last line
+        const targetDoc = await vscode.workspace.openTextDocument(target.fileUri);
+        const tgtEnd = targetRange.end.line;
+        let insertPos: vscode.Position;
+        let insertText: string;
+
+        if (tgtEnd + 1 < targetDoc.lineCount) {
+            insertPos = new vscode.Position(tgtEnd + 1, 0);
+            insertText = textToMove;
+        } else {
+            insertPos = new vscode.Position(tgtEnd, targetDoc.lineAt(tgtEnd).text.length);
+            insertText = '\n' + textToMove.replace(/\n$/, '');
+        }
+
+        const edit = new vscode.WorkspaceEdit();
+        edit.delete(source.fileUri, deleteRange);
+        edit.insert(target.fileUri, insertPos, insertText);
+        await vscode.workspace.applyEdit(edit);
+
+        // Refresh tree and reveal the target symbol
+        this.refresh();
+        const tgtPosition = target.symbol.selectionRange.start;
+        await this.revealLocation(target.fileUri, tgtPosition, edkWorkspaceTreeView);
+    }
 
     private _activeIndex: number = 0;
 
