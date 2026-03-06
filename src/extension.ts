@@ -288,7 +288,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	// vscode.window.createTreeView('definesView', { treeDataProvider: edkDefinesTreeProvider, showCollapseAll: true });
 
 	edkWorkspaceTreeProvider = new WorkspaceTreeProvider();
-	edkWorkspaceTreeView = vscode.window.createTreeView('workspaceView', { treeDataProvider: edkWorkspaceTreeProvider, showCollapseAll: true });
+	edkWorkspaceTreeView = vscode.window.createTreeView('workspaceView', { treeDataProvider: edkWorkspaceTreeProvider, showCollapseAll: true, dragAndDropController: edkWorkspaceTreeProvider });
 
 	await gEdkWorkspaces.loadConfig();
 	edkWorkspaceTreeProvider.refresh();
