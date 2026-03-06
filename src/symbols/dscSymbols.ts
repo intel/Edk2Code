@@ -99,9 +99,31 @@ export class EdkSymbolDscLine extends EdkSymbol{
     onDeclaration: undefined;
 }
 
+export class EdkSymbolDscComponentSubSection extends EdkSymbol {
+    type = Edk2SymbolType.dscComponentSubSection;
+    kind = vscode.SymbolKind.Namespace;
+
+    onCompletion: undefined;
+    onDefinition: undefined;
+    onHover: undefined;
+    onDeclaration: undefined;
+}
+
+export class EdkSymbolDscBuildOption extends EdkSymbol {
+    type = Edk2SymbolType.dscBuildOption;
+    kind = vscode.SymbolKind.Property;
+
+    onCompletion: undefined;
+    onDefinition: undefined;
+    onHover: undefined;
+    onDeclaration: undefined;
+}
+
 export class EdkSymbolDscModuleDefinition extends EdkSymbol{
     type = Edk2SymbolType.dscModuleDefinition;
     kind = vscode.SymbolKind.Event;
+
+    protected get nameRegex(): RegExp { return /^\s*([\w/.\\-]+\.inf)/i; }
 
     onCompletion: undefined;
     onDefinition  = async ()=>{
