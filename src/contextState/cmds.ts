@@ -4,7 +4,7 @@ import { rgSearch } from "../rg";
 import { delay, getCurrentWord, gotoFile, isWorkspacePath, listFilesRecursive, openTextDocument, pathCompare, profileEnd, profileStart, readLines, toPosix } from "../utils";
 import path = require("path");
 import * as fs from 'fs';
-import { edkLensTreeDetailProvider, edkLensTreeDetailView, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gMapFileManager, gPathFind, gWorkspacePath } from "../extension";
+import { edkLensTreeDetailProvider, edkLensTreeDetailView, edkWorkspaceTreeProvider, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gMapFileManager, gPathFind, gWorkspacePath } from "../extension";
 import { glob } from "fast-glob";
 import { BuildFolder } from "../Languages/buildFolder";
 import { EdkWorkspace, InfDsc } from "../index/edkWorkspace";
@@ -140,6 +140,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                     void vscode.window.showInformationMessage("Build data loaded");
 
                     await gEdkWorkspaces.loadConfig();
+                    edkWorkspaceTreeProvider.refresh();
                     await showDefines();
                 }
 
@@ -552,6 +553,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
             cancellable: true
         }, async (progress, reject) => {
             await gEdkWorkspaces.loadConfig();
+            edkWorkspaceTreeProvider.refresh();
             let filesList:string[] = [];
             let decList:string[] = [];
             let hFiles:string[] = [];
