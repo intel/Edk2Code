@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 import { ConfigAgent } from './configuration';
 import { Cscope, CscopeAgent } from './cscope';
@@ -20,6 +21,7 @@ import { ParserFactory } from './edkParser/parserFactory';
 import { TreeDetailsDataProvider } from './TreeDataProvider';
 // import { DefinesTreeDataProvider } from './definesPanel';
 import { DiagnosticManager } from './diagnostics';
+import { WorkspaceTreeProvider } from './workspaceTree/WorkspaceTreeProvider';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
 import { TreeItem } from './treeElements/TreeItem';
@@ -48,6 +50,9 @@ export var gDiagnosticManager:DiagnosticManager;
 
 export var edkLensTreeDetailProvider: TreeDetailsDataProvider;
 export var edkLensTreeDetailView: vscode.TreeView<vscode.TreeItem>;
+
+export var edkWorkspaceTreeProvider: WorkspaceTreeProvider;
+export var edkWorkspaceTreeView: vscode.TreeView<vscode.TreeItem>;
 
 // export var edkDefinesTreeProvider: DefinesTreeDataProvider;
 
@@ -159,7 +164,27 @@ export async function activate(context: vscode.ExtensionContext) {
 			void copyToClipboard(path, "Path copied to clipboard");
 		  }),
 
-		vscode.commands.registerCommand('edk2code.showWorkspaceDefines', async ()=>{await cmds.showDefines();})
+		vscode.commands.registerCommand('edk2code.showWorkspaceDefines', async ()=>{await cmds.showDefines();}),
+
+		vscode.commands.registerCommand('edk2code.selectWorkspaceView', async () => {
+			const workspaces = gEdkWorkspaces.workspaces;
+			if (workspaces.length === 0) {
+				void vscode.window.showInformationMessage('No EDK2 workspaces loaded yet.');
+				return;
+			}
+			const items = workspaces.map((ws, i) => ({
+				label: ws.platformName ?? path.basename(ws.mainDsc.fsPath),
+				description: vscode.workspace.asRelativePath(ws.mainDsc, false),
+				index: i
+			}));
+			const picked = await vscode.window.showQuickPick(items, {
+				placeHolder: 'Select workspace to display',
+				title: 'EDK2: Select Workspace'
+			});
+			if (picked !== undefined) {
+				edkWorkspaceTreeProvider.selectWorkspace(picked.index);
+			}
+		})
 	];
 
 	// We need to concat custom commands, because they are not in the list of commands
@@ -180,8 +205,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	// edkDefinesTreeProvider = new DefinesTreeDataProvider();
 	// vscode.window.createTreeView('definesView', { treeDataProvider: edkDefinesTreeProvider, showCollapseAll: true });
 
+	edkWorkspaceTreeProvider = new WorkspaceTreeProvider();
+	edkWorkspaceTreeView = vscode.window.createTreeView('workspaceView', { treeDataProvider: edkWorkspaceTreeProvider, showCollapseAll: true });
 
 	await gEdkWorkspaces.loadConfig();
+	edkWorkspaceTreeProvider.refresh();
 	// edkDefinesTreeProvider.refresh();
 	gFileUseWarning = new FileUseWarning();
 

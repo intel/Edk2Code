@@ -126,6 +126,11 @@
         "command": "edk2code.showWorkspaceDefines",
         "title": "EDK2: Show workspace Defines",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "edk2code.selectWorkspaceView",
+        "title": "EDK2: Select Workspace",
+        "icon": "$(list-selection)"
       }
     ],
     "configuration": [
@@ -322,6 +327,10 @@
         {
           "command": "edk2code.showWorkspaceDefines",
           "when": "true"
+        },
+        {
+          "command": "edk2code.selectWorkspaceView",
+          "when": "true"
         }
       ],
       "editor/title": [],
@@ -330,6 +339,11 @@
           "command": "edk2code.NodeFocusBack",
           "group": "navigation",
           "when": "view == detailsView && edk2code.isNodeFocusBackStack"
+        },
+        {
+          "command": "edk2code.selectWorkspaceView",
+          "group": "navigation",
+          "when": "view == workspaceView"
         },
         {
           "command": "edk2code.copyTreeData",

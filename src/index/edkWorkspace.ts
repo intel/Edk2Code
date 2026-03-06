@@ -42,6 +42,15 @@ export interface Pcd {
     position:vscode.Location
 }
 
+export interface IncludeNode {
+    /** Location of the !include directive in the parent file */
+    location: vscode.Location;
+    /** Resolved URI of the included file */
+    uri: vscode.Uri;
+    /** Nested includes found inside the included file */
+    children: IncludeNode[];
+}
+
 export class SectionProperties{
     properties: SectionProperty[] = [];
     constructor(){
@@ -321,9 +330,12 @@ export class EdkWorkspace {
     private sectionsStack: string[] = [];
     private parsedDocuments: Map<string, vscode.Range[]> = new Map();
 
+
+    // Elements
     private defines: WorkspaceDefinitions = new WorkspaceDefinitions();
-    definesFdf: WorkspaceDefinitions = new WorkspaceDefinitions();
     private pcdDefinitions: Map<string,Map<string,Pcd>> = new Map();
+    
+    definesFdf: WorkspaceDefinitions = new WorkspaceDefinitions();
 
     private libraryTypeTrack = new Map<string,InfDsc>();
 
@@ -358,6 +370,11 @@ export class EdkWorkspace {
     }
 
     private _grayoutControllers:GrayoutController[] = [];
+
+    private _includeTree: IncludeNode[] = [];
+    public get includeTree(): IncludeNode[] {
+        return this._includeTree;
+    }
 
     public updateGrayoutRange(document: vscode.TextDocument, range: vscode.Range[]){
         for (const grayoutController of this._grayoutControllers) {
@@ -430,6 +447,7 @@ export class EdkWorkspace {
             this.conditionStack = [];
             this.result = [];
             this.conditionOpen = [];
+            this._includeTree = [];
     
             
     
@@ -562,7 +580,7 @@ export class EdkWorkspace {
     }
     
 
-    private async _processDocument(document: vscode.TextDocument, type: 'DSC' | 'FDF') {
+    private async _processDocument(document: vscode.TextDocument, type: 'DSC' | 'FDF', parentIncludeNode?: IncludeNode) {
 
             DiagnosticManager.clearProblems(document.uri);
             gDebugLog.trace(`_process${type}: ${document.fileName}`);
@@ -712,12 +730,22 @@ export class EdkWorkspace {
                     let location = await gPathFind.findPath(value, document.uri.fsPath);
                     if (location.length > 0) {
                         gDebugLog.trace(`START Including: ${location[0].uri.fsPath}`);
+                        const includeNode: IncludeNode = {
+                            location: new vscode.Location(document.uri, new vscode.Position(lineIndex, 0)),
+                            uri: location[0].uri,
+                            children: []
+                        };
+                        if (parentIncludeNode) {
+                            parentIncludeNode.children.push(includeNode);
+                        } else {
+                            this._includeTree.push(includeNode);
+                        }
                         let includedDocument = await openTextDocument(location[0].uri);
                         if (type === 'DSC') {
-                            await this._processDocument(includedDocument, 'DSC');
+                            await this._processDocument(includedDocument, 'DSC', includeNode);
                         } else {
                             this.filesFdf.add(includedDocument);
-                            await this._processDocument(includedDocument, 'FDF');
+                            await this._processDocument(includedDocument, 'FDF', includeNode);
                         }
                         gDebugLog.trace(`END Including: ${location[0].uri.fsPath}`);
                     }
