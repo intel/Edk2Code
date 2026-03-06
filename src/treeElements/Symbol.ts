@@ -29,65 +29,6 @@ var baseTypeSet = new Set<string>([
 ]);
 
 
-function getIconForSymbolKind(kind: vscode.SymbolKind): string {
-    switch(kind) {
-      case vscode.SymbolKind.File:
-        return "symbol-file";
-      case vscode.SymbolKind.Module:
-        return "symbol-module";
-      case vscode.SymbolKind.Namespace:
-        return "symbol-namespace";
-      case vscode.SymbolKind.Package:
-        return "symbol-package";
-      case vscode.SymbolKind.Class:
-        return "symbol-class";
-      case vscode.SymbolKind.Method:
-        return "symbol-method";
-      case vscode.SymbolKind.Property:
-        return "symbol-property";
-      case vscode.SymbolKind.Field:
-        return "symbol-field";
-      case vscode.SymbolKind.Constructor:
-        return "symbol-constructor";
-      case vscode.SymbolKind.Enum:
-        return "symbol-enum";
-      case vscode.SymbolKind.Interface:
-        return "symbol-interface";
-      case vscode.SymbolKind.Function:
-        return "symbol-function";
-      case vscode.SymbolKind.Variable:
-        return "symbol-variable";
-      case vscode.SymbolKind.Constant:
-        return "symbol-constant";
-      case vscode.SymbolKind.String:
-        return "symbol-string";
-      case vscode.SymbolKind.Number:
-        return "symbol-number";
-      case vscode.SymbolKind.Boolean:
-        return "symbol-boolean";
-      case vscode.SymbolKind.Array:
-        return "symbol-array";
-      case vscode.SymbolKind.Object:
-        return "symbol-object";
-      case vscode.SymbolKind.Key:
-        return "symbol-key";
-      case vscode.SymbolKind.Null:
-        return "symbol-null";
-      case vscode.SymbolKind.EnumMember:
-        return "symbol-enum-member";
-      case vscode.SymbolKind.Struct:
-        return "symbol-struct";
-      case vscode.SymbolKind.Event:
-        return "symbol-event";
-      case vscode.SymbolKind.Operator:
-        return "symbol-operator";
-      case vscode.SymbolKind.TypeParameter:
-        return "symbol-type-parameter";
-      default:
-        return "symbol-misc";
-    }
-  }
-
 export class EdkSymbolNode extends EdkNode{
     uri:vscode.Uri;
     range:vscode.Range;
@@ -99,7 +40,7 @@ export class EdkSymbolNode extends EdkNode{
       this.label = symbol.name;
       this.name = symbol.name;
       this.description = symbol.detail.length?symbol.detail:vscode.SymbolKind[symbol.kind];
-      this.iconPath = new vscode.ThemeIcon(getIconForSymbolKind(symbol.kind));
+      this.iconPath = EdkSymbol.iconForKind(symbol.kind);
       this.collapsibleState = vscode.TreeItemCollapsibleState.None;
       this.range = symbol.range;
       this.uri = uri;

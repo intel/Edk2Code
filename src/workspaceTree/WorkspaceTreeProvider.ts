@@ -17,40 +17,6 @@ export const DSC_FILTER_TYPES: { type: Edk2SymbolType; label: string; descriptio
     { type: Edk2SymbolType.dscInclude,           label: 'Include directives', description: 'dscInclude' },
 ];
 
-// ─── Symbol kind → codicon mapping ───────────────────────────────────────────
-
-function symbolKindIcon(kind: vscode.SymbolKind): vscode.ThemeIcon {
-    const map: Partial<Record<vscode.SymbolKind, string>> = {
-        [vscode.SymbolKind.File]:        'symbol-file',
-        [vscode.SymbolKind.Module]:      'symbol-module',
-        [vscode.SymbolKind.Namespace]:   'symbol-namespace',
-        [vscode.SymbolKind.Package]:     'symbol-package',
-        [vscode.SymbolKind.Class]:       'symbol-class',
-        [vscode.SymbolKind.Method]:      'symbol-method',
-        [vscode.SymbolKind.Property]:    'symbol-property',
-        [vscode.SymbolKind.Field]:       'symbol-field',
-        [vscode.SymbolKind.Constructor]: 'symbol-constructor',
-        [vscode.SymbolKind.Enum]:        'symbol-enum',
-        [vscode.SymbolKind.Interface]:   'symbol-interface',
-        [vscode.SymbolKind.Function]:    'symbol-function',
-        [vscode.SymbolKind.Variable]:    'symbol-variable',
-        [vscode.SymbolKind.Constant]:    'symbol-constant',
-        [vscode.SymbolKind.String]:      'symbol-string',
-        [vscode.SymbolKind.Number]:      'symbol-number',
-        [vscode.SymbolKind.Boolean]:     'symbol-boolean',
-        [vscode.SymbolKind.Array]:       'symbol-array',
-        [vscode.SymbolKind.Object]:      'symbol-object',
-        [vscode.SymbolKind.Key]:         'symbol-key',
-        [vscode.SymbolKind.Null]:        'symbol-null',
-        [vscode.SymbolKind.EnumMember]:  'symbol-enum-member',
-        [vscode.SymbolKind.Struct]:      'symbol-struct',
-        [vscode.SymbolKind.Event]:       'symbol-event',
-        [vscode.SymbolKind.Operator]:    'symbol-operator',
-        [vscode.SymbolKind.TypeParameter]: 'symbol-type-parameter',
-    };
-    return new vscode.ThemeIcon(map[kind] ?? 'circle-small');
-}
-
 // ─── Helper: load symbols for a URI via the parser ───────────────────────────
 
 async function loadSymbols(uri: vscode.Uri): Promise<EdkSymbol[]> {
@@ -136,7 +102,7 @@ export class DocumentSymbolItem extends vscode.TreeItem {
         this.symbolType = symbol.type;
         this.description = symbol.detail || undefined;
         this.tooltip = symbol.name;
-        this.iconPath = symbolKindIcon(symbol.kind);
+        this.iconPath = EdkSymbol.iconForKind(symbol.kind);
         this.contextValue = 'symbolNode';
         // Clicking navigates to the symbol's location in its file
         this.command = {
