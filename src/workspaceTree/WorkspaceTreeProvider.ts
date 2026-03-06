@@ -30,14 +30,55 @@ async function loadSymbols(uri: vscode.Uri): Promise<EdkSymbol[]> {
     }
 }
 
+// ─── Helper: collect all file URIs reachable in an include tree ───────────────
+
+function collectIncludeUris(nodes: IncludeNode[], out: Set<string>): void {
+    for (const node of nodes) {
+        out.add(node.uri.fsPath);
+        collectIncludeUris(node.children, out);
+    }
+}
+
+/**
+ * Returns true when the given URI is the main DSC or any file included
+ * (directly or transitively) in at least one workspace of the provided list.
+ */
+export function isFileInWorkspaceTree(uri: vscode.Uri, workspaces: EdkWorkspace[]): boolean {
+    for (const ws of workspaces) {
+        if (ws.mainDsc.fsPath === uri.fsPath) { return true; }
+        const uris = new Set<string>();
+        collectIncludeUris(ws.includeTree, uris);
+        if (uris.has(uri.fsPath)) { return true; }
+    }
+    return false;
+}
+
+/**
+ * Returns true when the given INF URI is referenced as a module or library
+ * in at least one loaded workspace.
+ * Uses the same path-suffix check that EdkWorkspace.isFileInUse() performs.
+ */
+export function isInfInWorkspaces(uri: vscode.Uri, workspaces: EdkWorkspace[]): boolean {
+    for (const ws of workspaces) {
+        for (const mod of ws.filesModules) {
+            if (uri.fsPath.includes(mod.path)) { return true; }
+        }
+        for (const lib of ws.filesLibraries) {
+            if (uri.fsPath.includes(lib.path)) { return true; }
+        }
+    }
+    return false;
+}
+
 // ─── Tree Item: Workspace root (the main DSC) ────────────────────────────────
 
 export class WorkspaceRootItem extends vscode.TreeItem {
     public readonly treePath: string[];
 
-    constructor(public readonly workspace: EdkWorkspace) {
+    constructor(public readonly workspace: EdkWorkspace, public readonly wsIndex: number) {
         const label = path.basename(workspace.mainDsc.fsPath);
         super(label, vscode.TreeItemCollapsibleState.Expanded);
+        this.id = `wsr:${wsIndex}`;
         this.treePath = [label];
         this.description = workspace.platformName ?? '';
         this.tooltip = new vscode.MarkdownString(
@@ -88,7 +129,8 @@ export class DocumentSymbolItem extends vscode.TreeItem {
         public readonly symbol: EdkSymbol,
         public readonly fileUri: vscode.Uri,
         activeFilters: Set<Edk2SymbolType>,
-        parentPath: string[]
+        parentPath: string[],
+        public readonly parent: WorkspaceRootItem | DocumentSymbolItem | undefined
     ) {
         const visibleChildren = symbol.children.filter(
             c => activeFilters.has((c as EdkSymbol).type)
@@ -100,6 +142,7 @@ export class DocumentSymbolItem extends vscode.TreeItem {
                 ? vscode.TreeItemCollapsibleState.Collapsed
                 : vscode.TreeItemCollapsibleState.None
         );
+        this.id = `dsi:${fileUri.fsPath}:${symbol.selectionRange.start.line}:${symbol.selectionRange.start.character}`;
         this.treePath = [...parentPath, symbol.name];
         this.symbolType = symbol.type;
         this.description = symbol.detail || undefined;
@@ -115,7 +158,7 @@ export class DocumentSymbolItem extends vscode.TreeItem {
     }
 }
 
-type WorkspaceTreeNode = WorkspaceRootItem | IncludeTreeItem | DocumentSymbolItem;
+export type WorkspaceTreeNode = WorkspaceRootItem | IncludeTreeItem | DocumentSymbolItem;
 
 // ─── Helper: find an IncludeNode by the location of its !include directive ───
 
@@ -158,6 +201,38 @@ async function serializeIncludeNode(node: IncludeNode, indent: string, filter: S
         out += await serializeIncludeNode(child, indent + '  ', filter);
     }
     return out;
+}
+
+// ─── Helper: find the deepest filtered symbol that contains a position ────────
+
+function findDeepestSymbolAt(
+    symbols: EdkSymbol[],
+    position: vscode.Position,
+    filter: Set<Edk2SymbolType>
+): EdkSymbol | undefined {
+    let best: EdkSymbol | undefined;
+    for (const sym of symbols) {
+        if (!filter.has(sym.type)) { continue; }
+        const inRange = sym.range.contains(position) || sym.selectionRange.contains(position);
+        if (inRange) {
+            best = sym;
+            const deeper = findDeepestSymbolAt(sym.children as EdkSymbol[], position, filter);
+            if (deeper) { best = deeper; }
+        }
+    }
+    // Fallback: if no symbol contains the position, return the one closest by line
+    if (!best) {
+        let closestDist = Infinity;
+        for (const sym of symbols) {
+            if (!filter.has(sym.type)) { continue; }
+            const dist = Math.abs(sym.selectionRange.start.line - position.line);
+            if (dist < closestDist) {
+                closestDist = dist;
+                best = sym;
+            }
+        }
+    }
+    return best;
 }
 
 // ─── Tree data provider ───────────────────────────────────────────────────────
@@ -260,7 +335,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         if (!element) {
             const ws = workspaces[this._activeIndex];
             if (!ws) { return []; }
-            return [new WorkspaceRootItem(ws)];
+            return [new WorkspaceRootItem(ws, this._activeIndex)];
         }
 
         // Under the workspace root: symbols of the main DSC
@@ -268,7 +343,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
             const symbols = await loadSymbols(element.workspace.mainDsc);
             return symbols
                 .filter(s => this._activeFilters.has(s.type))
-                .map(s => new DocumentSymbolItem(s, element.workspace.mainDsc, this._activeFilters, element.treePath));
+                .map(s => new DocumentSymbolItem(s, element.workspace.mainDsc, this._activeFilters, element.treePath, element));
         }
 
         // Under an include node: symbols of that file only
@@ -276,7 +351,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
             const symbols = await loadSymbols(element.node.uri);
             return symbols
                 .filter(s => this._activeFilters.has(s.type))
-                .map(s => new DocumentSymbolItem(s, element.node.uri, this._activeFilters, element.treePath));
+                .map(s => new DocumentSymbolItem(s, element.node.uri, this._activeFilters, element.treePath, undefined));
         }
 
         // Under a symbol: for !include directives expand into the included file;
@@ -290,15 +365,89 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
                         const symbols = await loadSymbols(node.uri);
                         return symbols
                             .filter(s => this._activeFilters.has(s.type))
-                            .map(s => new DocumentSymbolItem(s, node.uri, this._activeFilters, element.treePath));
+                            .map(s => new DocumentSymbolItem(s, node.uri, this._activeFilters, element.treePath, element));
                     }
                 }
             }
             return (element.symbol.children as EdkSymbol[])
                 .filter(c => this._activeFilters.has(c.type))
-                .map(child => new DocumentSymbolItem(child, element.fileUri, this._activeFilters, element.treePath));
+                .map(child => new DocumentSymbolItem(child, element.fileUri, this._activeFilters, element.treePath, element));
         }
 
         return [];
+    }
+
+    getParent(element: WorkspaceTreeNode): vscode.ProviderResult<WorkspaceTreeNode> {
+        if (element instanceof WorkspaceRootItem) { return undefined; }
+        if (element instanceof DocumentSymbolItem) { return element.parent; }
+        return undefined;
+    }
+
+    /**
+     * Reveal the tree node that best matches the symbol at the cursor in the active editor.
+     */
+    async revealActiveEditor(treeView: vscode.TreeView<WorkspaceTreeNode>): Promise<void> {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            void vscode.window.showInformationMessage('No active editor.');
+            return;
+        }
+        await this.revealLocation(editor.document.uri, editor.selection.active, treeView);
+    }
+
+    /**
+     * Reveal the tree node that best matches the symbol at a specific location.
+     */
+    async revealLocation(
+        uri: vscode.Uri,
+        position: vscode.Position,
+        treeView: vscode.TreeView<WorkspaceTreeNode>
+    ): Promise<void> {
+        // Load symbols for the file and find the deepest one at the position
+        const symbols = await loadSymbols(uri);
+        if (symbols.length === 0) {
+            void vscode.window.showInformationMessage('No EDK2 symbols found in the active file.');
+            return;
+        }
+
+        const target = findDeepestSymbolAt(symbols, position, this._activeFilters);
+        if (!target) {
+            void vscode.window.showInformationMessage('No EDK2 symbol found at the cursor position.');
+            return;
+        }
+
+        // Traverse the tree to find the matching DocumentSymbolItem
+        const rootItems = await this.getChildren(undefined);
+        for (const root of rootItems) {
+            const found = await this._findItemForSymbol(root, uri, target);
+            if (found) {
+                await treeView.reveal(found, { select: true, focus: false, expand: true });
+                return;
+            }
+        }
+
+        void vscode.window.showInformationMessage('Symbol not found in the workspace tree.');
+    }
+
+    /** Recursively walk the tree to find a DocumentSymbolItem matching (fileUri, targetSymbol). */
+    private async _findItemForSymbol(
+        parent: WorkspaceTreeNode,
+        fileUri: vscode.Uri,
+        targetSymbol: EdkSymbol
+    ): Promise<DocumentSymbolItem | undefined> {
+        const children = await this.getChildren(parent);
+        for (const child of children) {
+            if (
+                child instanceof DocumentSymbolItem &&
+                child.fileUri.fsPath === fileUri.fsPath &&
+                child.symbol.selectionRange.start.line === targetSymbol.selectionRange.start.line &&
+                child.symbol.selectionRange.start.character === targetSymbol.selectionRange.start.character
+            ) {
+                return child;
+            }
+            const found = await this._findItemForSymbol(child, fileUri, targetSymbol);
+            if (found) { return found; }
+        }
+        return undefined;
     }
 }
