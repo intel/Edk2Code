@@ -13,6 +13,7 @@ export interface WorkspaceConfig {
     packagePaths:string[];
     dscPaths:string[];
     buildDefines:string[];
+    workspaceTreeFilters?: number[];
 }
 
 export interface WorkspaceConfigErrors{
@@ -259,6 +260,15 @@ export class ConfigAgent {
 
     getBuildDscPaths() {
         return this.workspaceConfig.dscPaths;
+    }
+
+    getWorkspaceTreeFilters(): number[] | undefined {
+        return this.workspaceConfig.workspaceTreeFilters;
+    }
+
+    setWorkspaceTreeFilters(filters: number[]): void {
+        this.workspaceConfig.workspaceTreeFilters = filters;
+        this.writeWorkspaceConfig(this.workspaceConfig);
     }
 
     getIsGenIgnoreFile() {
