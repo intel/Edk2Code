@@ -21,7 +21,7 @@ import { ParserFactory } from './edkParser/parserFactory';
 import { TreeDetailsDataProvider } from './TreeDataProvider';
 // import { DefinesTreeDataProvider } from './definesPanel';
 import { DiagnosticManager } from './diagnostics';
-import { WorkspaceTreeProvider } from './workspaceTree/WorkspaceTreeProvider';
+import { WorkspaceTreeProvider, WorkspaceRootItem, IncludeTreeItem, DocumentSymbolItem } from './workspaceTree/WorkspaceTreeProvider';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
 import { TreeItem } from './treeElements/TreeItem';
@@ -165,6 +165,25 @@ export async function activate(context: vscode.ExtensionContext) {
 		  }),
 
 		vscode.commands.registerCommand('edk2code.showWorkspaceDefines', async ()=>{await cmds.showDefines();}),
+
+		vscode.commands.registerCommand('edk2code.copyWorkspaceTree', async () => {
+			const text = await edkWorkspaceTreeProvider.serializeTree();
+			await vscode.env.clipboard.writeText(text);
+			void vscode.window.showInformationMessage('Workspace tree copied to clipboard.');
+		}),
+
+		vscode.commands.registerCommand('edk2code.copyWorkspaceNodePath', async (node: WorkspaceRootItem | IncludeTreeItem | DocumentSymbolItem) => {
+			if (!('treePath' in node)) {
+				return;
+			}
+			const treePath = node.treePath.join(' > ');
+			await vscode.env.clipboard.writeText(treePath);
+			void vscode.window.showInformationMessage(`Workspace path copied: ${treePath}`);
+		}),
+
+		vscode.commands.registerCommand('edk2code.filterWorkspaceSymbols', async () => {
+			await edkWorkspaceTreeProvider.showFilterPicker();
+		}),
 
 		vscode.commands.registerCommand('edk2code.selectWorkspaceView', async () => {
 			const workspaces = gEdkWorkspaces.workspaces;

@@ -131,6 +131,20 @@
         "command": "edk2code.selectWorkspaceView",
         "title": "EDK2: Select Workspace",
         "icon": "$(list-selection)"
+      },
+      {
+        "command": "edk2code.copyWorkspaceTree",
+        "title": "EDK2: Copy workspace tree",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "edk2code.filterWorkspaceSymbols",
+        "title": "EDK2: Filter workspace symbols",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "edk2code.copyWorkspaceNodePath",
+        "title": "Copy path"
       }
     ],
     "configuration": [
@@ -331,6 +345,18 @@
         {
           "command": "edk2code.selectWorkspaceView",
           "when": "true"
+        },
+        {
+          "command": "edk2code.copyWorkspaceTree",
+          "when": "true"
+        },
+        {
+          "command": "edk2code.filterWorkspaceSymbols",
+          "when": "true"
+        },
+        {
+          "command": "edk2code.copyWorkspaceNodePath",
+          "when": "false"
         }
       ],
       "editor/title": [],
@@ -342,6 +368,16 @@
         },
         {
           "command": "edk2code.selectWorkspaceView",
+          "group": "navigation",
+          "when": "view == workspaceView"
+        },
+        {
+          "command": "edk2code.copyWorkspaceTree",
+          "group": "navigation",
+          "when": "view == workspaceView"
+        },
+        {
+          "command": "edk2code.filterWorkspaceSymbols",
           "group": "navigation",
           "when": "view == workspaceView"
         },
@@ -408,6 +444,21 @@
           "command": "edk2code.focusOnNode",
           "group": "navigation",
           "when": "view == detailsView"
+        },
+        {
+          "command": "edk2code.copyWorkspaceNodePath",
+          "group": "navigation",
+          "when": "view == workspaceView && viewItem == workspaceRoot"
+        },
+        {
+          "command": "edk2code.copyWorkspaceNodePath",
+          "group": "navigation",
+          "when": "view == workspaceView && viewItem == includeNode"
+        },
+        {
+          "command": "edk2code.copyWorkspaceNodePath",
+          "group": "navigation",
+          "when": "view == workspaceView && viewItem == symbolNode"
         }
       ]
     },
