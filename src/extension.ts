@@ -176,9 +176,9 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (!('treePath' in node)) {
 				return;
 			}
-			const treePath = node.treePath.join(' > ');
+			const treePath = node.treePath.map((p, i) => '  '.repeat(i) + p).join('\n');
 			await vscode.env.clipboard.writeText(treePath);
-			void vscode.window.showInformationMessage(`Workspace path copied: ${treePath}`);
+			void vscode.window.showInformationMessage(`Workspace path copied to clipboard`);
 		}),
 
 		vscode.commands.registerCommand('edk2code.filterWorkspaceSymbols', async () => {

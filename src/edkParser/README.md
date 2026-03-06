@@ -225,6 +225,43 @@ When `isRoot` is `true`, the parser only activates when `symbolStack` is empty (
 
 ---
 
+## `startContext` / `endContext` — alternate end delimiter
+
+Some EDK II constructs use a delimiter that appears *on the same line as the tag* to enter a special sub-block, and that sub-block requires a different `end` pattern than the surrounding block. `startContext` and `endContext` handle this case without needing a separate `BlockParser`.
+
+| Property | Type | Purpose |
+|---|---|---|
+| `startContext` | `RegExp \| undefined` | If this pattern matches the tag line (or any line scanned while looking for `start`), the block switches to `endContext` as its terminator |
+| `endContext` | `RegExp \| undefined` | Alternative `end` regex used only when `startContext` was matched |
+
+### How it works
+
+1. After the `tag` matches and the symbol is created, the parser checks whether the tag line also matches `startContext`. If so, `inContext = true`.
+2. While scanning forward looking for `start`, each scanned line is also tested against `startContext`.
+3. Once the content loop begins, `activeEnd` is resolved:
+   - `inContext && endContext` → `activeEnd = endContext`
+   - otherwise → `activeEnd = end`
+4. Additionally, after a child context parser consumes a line, the **last consumed line** is peeked and tested against `endContext`. This handles the case where the child parser itself consumed the closing delimiter.
+
+### Example — `BlockComponentInf`
+
+`BlockComponentInf` matches `*.inf` lines. A component entry can optionally have an opening brace `{` on the same (or next) line, introducing a sub-block with scoped overrides. Without `startContext`/`endContext`, both `{...}` and bare entries would need separate parsers.
+
+```typescript
+class BlockComponentInf extends BlockParser {
+    tag       = /^[\s\.\w\$\(\)_\-\\\/]*\.inf/gi;
+    start     = /.*?{/;               // look for the opening brace
+    end       = /(^\})|(^\[)|(\.inf)|(^\!include)/gi;  // bare-entry terminators
+    startContext = /\{/;              // brace on the tag/start line → enter context mode
+    endContext   = /^\s*\}/gi;        // context mode ends only on closing brace
+    // ...
+}
+```
+
+When `{` is found, `inContext` becomes `true` and `endContext` (`^\s*\}`) takes over from `end`, so only a closing brace terminates the sub-block. When `{` is absent, `end` applies as usual and the entry is treated as a single-line construct.
+
+---
+
 ## `exclusive` flag
 
 When a child parser in `context[]` matches a line and `exclusive` is `true` (the default), no further child parsers are tried for that line. Setting `exclusive = false` would allow multiple child parsers to process the same line.
