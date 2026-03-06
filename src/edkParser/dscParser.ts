@@ -19,6 +19,54 @@ class BlockIncludes extends BlockParser {
 
 
 
+class BlockBuildOption extends BlockParser {
+    name = "BuildOption";
+    tag = /^[\w\*\:\|]+\s*=\s*.*/gi;
+    start = undefined;
+    end = undefined;
+    type = Edk2SymbolType.dscBuildOption;
+    visible: boolean = true;
+}
+
+class BlockComponentSubLibraryClasses extends BlockParser {
+    name = "ComponentLibraryClasses";
+    tag = /^<\s*LibraryClasses\s*>/gi;
+    start = undefined;
+    end = /(^<)|(^\})/gi;
+    type = Edk2SymbolType.dscComponentSubSection;
+    visible: boolean = true;
+    context: BlockParser[] = [
+        new BlocklibraryDef(),
+        new BlockIncludes(),
+    ];
+}
+
+class BlockComponentSubPcds extends BlockParser {
+    name = "ComponentPcds";
+    tag = /^<\s*Pcd[^>]*>/gi;
+    start = undefined;
+    end = /(^<)|(^\})/gi;
+    type = Edk2SymbolType.dscComponentSubSection;
+    visible: boolean = true;
+    context: BlockParser[] = [
+        new BlockPcd(),
+        new BlockIncludes(),
+    ];
+}
+
+class BlockComponentSubBuildOptions extends BlockParser {
+    name = "ComponentBuildOptions";
+    tag = /^<\s*BuildOptions\s*>/gi;
+    start = undefined;
+    end = /(^<)|(^\})/gi;
+    type = Edk2SymbolType.dscComponentSubSection;
+    visible: boolean = true;
+    context: BlockParser[] = [
+        new BlockBuildOption(),
+        new BlockIncludes(),
+    ];
+}
+
 class BlockComponentInf extends BlockParser {
     name= "ComponentInf";
     tag= /^[\s\.\w\$\(\)_\-\\\/]*\.inf/gi;
@@ -28,8 +76,11 @@ class BlockComponentInf extends BlockParser {
 
     visible:boolean = true;
     context: BlockParser[] = [
-        new BlocklibraryDef(),
-        new BlockPcd(),
+        new BlockComponentSubLibraryClasses(),
+        new BlockComponentSubPcds(),
+        new BlockComponentSubBuildOptions(),
+        // new BlocklibraryDef(),
+        // new BlockPcd(),
     ];
 }
 

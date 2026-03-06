@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { gDebugLog } from "../extension";
 
-import { EdkSymbolDscDefine, EdkSymbolDscInclude, EdkSymbolDscLibraryDefinition, EdkSymbolDscLine, EdkSymbolDscModuleDefinition, EdkSymbolDscPcdDefinition, EdkSymbolDscSection } from "./dscSymbols";
+import { EdkSymbolDscDefine, EdkSymbolDscInclude, EdkSymbolDscLibraryDefinition, EdkSymbolDscLine, EdkSymbolDscModuleDefinition, EdkSymbolDscPcdDefinition, EdkSymbolDscSection, EdkSymbolDscComponentSubSection, EdkSymbolDscBuildOption } from "./dscSymbols";
 import { EdkSymbolFdfSection, EdkSymbolFdfInf, EdkSymbolFdfDefinition, EdkSymbolFdfFile, EdkSymbolFdfInclude } from './fdfSymbols';
 import { EdkSymbolInfSectionLibraries, EdkSymbolInfSectionProtocols, EdkSymbolInfSectionPpis, EdkSymbolInfSectionGuids, EdkSymbolInfSectionPcds, EdkSymbolInfSection, EdkSymbolInfDefine, EdkSymbolInfSource, EdkSymbolInfLibrary, EdkSymbolInfPackage, EdkSymbolInfPpi, EdkSymbolInfProtocol, EdkSymbolInfPcd, EdkSymbolInfGuid, EdkSymbolInfDepex, EdkSymbolInfBinary, EdkSymbolInfFunction, EdkSymbolInfSectionSource, EdkSymbolSectionPackages, EdkSymbolinfSectionDepex } from './infSymbols';
 import { EdkSymbolDecSection, EdkSymbolDecDefine, EdkSymbolDecLibrary, EdkSymbolDecPackage, EdkSymbolDecPpi, EdkSymbolDecProtocol, EdkSymbolDecPcd, EdkSymbolDecGuid, EdkSymbolDecIncludes } from './decSymbols';
@@ -32,6 +32,10 @@ export class SymbolFactory {
                 return new EdkSymbolDscInclude(textLine, location, true, true, parser);
             case Edk2SymbolType.dscLine:
                 return new EdkSymbolDscLine(textLine, location, true, true, parser);
+            case Edk2SymbolType.dscComponentSubSection:
+                return new EdkSymbolDscComponentSubSection(textLine, location, true, true, parser);
+            case Edk2SymbolType.dscBuildOption:
+                return new EdkSymbolDscBuildOption(textLine, location, true, true, parser);
             case Edk2SymbolType.infSectionSource:
                 return new EdkSymbolInfSectionSource(textLine, location, true, true, parser);
             case Edk2SymbolType.infSectionPackages:
