@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { gDebugLog } from "../extension";
 
-import { EdkSymbolDscDefine, EdkSymbolDscInclude, EdkSymbolDscLibraryDefinition, EdkSymbolDscLine, EdkSymbolDscModuleDefinition, EdkSymbolDscPcdDefinition, EdkSymbolDscSection, EdkSymbolDscComponentSubSection, EdkSymbolDscBuildOption } from "./dscSymbols";
+import { EdkSymbolDscDefine, EdkSymbolDscInclude, EdkSymbolDscLibraryDefinition, EdkSymbolDscLine, EdkSymbolDscModuleDefinition, EdkSymbolDscPcdDefinition, EdkSymbolDscSection, EdkSymbolDscBuildOptionsSection, EdkSymbolDscComponentSubSection, EdkSymbolDscBuildOption } from "./dscSymbols";
 import { EdkSymbolFdfSection, EdkSymbolFdfInf, EdkSymbolFdfDefinition, EdkSymbolFdfFile, EdkSymbolFdfInclude } from './fdfSymbols';
 import { EdkSymbolInfSectionLibraries, EdkSymbolInfSectionProtocols, EdkSymbolInfSectionPpis, EdkSymbolInfSectionGuids, EdkSymbolInfSectionPcds, EdkSymbolInfSection, EdkSymbolInfDefine, EdkSymbolInfSource, EdkSymbolInfLibrary, EdkSymbolInfPackage, EdkSymbolInfPpi, EdkSymbolInfProtocol, EdkSymbolInfPcd, EdkSymbolInfGuid, EdkSymbolInfDepex, EdkSymbolInfBinary, EdkSymbolInfFunction, EdkSymbolInfSectionSource, EdkSymbolSectionPackages, EdkSymbolinfSectionDepex } from './infSymbols';
 import { EdkSymbolDecSection, EdkSymbolDecDefine, EdkSymbolDecLibrary, EdkSymbolDecPackage, EdkSymbolDecPpi, EdkSymbolDecProtocol, EdkSymbolDecPcd, EdkSymbolDecGuid, EdkSymbolDecIncludes } from './decSymbols';
@@ -20,6 +20,8 @@ export class SymbolFactory {
         switch (type) {
             case Edk2SymbolType.dscSection:
                 return new EdkSymbolDscSection(textLine, location, true, true, parser);
+            case Edk2SymbolType.dscBuildOptionsSection:
+                return new EdkSymbolDscBuildOptionsSection(textLine, location, true, true, parser);
             case Edk2SymbolType.dscDefine:
                 return new EdkSymbolDscDefine(textLine, location, true, true, parser);
             case Edk2SymbolType.dscLibraryDefinition:

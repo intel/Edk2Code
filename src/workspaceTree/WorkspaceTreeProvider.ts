@@ -9,12 +9,14 @@ import { gConfigAgent, gEdkWorkspaces } from '../extension';
 // ─── DSC symbol types available for filtering ─────────────────────────────────
 
 export const DSC_FILTER_TYPES: { type: Edk2SymbolType; label: string; description: string }[] = [
-    { type: Edk2SymbolType.dscDefine,            label: 'Defines',            description: 'dscDefine' },
-    { type: Edk2SymbolType.dscLibraryDefinition, label: 'Library classes',    description: 'dscLibraryDefinition' },
-    { type: Edk2SymbolType.dscModuleDefinition,  label: 'Components',         description: 'dscModuleDefinition' },
-    { type: Edk2SymbolType.dscSection,           label: 'Sections',           description: 'dscSection' },
-    { type: Edk2SymbolType.dscPcdDefinition,     label: 'PCDs',               description: 'dscPcdDefinition' },
-    { type: Edk2SymbolType.dscInclude,           label: 'Include directives', description: 'dscInclude' },
+    { type: Edk2SymbolType.dscDefine,              label: 'Defines',              description: 'dscDefine' },
+    { type: Edk2SymbolType.dscLibraryDefinition,   label: 'Library classes',      description: 'dscLibraryDefinition' },
+    { type: Edk2SymbolType.dscModuleDefinition,    label: 'Components',           description: 'dscModuleDefinition' },
+    { type: Edk2SymbolType.dscSection,             label: 'Sections',             description: 'dscSection' },
+    { type: Edk2SymbolType.dscBuildOptionsSection, label: 'Build options',        description: 'dscBuildOptionsSection' },
+    { type: Edk2SymbolType.dscBuildOption,         label: 'Build option entries', description: 'dscBuildOption' },
+    { type: Edk2SymbolType.dscPcdDefinition,       label: 'PCDs',                 description: 'dscPcdDefinition' },
+    { type: Edk2SymbolType.dscInclude,             label: 'Include directives',   description: 'dscInclude' },
 ];
 
 // ─── Helper: load symbols for a URI via the parser ───────────────────────────

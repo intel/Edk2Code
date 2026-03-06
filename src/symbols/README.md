@@ -140,6 +140,37 @@ class BlockComponentInf extends BlockParser {
 }
 ```
 
+If the new type should also appear as a root-level fallback (so lines are captured even when they appear outside any section), register an additional `isRoot = true` instance at the end of `DscParser.blockParsers`:
+
+```typescript
+blockParsers: BlockParser[] = [
+    new BlockBuildOptionsSection(),   // normal section block
+    // ...
+    new BlockBuildOption(true),       // isRoot fallback
+];
+```
+
+### 5. Register the type in `WorkspaceTreeProvider.ts`
+
+The workspace tree view (`src/workspaceTree/WorkspaceTreeProvider.ts`) uses `DSC_FILTER_TYPES` to control which symbol types are rendered. Any new type that should appear in the tree **must** be added here — both for top-level rendering and for collapsible-state detection on parent nodes.
+
+```typescript
+// WorkspaceTreeProvider.ts
+export const DSC_FILTER_TYPES: { type: Edk2SymbolType; label: string; description: string }[] = [
+    // ...
+    { type: Edk2SymbolType.dscBuildOptionsSection, label: 'Build options',        description: 'dscBuildOptionsSection' },
+    { type: Edk2SymbolType.dscBuildOption,         label: 'Build option entries', description: 'dscBuildOption' },
+    // ...
+];
+```
+
+This array serves three roles:
+1. **Root filter** — only symbols whose type is in this set are shown at the workspace root level.
+2. **Child filter** — `getChildren()` uses it to filter children of every tree node.
+3. **Collapsible state** — `DocumentSymbolItem` counts `visibleChildren` against this set to decide whether a node should be expandable.
+
+Omitting a type from `DSC_FILTER_TYPES` silently hides the symbol and all its children in the tree, even if parsing logs show "Added symbol" correctly.
+
 ---
 
 ## `EdkSymbol` base class

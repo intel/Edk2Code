@@ -99,6 +99,16 @@ export class EdkSymbolDscLine extends EdkSymbol{
     onDeclaration: undefined;
 }
 
+export class EdkSymbolDscBuildOptionsSection extends EdkSymbol {
+    type = Edk2SymbolType.dscBuildOptionsSection;
+    kind = vscode.SymbolKind.Class;
+
+    onCompletion: undefined;
+    onDefinition: undefined;
+    onHover: undefined;
+    onDeclaration: undefined;
+}
+
 export class EdkSymbolDscComponentSubSection extends EdkSymbol {
     type = Edk2SymbolType.dscComponentSubSection;
     kind = vscode.SymbolKind.Namespace;

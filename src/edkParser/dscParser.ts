@@ -161,9 +161,22 @@ class BlockSimpleLine extends BlockParser {
 // Main sections
 //
 
+class BlockBuildOptionsSection extends BlockParser {
+    name = "BuildOptions";
+    tag = /\[\s*buildoptions.*?\]/gi;
+    start = undefined;
+    end = /^\[/gi;
+    type = Edk2SymbolType.dscBuildOptionsSection;
+    visible: boolean = true;
+    context: BlockParser[] = [
+        new BlockBuildOption(),
+        new BlockIncludes(),
+    ];
+}
+
 class BlockDefines extends BlockParser {
     name= "Defines";
-    tag= /\[\s*(defines|buildoptions)\s*\]/gi;
+    tag= /\[\s*defines\s*\]/gi;
     start= undefined;
     end= /^\[/gi;
     type= Edk2SymbolType.dscSection;
@@ -264,6 +277,7 @@ export class DscParser extends DocumentParser {
 
     blockParsers: BlockParser[] = [
             new BlockDefines(),
+            new BlockBuildOptionsSection(),
             new BlockComponentsSection(),
             new BlockLibraryClasses(),
             new BlockSkuIds(),
@@ -275,6 +289,7 @@ export class DscParser extends DocumentParser {
             new BlockComponentInf(true),
             new BlocklibraryDef(true),
             new BlockPcd(true),
+            new BlockBuildOption(true),
     ];
 
 
