@@ -211,10 +211,23 @@
         }
       }
     ],
-    "views": {
-      "explorer": [
+    "viewsContainers": {
+      "activitybar": [
         {
-          "icon": "assets/icon.png",
+          "id": "edk2code-sidebar",
+          "title": "Edk2Code",
+          "icon": "assets/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "edk2code-sidebar": [
+        {
+          "id": "workspaceView",
+          "name": "Workspace",
+          "type": "tree"
+        },
+        {
           "id": "detailsView",
           "name": "Edk2",
           "type": "tree"
