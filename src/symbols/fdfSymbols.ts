@@ -29,7 +29,7 @@ export class EdkSymbolFdfSection extends EdkSymbol {
 export class EdkSymbolFdfInf extends EdkSymbol {
 
     type = Edk2SymbolType.fdfInf;
-    kind = vscode.SymbolKind.Event;
+    kind = vscode.SymbolKind.Method;
 
     onCompletion: undefined;
 

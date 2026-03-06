@@ -47,7 +47,7 @@ export class EdkSymbolDscDefine extends EdkSymbol{
 
 export class EdkSymbolDscLibraryDefinition extends EdkSymbol{
     type = Edk2SymbolType.dscLibraryDefinition;
-    kind = vscode.SymbolKind.Module;
+    kind = vscode.SymbolKind.Field;
 
     onCompletion: undefined;
     onDefinition = async (parser:DocumentParser)=>{
@@ -121,7 +121,7 @@ export class EdkSymbolDscBuildOption extends EdkSymbol {
 
 export class EdkSymbolDscModuleDefinition extends EdkSymbol{
     type = Edk2SymbolType.dscModuleDefinition;
-    kind = vscode.SymbolKind.Event;
+    kind = vscode.SymbolKind.Method;
 
     protected get nameRegex(): RegExp { return /^\s*([\w/.\\-]+\.inf)/i; }
 
