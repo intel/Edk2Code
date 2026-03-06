@@ -73,6 +73,8 @@ class BlockComponentInf extends BlockParser {
     start= /.*?{/;
     end= /(^\})|(^\[)|(^[\s\.\w\$\(\)_\-\\\/]*\.inf)|(^\!include)/gi;
     type= Edk2SymbolType.dscModuleDefinition;
+    startContext= /\{/;
+    endContext= /^\s*\}/gi;
 
     visible:boolean = true;
     context: BlockParser[] = [

@@ -21,6 +21,8 @@ export abstract class BlockParser {
     exclusive: boolean = true; // Indicates if other blocks should parse this line
     isRoot: boolean = false; // Indicates if this block is in the root block of the document
     diagnostic: undefined | ((docParser:DocumentParser, symbol:EdkSymbol) => Promise<void>) = undefined;
+    startContext: RegExp | undefined; // When matched during start phase, endContext replaces end for block termination
+    endContext: RegExp | undefined;   // End pattern used when startContext was matched
 
     constructor(isRoot: boolean = false) {
         this.isRoot = isRoot;
@@ -81,7 +83,11 @@ export abstract class BlockParser {
                 }, 1); // Adjust the delay (in milliseconds) as needed
             }            
             
-            
+            // Check if context mode is active (startContext matched on the tag line)
+            let inContext = false;
+            if (this.startContext && textLine.match(this.startContext)) {
+                inContext = true;
+            }
 
             // look for block start
             if (this.start) {
@@ -98,6 +104,10 @@ export abstract class BlockParser {
                         docParser.popSymbolStack();
                         return true;
                     }
+                    // Check startContext on lines scanned for block start
+                    if (!inContext && this.startContext && textLine.match(this.startContext)) {
+                        inContext = true;
+                    }
                 }
             } else {
                 if (this.end === undefined) {
@@ -105,6 +115,9 @@ export abstract class BlockParser {
                     return true;
                 }
             }
+
+            // Use endContext instead of end when context mode is active
+            const activeEnd = inContext && this.endContext ? this.endContext : this.end;
 
             // Parse block content
             while (docParser.hasPendingLines()) {
@@ -120,6 +133,7 @@ export abstract class BlockParser {
                 }
 
                 // parse block
+                let contextMatched = false;
                 const contextLength = this.context.length;
                 for (let i = 0; i < contextLength; i++) {
                     const blockContext = this.context[i];
@@ -129,14 +143,30 @@ export abstract class BlockParser {
                     const isSymbolAdded = blockContext.parse(docParser);
                     if (isSymbolAdded) {
                         gDebugLog.trace("Added symbol");
+                        contextMatched = true;
                         if (blockContext.exclusive) {
                             break;
                         }
                     }
                 }
 
+                // If a context parser consumed lines, peek at the last consumed line
+                // to check if it also matches our endContext (child may have consumed the delimiter)
+                if (contextMatched && inContext && this.endContext) {
+                    const peekIdx = docParser.lineIndex - 1;
+                    if (peekIdx >= 0 && peekIdx < docParser.document.lineCount) {
+                        const peekText = docParser.removeComment(
+                            docParser.document.lineAt(peekIdx).text
+                        );
+                        if (peekText.match(this.endContext)) {
+                            docParser.popSymbolStack();
+                            return true;
+                        }
+                    }
+                }
+
                 // Check the end tag
-                if (this.end && textLine.match(this.end)) {
+                if (activeEnd && textLine.match(activeEnd)) {
                     docParser.popSymbolStack();
                     return true;
                 }
