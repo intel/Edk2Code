@@ -21,7 +21,8 @@ import { ParserFactory } from './edkParser/parserFactory';
 import { TreeDetailsDataProvider } from './TreeDataProvider';
 // import { DefinesTreeDataProvider } from './definesPanel';
 import { DiagnosticManager } from './diagnostics';
-import { WorkspaceTreeProvider, WorkspaceRootItem, IncludeTreeItem, DocumentSymbolItem } from './workspaceTree/WorkspaceTreeProvider';
+import { WorkspaceTreeProvider, WorkspaceRootItem, IncludeTreeItem, DocumentSymbolItem, WorkspaceTreeNode, isFileInWorkspaceTree, isInfInWorkspaces } from './workspaceTree/WorkspaceTreeProvider';
+import { InfDsc } from './index/edkWorkspace';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
 import { TreeItem } from './treeElements/TreeItem';
@@ -52,7 +53,7 @@ export var edkLensTreeDetailProvider: TreeDetailsDataProvider;
 export var edkLensTreeDetailView: vscode.TreeView<vscode.TreeItem>;
 
 export var edkWorkspaceTreeProvider: WorkspaceTreeProvider;
-export var edkWorkspaceTreeView: vscode.TreeView<vscode.TreeItem>;
+export var edkWorkspaceTreeView: vscode.TreeView<WorkspaceTreeNode>;
 
 // export var edkDefinesTreeProvider: DefinesTreeDataProvider;
 
@@ -208,6 +209,63 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (picked !== undefined) {
 				edkWorkspaceTreeProvider.selectWorkspace(picked.index);
 			}
+		}),
+
+		vscode.commands.registerCommand('edk2code.revealEditorInWorkspaceTree', async () => {
+			await edkWorkspaceTreeProvider.revealActiveEditor(edkWorkspaceTreeView);
+		}),
+
+		vscode.commands.registerCommand('edk2code.focusEditorInWorkspaceView', async () => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor) { return; }
+
+			const langId = editor.document.languageId;
+
+			// DSC / DSC-include: reveal directly by cursor position
+			if (langId === 'edk2_dsc') {
+				await edkWorkspaceTreeProvider.revealActiveEditor(edkWorkspaceTreeView);
+				return;
+			}
+
+			// INF: first find DSC declaration(s), then reveal that location
+			if (langId === 'edk2_inf') {
+				const fileUri = editor.document.uri;
+				const wps = await gEdkWorkspaces.getWorkspace(fileUri);
+
+				let declarations: InfDsc[] = [];
+				for (const wp of wps) {
+					declarations = declarations.concat(await wp.getDscDeclaration(fileUri));
+				}
+
+				if (declarations.length === 0) {
+					void vscode.window.showInformationMessage('This INF file has no DSC declaration in the loaded workspaces.');
+					return;
+				}
+
+				let chosen: InfDsc;
+				if (declarations.length === 1) {
+					chosen = declarations[0];
+				} else {
+					const items = declarations.map(d => ({
+						label: vscode.workspace.asRelativePath(d.location.uri, false),
+						description: `line ${d.location.range.start.line + 1}`,
+						detail: d.text.trim(),
+						decl: d
+					}));
+					const picked = await vscode.window.showQuickPick(items, {
+						placeHolder: 'Multiple DSC declarations found – select one to reveal',
+						title: 'EDK2: Focus on workspace view'
+					});
+					if (!picked) { return; }
+					chosen = picked.decl;
+				}
+
+				await edkWorkspaceTreeProvider.revealLocation(
+					chosen.location.uri,
+					chosen.location.range.start,
+					edkWorkspaceTreeView
+				);
+			}
 		})
 	];
 
@@ -259,7 +317,29 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', false);
-	
+
+	// ─── Track whether the active editor belongs to the workspace tree ─────────
+	async function updateEditorInWorkspaceContext(editor: vscode.TextEditor | undefined): Promise<void> {
+		const uri = editor?.document.uri;
+		const langId = editor?.document.languageId;
+
+		const inDscTree =
+			uri !== undefined &&
+			isFileInWorkspaceTree(uri, gEdkWorkspaces.workspaces);
+
+		const inInfWorkspace =
+			uri !== undefined &&
+			langId === 'edk2_inf' &&
+			isInfInWorkspaces(uri, gEdkWorkspaces.workspaces);
+
+		void vscode.commands.executeCommand('setContext', 'edk2code.editorFileInWorkspaceTree', inDscTree);
+		void vscode.commands.executeCommand('setContext', 'edk2code.infFileInWorkspaceTree', inInfWorkspace);
+	}
+	context.subscriptions.push(
+		vscode.window.onDidChangeActiveTextEditor(editor => { void updateEditorInWorkspaceContext(editor); })
+	);
+	void updateEditorInWorkspaceContext(vscode.window.activeTextEditor);
+
 	void showReleaseNotes(context);
 	
 }

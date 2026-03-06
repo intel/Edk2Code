@@ -150,6 +150,15 @@
         "command": "edk2code.refreshWorkspaceConfig",
         "title": "EDK2: Refresh workspace config",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "edk2code.revealEditorInWorkspaceTree",
+        "title": "EDK2: Reveal active editor in workspace tree",
+        "icon": "$(target)"
+      },
+      {
+        "command": "edk2code.focusEditorInWorkspaceView",
+        "title": "EDK2: Focus on workspace view"
       }
     ],
     "configuration": [
@@ -366,6 +375,14 @@
         {
           "command": "edk2code.refreshWorkspaceConfig",
           "when": "true"
+        },
+        {
+          "command": "edk2code.revealEditorInWorkspaceTree",
+          "when": "true"
+        },
+        {
+          "command": "edk2code.focusEditorInWorkspaceView",
+          "when": "false"
         }
       ],
       "editor/title": [],
@@ -392,6 +409,11 @@
         },
         {
           "command": "edk2code.refreshWorkspaceConfig",
+          "group": "navigation",
+          "when": "view == workspaceView"
+        },
+        {
+          "command": "edk2code.revealEditorInWorkspaceTree",
           "group": "navigation",
           "when": "view == workspaceView"
         },
@@ -441,6 +463,16 @@
           "command": "edk2code.dscInclusion",
           "group": "navigation",
           "when": "editorLangId == edk2_dsc || editorLangId == edk2_fdf"
+        },
+        {
+          "command": "edk2code.focusEditorInWorkspaceView",
+          "group": "navigation",
+          "when": "editorLangId == edk2_dsc && edk2code.editorFileInWorkspaceTree"
+        },
+        {
+          "command": "edk2code.focusEditorInWorkspaceView",
+          "group": "navigation",
+          "when": "editorLangId == edk2_inf && edk2code.infFileInWorkspaceTree"
         },
         {
           "command": "edk2code.showReferences",
