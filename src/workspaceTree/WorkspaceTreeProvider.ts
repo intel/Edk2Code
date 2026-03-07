@@ -19,6 +19,18 @@ export const DSC_FILTER_TYPES: { type: Edk2SymbolType; label: string; descriptio
     { type: Edk2SymbolType.dscInclude,             label: 'Include directives',   description: 'dscInclude' },
 ];
 
+// Structural / container types that are always visible in the tree regardless of
+// the user's filter selection.  These types exist only to group children and
+// filtering them out would hide all their descendants.
+const STRUCTURAL_TYPES = new Set<Edk2SymbolType>([
+    Edk2SymbolType.dscComponentSubSection,
+]);
+
+/** Returns true when a symbol type should be shown in the tree. */
+function isTypeVisible(type: Edk2SymbolType, activeFilters: Set<Edk2SymbolType>): boolean {
+    return activeFilters.has(type) || STRUCTURAL_TYPES.has(type);
+}
+
 // ─── Helper: load symbols for a URI via the parser ───────────────────────────
 
 async function loadSymbols(uri: vscode.Uri): Promise<EdkSymbol[]> {
@@ -133,7 +145,7 @@ export class DocumentSymbolItem extends vscode.TreeItem {
         public readonly parent: WorkspaceRootItem | DocumentSymbolItem | undefined
     ) {
         const visibleChildren = symbol.children.filter(
-            c => activeFilters.has((c as EdkSymbol).type)
+            c => isTypeVisible((c as EdkSymbol).type, activeFilters)
         );
         const isDscInclude = symbol.type === Edk2SymbolType.dscInclude;
         super(
@@ -181,7 +193,7 @@ async function serializeSymbol(symbol: EdkSymbol, fileUri: vscode.Uri, indent: s
     let out = line;
     for (const child of symbol.children) {
         const edkChild = child as EdkSymbol;
-        if (filter.has(edkChild.type)) {
+        if (isTypeVisible(edkChild.type, filter)) {
             out += await serializeSymbol(edkChild, fileUri, indent + '  ', filter);
         }
     }
@@ -193,7 +205,7 @@ async function serializeIncludeNode(node: IncludeNode, indent: string, filter: S
     let out = `${indent}!include ${rel}\n`;
     const symbols = await loadSymbols(node.uri);
     for (const sym of symbols) {
-        if (filter.has(sym.type)) {
+        if (isTypeVisible(sym.type, filter)) {
             out += await serializeSymbol(sym, node.uri, indent + '  ', filter);
         }
     }
@@ -212,7 +224,7 @@ function findDeepestSymbolAt(
 ): EdkSymbol | undefined {
     let best: EdkSymbol | undefined;
     for (const sym of symbols) {
-        if (!filter.has(sym.type)) { continue; }
+        if (!isTypeVisible(sym.type, filter)) { continue; }
         const inRange = sym.range.contains(position) || sym.selectionRange.contains(position);
         if (inRange) {
             best = sym;
@@ -224,7 +236,7 @@ function findDeepestSymbolAt(
     if (!best) {
         let closestDist = Infinity;
         for (const sym of symbols) {
-            if (!filter.has(sym.type)) { continue; }
+            if (!isTypeVisible(sym.type, filter)) { continue; }
             const dist = Math.abs(sym.selectionRange.start.line - position.line);
             if (dist < closestDist) {
                 closestDist = dist;
@@ -398,7 +410,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
 
         const rootSymbols = await loadSymbols(ws.mainDsc);
         for (const sym of rootSymbols) {
-            if (this._activeFilters.has(sym.type)) {
+            if (isTypeVisible(sym.type, this._activeFilters)) {
                 out += await serializeSymbol(sym, ws.mainDsc, '  ', this._activeFilters);
             }
         }
@@ -429,7 +441,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         if (element instanceof WorkspaceRootItem) {
             const symbols = await loadSymbols(element.workspace.mainDsc);
             return symbols
-                .filter(s => this._activeFilters.has(s.type))
+                .filter(s => isTypeVisible(s.type, this._activeFilters))
                 .map(s => new DocumentSymbolItem(s, element.workspace.mainDsc, this._activeFilters, element.treePath, element));
         }
 
@@ -437,7 +449,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         if (element instanceof IncludeTreeItem) {
             const symbols = await loadSymbols(element.node.uri);
             return symbols
-                .filter(s => this._activeFilters.has(s.type))
+                .filter(s => isTypeVisible(s.type, this._activeFilters))
                 .map(s => new DocumentSymbolItem(s, element.node.uri, this._activeFilters, element.treePath, undefined));
         }
 
@@ -451,13 +463,13 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
                     if (node) {
                         const symbols = await loadSymbols(node.uri);
                         return symbols
-                            .filter(s => this._activeFilters.has(s.type))
+                            .filter(s => isTypeVisible(s.type, this._activeFilters))
                             .map(s => new DocumentSymbolItem(s, node.uri, this._activeFilters, element.treePath, element));
                     }
                 }
             }
             return (element.symbol.children as EdkSymbol[])
-                .filter(c => this._activeFilters.has(c.type))
+                .filter(c => isTypeVisible(c.type, this._activeFilters))
                 .map(child => new DocumentSymbolItem(child, element.fileUri, this._activeFilters, element.treePath, element));
         }
 

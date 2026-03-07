@@ -1,6 +1,6 @@
 {
-  "name": "edk2code",
-  "displayName": "Edk2code",
+  "name": "edk2code-dev",
+  "displayName": "Edk2code-dev",
   "description": "EDK2 code support",
   "version": "1.1.2",
   "icon": "assets/icon.png",
