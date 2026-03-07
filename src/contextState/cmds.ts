@@ -140,7 +140,6 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                     void vscode.window.showInformationMessage("Build data loaded");
 
                     await gEdkWorkspaces.loadConfig();
-                    edkWorkspaceTreeProvider.refresh();
                     await showDefines();
                 }
 

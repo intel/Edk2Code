@@ -188,7 +188,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		vscode.commands.registerCommand('edk2code.refreshWorkspaceConfig', async () => {
 			await gEdkWorkspaces.loadConfig();
-			edkWorkspaceTreeProvider.refresh();
 		}),
 
 		vscode.commands.registerCommand('edk2code.selectWorkspaceView', async () => {
@@ -291,7 +290,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	edkWorkspaceTreeView = vscode.window.createTreeView('workspaceView', { treeDataProvider: edkWorkspaceTreeProvider, showCollapseAll: true, dragAndDropController: edkWorkspaceTreeProvider });
 
 	await gEdkWorkspaces.loadConfig();
-	edkWorkspaceTreeProvider.refresh();
 	// edkDefinesTreeProvider.refresh();
 	gFileUseWarning = new FileUseWarning();
 

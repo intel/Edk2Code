@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import { gCompileCommands, gConfigAgent, gDebugLog, gMapFileManager, gPathFind, gWorkspacePath } from '../extension';
+import { edkWorkspaceTreeProvider, gCompileCommands, gConfigAgent, gDebugLog, gMapFileManager, gPathFind, gWorkspacePath } from '../extension';
 import { GrayoutController } from '../grayout';
 import { createRange, openTextDocument, pathCompare, split } from '../utils';
 import { REGEX_DEFINE as REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_INCLUDE as REGEX_INCLUDE, REGEX_LIBRARY_PATH, REGEX_MODULE_PATH, REGEX_PCD_LINE, REGEX_VAR_USAGE } from "../edkParser/commonParser";
@@ -476,6 +476,7 @@ export class EdkWorkspace {
             await this.findDefinesFdf();
     
             this.processComplete = true;
+            edkWorkspaceTreeProvider.refresh();
             return true;
         }finally{
             edkStatusBar.popText();
