@@ -7,6 +7,7 @@ import { askReloadFiles } from './ui/messages';
 import { readFile } from './utils';
 import { SettingsPanel } from './settings/settingsPanel';
 import { getEdkCodeFolderFilePath, existsEdkCodeFolderFile, writeEdkCodeFolderFile } from './edk2CodeFolder';
+import { TernarySearchTree } from './ternarySearchTree';
 
 
 export interface WorkspaceConfig {
@@ -39,6 +40,21 @@ export class ConfigAgent {
 
     private workspaceConfig:WorkspaceConfig;
     private settingsFileName: string = "edk2_workspace_properties.json";
+
+    /**
+     * Temporary T-tree file index built when the workspace is being processed.
+     * Used by PathFind as a fast lookup while packagePaths are not yet populated.
+     * Set to `null` when the processing is finished.
+     */
+    private _fileIndex: TernarySearchTree | null = null;
+
+    /**
+     * Tracks whether the last workspace processing completed successfully.
+     * When `false`, the next `loadConfig` / `proccessWorkspace` will build
+     * a temporary T-tree so PathFind can resolve files without relying on
+     * the (still-empty) packagePaths.
+     */
+    private _workspaceProcessComplete: boolean = false;
 
     public constructor() {
         this.vscodeSettings = vscode.workspace.getConfiguration('edk2code');
@@ -105,6 +121,50 @@ export class ConfigAgent {
 
     clearWpConfiguration(){
         this.workspaceConfig = this.getCleanWpConfig();
+        // Mark workspace as not-yet-processed so the next loadConfig
+        // will build a temporary T-tree for fast file lookups.
+        this._workspaceProcessComplete = false;
+    }
+
+    /**
+     * Returns `true` if the previous workspace processing completed
+     * successfully (i.e. packagePaths are fully populated).
+     */
+    isWorkspaceProcessComplete(): boolean {
+        return this._workspaceProcessComplete;
+    }
+
+    /**
+     * Mark the workspace processing as complete and dispose of the
+     * temporary file index so that normal `findFiles` is used again.
+     */
+    setWorkspaceProcessComplete(): void {
+        this._workspaceProcessComplete = true;
+        if (this._fileIndex) {
+            this._fileIndex.dispose();
+            this._fileIndex = null;
+        }
+    }
+
+    /**
+     * Build the temporary T-tree file index if the workspace has not
+     * yet been fully processed (packagePaths not populated).
+     * This should be called at the beginning of workspace processing.
+     */
+    async buildFileIndexIfNeeded(): Promise<void> {
+        if (!this._workspaceProcessComplete) {
+            this._fileIndex = new TernarySearchTree();
+            await this._fileIndex.buildFromWorkspace();
+        }
+    }
+
+    /**
+     * Returns the temporary file index if one is active, or `null`
+     * when the workspace is fully processed and findFiles should be
+     * used instead.
+     */
+    getFileIndex(): TernarySearchTree | null {
+        return this._fileIndex;
     }
 
     initConfigWatcher(){
@@ -289,6 +349,10 @@ export class ConfigAgent {
 
     getExtraIgnorePatterns() {
         return <string[]>this.get("extraIgnorePatterns");
+    }
+
+    getUseCscope() {
+        return <boolean>this.get("useCscope");
     }
 
     getCscopeOverwritePath() {

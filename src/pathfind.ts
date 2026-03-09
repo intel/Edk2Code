@@ -2,9 +2,10 @@ import path = require("path");
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import glob = require("fast-glob");
+
 import { gConfigAgent, gDebugLog, gWorkspacePath } from "./extension";
 import { REGEX_VAR_USAGE } from "./edkParser/commonParser";
-import { toPosix } from "./utils";
+import { toPosix, getRealPathRelative } from "./utils";
 
 export class PathFind{
 
@@ -97,7 +98,17 @@ export class PathFind{
         let normalizedArg = pathArg.replaceAll('\\', '/').replaceAll(REGEX_VAR_USAGE, '**');
         // Search by filename only (like Ctrl+P), then filter by path suffix
         let fileName = path.basename(pathArg);
-        let paths = await vscode.workspace.findFiles(`**/${fileName}`, null);
+
+        // If a temporary T-tree index exists (workspace is being rebuilt
+        // after a clear) use it for an instant lookup; otherwise fall
+        // back to the normal vscode.workspace.findFiles API.
+        const fileIndex = gConfigAgent.getFileIndex();
+        let paths: vscode.Uri[];
+        if (fileIndex) {
+            paths = fileIndex.findFilesByName(fileName);
+        } else {
+            paths = await vscode.workspace.findFiles(`**/${fileName}`, null);
+        }
         
         // Filter results that match the full path pattern
         let filteredPaths = paths.filter(p => {
@@ -117,6 +128,10 @@ export class PathFind{
         let retPath = [];
         for (const p of filteredPaths) {
             retPath.push(new vscode.Location(vscode.Uri.file(p.fsPath), new vscode.Position(0, 0)));
+
+            // Add dinamyc include paths
+            let newPath = p.fsPath.slice(0,p.fsPath.length - pathArg.length - 1);
+            gConfigAgent.pushBuildPackagePaths(getRealPathRelative(newPath));            
         }
 
         if(retPath.length === 0){

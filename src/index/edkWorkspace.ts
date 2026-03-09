@@ -296,6 +296,12 @@ async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
         gDebugLog.trace("Loading Configuration");
         // TODO: enable to get more commands available
         //await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', false);
+
+        // If the previous workspace processing did not complete (e.g.
+        // after a clear), build a temporary T-tree so PathFind can
+        // resolve files without relying on the empty packagePaths.
+        await gConfigAgent.buildFileIndexIfNeeded();
+
         let dscPaths = gConfigAgent.getBuildDscPaths();
         gDebugLog.trace(`dscPaths = ${dscPaths}`);
         for (const dscPath of dscPaths) {
@@ -307,6 +313,9 @@ async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
         }
         gMapFileManager.load();
         gCompileCommands.load();
+        // Workspace processing is complete – mark flag and dispose
+        // of the temporary T-tree so PathFind reverts to findFiles.
+        gConfigAgent.setWorkspaceProcessComplete();
         //await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', true);
     }
 }
