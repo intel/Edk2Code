@@ -30,6 +30,12 @@ export class EdkSymbolDscDefine extends EdkSymbol{
     onHover: undefined;
     onDeclaration: undefined;
 
+    
+    protected get nameRegex(): RegExp { return /define\s+(\w+).*=.*/i; }
+    protected get descriptionRegex(): RegExp { return /define\s+\w+\s*=\s*(.*)/i; }
+
+
+
     async getKey() {
         let key = this.textLine.replace(/define/gi, "").trim();
         key = split(key, "=", 2)[0].trim();        
@@ -48,6 +54,9 @@ export class EdkSymbolDscDefine extends EdkSymbol{
 export class EdkSymbolDscLibraryDefinition extends EdkSymbol{
     type = Edk2SymbolType.dscLibraryDefinition;
     kind = vscode.SymbolKind.Field;
+
+    protected get descriptionRegex(): RegExp { return /.*\|(.*)/i; }
+    protected get nameRegex(): RegExp { return /(.*)\|.*/i; }
 
     onCompletion: undefined;
     onDefinition = async (parser:DocumentParser)=>{
@@ -133,7 +142,7 @@ export class EdkSymbolDscModuleDefinition extends EdkSymbol{
     type = Edk2SymbolType.dscModuleDefinition;
     kind = vscode.SymbolKind.Method;
 
-    protected get nameRegex(): RegExp { return /^\s*([\w/.\\-]+\.inf)/i; }
+    protected get nameRegex(): RegExp { return /.*?\.inf/i; }
 
     onCompletion: undefined;
     onDefinition  = async ()=>{

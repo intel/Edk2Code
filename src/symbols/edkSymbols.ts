@@ -33,6 +33,9 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
 
     /** Override in subclasses to extract a specific portion of the text line as the symbol name. */
     protected get nameRegex(): RegExp | undefined { return undefined; }
+
+    /** Override in subclasses to extract a description (detail) from the text line. */
+    protected get descriptionRegex(): RegExp | undefined { return undefined; }
     
 
 
@@ -73,6 +76,13 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
         } else {
             this.name = textLine.replaceAll(/\s+/gi, " ");
         }
+
+        const descRegex = this.descriptionRegex;
+        if (descRegex) {
+            const descMatch = textLine.match(descRegex);
+            this.detail = descMatch ? (descMatch[1] ?? descMatch[0]).trim() : '';
+        }
+        
         let parent = parser.symbolStack[parser.symbolStack.length - 1];
         this.sectionProperties = new SectionProperties();
         if(parent){
