@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import { edkWorkspaceTreeProvider, gCompileCommands, gConfigAgent, gDebugLog, gMapFileManager, gPathFind, gWorkspacePath } from '../extension';
+import { edkWorkspaceTreeProvider, edkWorkspaceTreeView, gCompileCommands, gConfigAgent, gDebugLog, gMapFileManager, gPathFind, gWorkspacePath } from '../extension';
 import { GrayoutManager } from '../grayout';
 import { createRange, openTextDocument, pathCompare, split } from '../utils';
 import { REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_EQUAL, REGEX_INCLUDE as REGEX_INCLUDE, REGEX_LIBRARY_PATH, REGEX_MODULE_PATH, REGEX_PCD_LINE, REGEX_VAR_USAGE } from "../edkParser/commonParser";
@@ -404,6 +404,15 @@ export class EdkWorkspace {
     
 
     async proccessWorkspace() {
+        return vscode.window.withProgress(
+            { location: { viewId: 'workspaceView' } },
+            async () => {
+                return this._doProccessWorkspace();
+            }
+        );
+    }
+
+    private async _doProccessWorkspace() {
         try{
             if(this.platformName !== undefined){
                 edkStatusBar.pushText(`Parsing ${this.platformName}`);
