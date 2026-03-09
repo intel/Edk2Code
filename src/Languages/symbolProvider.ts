@@ -4,7 +4,7 @@ import { getStaticPath, itsPcdSelected } from '../utils';
 import path = require('path');
 import { CompletionItemKind } from 'vscode';
 import { ParserFactory } from '../edkParser/parserFactory';
-import { gConfigAgent, gEdkWorkspaces, gGrayOutController } from '../extension';
+import { gConfigAgent, gEdkWorkspaces } from '../extension';
 import { Debouncer } from '../debouncer';
 import { DiagnosticManager } from '../diagnostics';
 
