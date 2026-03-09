@@ -154,8 +154,11 @@ export class DocumentSymbolItem extends vscode.TreeItem {
                 ? vscode.TreeItemCollapsibleState.Collapsed
                 : vscode.TreeItemCollapsibleState.None
         );
-        this.id = `dsi:${fileUri.fsPath}:${symbol.selectionRange.start.line}:${symbol.selectionRange.start.character}`;
         this.treePath = [...parentPath, symbol.name];
+        // Include the parent path in the id so the same file/symbol included from
+        // multiple places in the tree gets a unique id for each occurrence.
+        const parentKey = parentPath.join('/');
+        this.id = `dsi:${parentKey}:${fileUri.fsPath}:${symbol.selectionRange.start.line}:${symbol.selectionRange.start.character}`;
         this.symbolType = symbol.type;
         this.description = symbol.detail || undefined;
         this.tooltip = symbol.name;
