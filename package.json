@@ -215,6 +215,12 @@
             "markdownDescription": "Expand circular include or duplicated libraries in the Edk2 Map view",
             "default": false
           },
+          "edk2code.useCscope": {
+            "order": 2,
+            "type": "boolean",
+            "markdownDescription": "Enable or disable cscope integration. When disabled, cscope database will not be built or queried, and features like call hierarchy and cscope-based go-to-definition will be unavailable. `(reload of vscode after setup)`",
+            "default": true
+          },
           "edk2code.cscopeOverwritePath": {
             "order": 2,
             "type": "string",

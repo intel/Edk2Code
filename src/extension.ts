@@ -299,7 +299,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	gCscope = new Cscope();
 	gCscopeAgent = new CscopeAgent();
 	
-	if(gCscope.existCscopeFile()){
+	if(gConfigAgent.getUseCscope() && gCscope.existCscopeFile()){
 		void gCscope.reload().then(()=>{
 			if(gConfigAgent.getUseEdkCallHiearchy()){
 				gEdk2CallHierarchyProvider = new Edk2CallHierarchyProvider();

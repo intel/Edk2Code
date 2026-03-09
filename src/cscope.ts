@@ -132,6 +132,7 @@ export class Cscope {
     }
 
     writeCscopeFile(fileList:string[]){
+        if(!gConfigAgent.getUseCscope()){ return; }
         if(fileList.length === 0){
             return;
         }
@@ -164,6 +165,10 @@ export class Cscope {
 
     async reload(progressWindow=false){
         gDebugLog.info("CSCOPE reload database");
+        if(!gConfigAgent.getUseCscope()){
+            gDebugLog.info("CSCOPE is disabled by setting");
+            return;
+        }
         if(!this.cscopeInstalled){
             this.showCscopeErrorMessage();
             return;
@@ -182,17 +187,20 @@ export class Cscope {
     }
 
     async getCaller(text:string){
+        if(!gConfigAgent.getUseCscope()){ return []; }
         let result = await this.cscopeCommandWindow(text, CscopeCmd.findCallers, "Looking callers");
         let temp = this.parseResult(result, text);
         return temp;
     }
 
     async getCallee(text:string){
+        if(!gConfigAgent.getUseCscope()){ return []; }
         let result = await this.cscopeCommandWindow(text, CscopeCmd.findCallee, "Looking callees");
         return this.parseResult(result, text);
     }
 
     async search(text:string){
+        if(!gConfigAgent.getUseCscope()){ return []; }
         let result = await this.cscopeCommandWindow(text, CscopeCmd.findEgrep, "Searching");
         let searchResult = this.parseResult(result, text);
 
@@ -209,6 +217,7 @@ export class Cscope {
     }
 
     async getDefinitionPositions(text:string, showWindows:boolean=true){
+        if(!gConfigAgent.getUseCscope()){ return []; }
     
         let windDescription = "Looking for definition";
         if(!showWindows){
@@ -295,6 +304,7 @@ export class CscopeAgent {
     }
 
     async writeCscopeFile(fileList:string[]){
+        if(!gConfigAgent.getUseCscope()){ return; }
         if(fileList.length === 0){
             return;
         }
@@ -328,6 +338,7 @@ export class CscopeAgent {
     /**
      * Updates Cscope database based on cscope.files elements
      */
+        if(!gConfigAgent.getUseCscope()){ return; }
         const debouncer = Debouncer.getInstance();
         debouncer.debounce("updateCscopeDb", async () => {
             let cscopeFilesPath = getEdkCodeFolderFilePath("cscope.files");
