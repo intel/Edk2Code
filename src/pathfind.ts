@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import glob = require("fast-glob");
 import { gConfigAgent, gDebugLog, gWorkspacePath } from "./extension";
 import { REGEX_VAR_USAGE } from "./edkParser/commonParser";
+import { toPosix } from "./utils";
 
 export class PathFind{
 
@@ -36,7 +37,7 @@ export class PathFind{
 ];
 
 
-    private missingFiles: string[] = [];
+    private missingPaths: string[] = [];
 
     async findPath(pathArg: string, relativePath: string|undefined = "") {
         pathArg = pathArg.replaceAll(/(\\+|\/+)/gi, path.sep);
@@ -56,8 +57,7 @@ export class PathFind{
             return [];
         }
 
-        if(this.missingFiles.includes(pathArg)){
-            //Todo: Add job to look for the file
+        if(this.isKnownMissing(pathArg)){
             return [];
         }
 
@@ -121,7 +121,7 @@ export class PathFind{
 
         if(retPath.length === 0){
             gDebugLog.warning(`Missing file: ${pathArg}`);
-            this.missingFiles.push(path.join(relativePath, pathArg));
+            this.addMissingPath(pathArg);
         }
 
         return retPath;
@@ -138,6 +138,62 @@ export class PathFind{
                 return new vscode.Location(vscode.Uri.file(p), new vscode.Position(0, 0));
             }
         }
+    }
+
+    /**
+     * Check if pathArg (or any of its parent segments) is already known to be missing.
+     */
+    private isKnownMissing(pathArg: string): boolean {
+        const normalized = toPosix(pathArg);
+        return this.missingPaths.some(missing => {
+            return normalized === missing || normalized.startsWith(missing + '/');
+        });
+    }
+
+    /**
+     * Walk up parent directories of pathArg and find the highest-level
+     * directory that doesn't exist in the workspace or package paths.
+     * Cache that root so all future lookups under it are skipped.
+     */
+    private addMissingPath(pathArg: string): void {
+        // Don't add if already covered by an existing missing path
+        if (this.isKnownMissing(pathArg)) {
+            return;
+        }
+
+        const posixPath = toPosix(pathArg);
+        const parts = posixPath.split('/');
+        let missingRoot = posixPath;
+
+        // Walk from the top-level segment downward; find the first parent that
+        // does NOT exist anywhere, and cache that instead of the full path.
+        for (let i = 1; i < parts.length; i++) {
+            const parentPath = parts.slice(0, i).join(path.sep);
+            if (!this.parentExistsInWorkspace(parentPath)) {
+                missingRoot = parentPath;
+                break;
+            }
+        }
+
+        gDebugLog.trace(`Caching missing path: ${missingRoot}`);
+        this.missingPaths.push(toPosix(missingRoot));
+    }
+
+    /**
+     * Check whether a relative directory exists under the workspace root
+     * or any of the configured package paths.
+     */
+    private parentExistsInWorkspace(parentPath: string): boolean {
+        if (fs.existsSync(path.join(gWorkspacePath, parentPath))) {
+            return true;
+        }
+        const packagePaths = gConfigAgent.getBuildPackagePaths();
+        for (const relPath of packagePaths) {
+            if (fs.existsSync(path.join(relPath, parentPath))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     produceLocation(path:string){
