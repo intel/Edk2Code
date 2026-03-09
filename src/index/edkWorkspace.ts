@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { edkWorkspaceTreeProvider, gCompileCommands, gConfigAgent, gDebugLog, gMapFileManager, gPathFind, gWorkspacePath } from '../extension';
 import { GrayoutManager } from '../grayout';
 import { createRange, openTextDocument, pathCompare, split } from '../utils';
-import { REGEX_DEFINE as REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_INCLUDE as REGEX_INCLUDE, REGEX_LIBRARY_PATH, REGEX_MODULE_PATH, REGEX_PCD_LINE, REGEX_VAR_USAGE } from "../edkParser/commonParser";
+import { REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_EQUAL, REGEX_INCLUDE as REGEX_INCLUDE, REGEX_LIBRARY_PATH, REGEX_MODULE_PATH, REGEX_PCD_LINE, REGEX_VAR_USAGE } from "../edkParser/commonParser";
 import { UNDEFINED_VARIABLE, WorkspaceDefinitions } from "./definitions";
 import * as fs from 'fs';
 import path = require('path');
@@ -657,14 +657,17 @@ export class EdkWorkspace {
                 }
     
                 // Defines
-                if (line.match(REGEX_DEFINE)) {
+                if (line.match(REGEX_DEFINE) || 
+                (this.sectionsStack.length > 0 &&
+                 this.sectionsStack[this.sectionsStack.length - 1].toLowerCase() === "defines" &&
+                 line.match(REGEX_EQUAL))) {
                     let key = line.replace(/define/gi, "").trim();
                     key = split(key, "=", 2)[0].trim();
                     let value = split(line, "=", 2)[1].trim();
                     let originalValue = split(originalLine, "=", 2)[1].trim();
 
                     if (value.includes(`$(${key})`) || originalValue.includes(`$(${key})`)) {
-                        gDebugLog.info(`Circular define: ${key}: ${value}`);
+                        gDebugLog.trace(`Circular define: ${key}: ${value}`);
                     } else {
                         // Warn if DEFINE is being redefined without referencing itself
                         let defines = type === 'DSC' ? this.defines : this.definesFdf;
