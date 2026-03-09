@@ -9,7 +9,7 @@ import { DebugLog } from './debugLog';
 import * as edkStatusBar from './statusBar';
 import { FileUseWarning } from './usedFileTracker';
 import * as cmds from "./contextState/cmds";
-import { GrayoutController } from './grayout';
+
 import { initLanguages } from './Languages/languages';
 import { ModuleReport } from './moduleReport';
 import { GuidProvider } from './Languages/guidProvider';
@@ -44,7 +44,7 @@ var gEdk2CallHierarchyProvider: Edk2CallHierarchyProvider;
 
 export var gDebugLog: DebugLog;
 export var gFileUseWarning: FileUseWarning;
-export var gGrayOutController: GrayoutController;
+
 export var gModuleReport: ModuleReport;
 export var gGuidProvider:GuidProvider;
 export var gDiagnosticManager:DiagnosticManager;
