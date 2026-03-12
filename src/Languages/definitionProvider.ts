@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ParserFactory } from '../edkParser/parserFactory';
+import { getParserForDocument } from '../edkParser/parserFactory';
 import { gDebugLog, gEdkWorkspaces } from '../extension';
 import { REGEX_PCD, REGEX_VAR_USAGE } from '../edkParser/commonParser';
 import { split } from '../utils';
@@ -57,10 +57,8 @@ export class EdkDefinitionProvider implements vscode.DefinitionProvider {
 
 
 
-        let factory = new ParserFactory();
-        let parser = factory.getParser(document);
+        let parser = await getParserForDocument(document);
         if(parser){
-            await parser.parseFile();
             let selectedSymbol = parser.getSelectedSymbol(position);
             if (!selectedSymbol) { return []; }
             gDebugLog.trace(`Definition for: ${selectedSymbol.toString()}`);

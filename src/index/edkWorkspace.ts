@@ -7,7 +7,7 @@ import { REGEX_DEFINE, REGEX_DSC_SECTION, REGEX_EQUAL, REGEX_INCLUDE as REGEX_IN
 import { UNDEFINED_VARIABLE, WorkspaceDefinitions } from "./definitions";
 import * as fs from 'fs';
 import path = require('path');
-import { ParserFactory, getParser } from '../edkParser/parserFactory';
+import { getParser } from '../edkParser/parserFactory';
 import { Edk2SymbolType } from '../symbols/symbolsType';
 import { EdkSymbolInfLibrary } from '../symbols/infSymbols';
 import { DiagnosticManager, EdkDiagnosticCodes } from '../diagnostics';

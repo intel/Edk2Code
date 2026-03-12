@@ -8,7 +8,7 @@ import { isFileEdkLibrary, listFiles, listFilesRecursive, openTextDocument, spli
 import { InfDsc } from "../index/edkWorkspace";
 import { DocumentParser } from "../edkParser/languageParser";
 import * as fs from 'fs';
-import { ParserFactory } from "../edkParser/parserFactory";
+import { getParserForDocument } from "../edkParser/parserFactory";
 import { REGEX_INF_SECTION } from "../edkParser/commonParser";
 
 
@@ -500,15 +500,13 @@ export class EdkSymbolInfFunction extends EdkSymbol {
 
 
 async function decDefinition(thisSymbol:EdkSymbol, type:Edk2SymbolType){
-    let factory = new ParserFactory();
     let thisPpi = await thisSymbol.getKey();
     let decs = thisSymbol.parser.getSymbolsType(Edk2SymbolType.infPackage);
     for (const dec of decs) {
         let decTextPath = await dec.getValue();
         let document = await openTextDocument(vscode.Uri.file(decTextPath));
-        let decParser = factory.getParser(document);
+        let decParser = await getParserForDocument(document);
         if(decParser){
-            await decParser.parseFile();
             let decPpis = decParser.getSymbolsType(type);
             for (const decPpi of decPpis) {
                 let decPpiValue = await decPpi.getKey();

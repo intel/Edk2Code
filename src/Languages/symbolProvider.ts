@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { getStaticPath, itsPcdSelected } from '../utils';
 import path = require('path');
 import { CompletionItemKind } from 'vscode';
-import { ParserFactory } from '../edkParser/parserFactory';
+import { getParserForDocument } from '../edkParser/parserFactory';
 import { gConfigAgent, gEdkWorkspaces } from '../extension';
 import { Debouncer } from '../debouncer';
 import { DiagnosticManager } from '../diagnostics';
@@ -38,10 +38,8 @@ export class EdkSymbolProvider implements vscode.DocumentSymbolProvider {
   public async provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken) {
 
     // Create a parser for the document
-    let factory = new ParserFactory();
-    let parser = factory.getParser(document);
+    let parser = await getParserForDocument(document);
     if (parser) {
-      await parser.parseFile();
       return parser.symbolsTree;
     }
     return [];
