@@ -3,7 +3,7 @@ import { gDebugLog } from '../extension';
 import { Edk2SymbolType, typeToStr } from './symbolsType';
 import { DocumentParser } from '../edkParser/languageParser';
 import { SectionProperties } from '../index/edkWorkspace';
-import { ParserFactory } from '../edkParser/parserFactory';
+import { getParserForDocument } from '../edkParser/parserFactory';
 import path = require('path');
 import { debuglog } from 'util';
 import { log } from 'console';
@@ -93,14 +93,12 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
 
     async decCompletion(type:Edk2SymbolType, completionKind:vscode.CompletionItemKind=vscode.CompletionItemKind.File){
         let retData = [];
-        let factory = new ParserFactory();
         let decs = this.parser.getSymbolsType(Edk2SymbolType.infPackage);
         for (const dec of decs) {
             let decTextPath = await dec.getValue();
             let document = await vscode.workspace.openTextDocument(vscode.Uri.file(decTextPath));
-            let decParser = factory.getParser(document);
+            let decParser = await getParserForDocument(document);
             if(decParser){
-                await decParser.parseFile();
                 let decPpis = decParser.getSymbolsType(type);
                 for (const decPpi of decPpis) {
                     let decPpiValue = await decPpi.getKey();
@@ -112,7 +110,6 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
     }
 
     async isInDec(type:Edk2SymbolType){
-        let factory = new ParserFactory();
         let decs = this.parser.getSymbolsType(Edk2SymbolType.infPackage);
         const testKey = await this.getKey();
 
@@ -126,9 +123,8 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
                 }
             }
             let document = await vscode.workspace.openTextDocument(vscode.Uri.file(decTextPath));
-            let decParser = factory.getParser(document);
+            let decParser = await getParserForDocument(document);
             if(decParser){
-                await decParser.parseFile();
                 let decSymbols = decParser.getSymbolsType(type);
                 for (const decSymbol of decSymbols) {
                     

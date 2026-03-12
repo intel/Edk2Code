@@ -17,7 +17,7 @@ import { PathFind } from './pathfind';
 import { EdkWorkspaces } from './index/edkWorkspace';
 import { Edk2CallHierarchyProvider } from './callHiearchy';
 import { copyToClipboard, findClosestCommonDirectory, getCurrentDocument, getDocsUrl, gotoFile, showVirtualFile } from './utils';
-import { ParserFactory } from './edkParser/parserFactory';
+import { getParserForDocument } from './edkParser/parserFactory';
 import { TreeDetailsDataProvider } from './TreeDataProvider';
 // import { DefinesTreeDataProvider } from './definesPanel';
 import { DiagnosticManager } from './diagnostics';
@@ -115,10 +115,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		// Debug
 		vscode.commands.registerCommand('edk2code.debugCommand', async ()=>{
 
-			let factory = new ParserFactory();
 			let doc = getCurrentDocument()!;
-			let parser = factory.getParser(doc);
-			await parser?.parseFile();
+			let parser = await getParserForDocument(doc);
 			let content = "";
 			for (const symb  of parser?.symbolsList!) {
 				content += `${symb.toString()}\n`;

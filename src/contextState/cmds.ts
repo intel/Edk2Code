@@ -9,7 +9,7 @@ import { glob } from "fast-glob";
 import { BuildFolder } from "../Languages/buildFolder";
 import { EdkWorkspace, InfDsc } from "../index/edkWorkspace";
 import { FileTreeItem, FileTreeItemLibraryTree, openLibraryNode, SectionTreeItem } from "../TreeDataProvider";
-import { ParserFactory, getParser } from "../edkParser/parserFactory";
+import { getParser, getParserForDocument } from "../edkParser/parserFactory";
 import { Edk2SymbolType } from "../symbols/symbolsType";
 import * as edkStatusBar from '../statusBar';
 import { SettingsPanel } from "../settings/settingsPanel";
@@ -561,8 +561,6 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
             edkStatusBar.setWorking();
             proccesedInfFiles = new Set();
 
-            let factory = new ParserFactory();
-
             let wpInfFiles:InfDsc[] = [];
             // Grab all inf files in all workspaces
             for (const wp of gEdkWorkspaces.workspaces) {
@@ -589,9 +587,8 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                             proccesedInfFiles.add(p[0].uri.fsPath);
                         }
                         let document = await openTextDocument(p[0].uri);
-                        let parser = factory.getParser(document);
+                        let parser = await getParserForDocument(document);
                         if(parser){
-                            await parser.parseFile();
                             let sources = parser.getSymbolsType(Edk2SymbolType.infSource);
                             filesList.push(parser.document.fileName);
                             for (const source of sources) {
@@ -607,9 +604,8 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                                 let decPath = await gPathFind.findPath(decValue);
                                 if(decPath.length){
                                     let decDoc = await openTextDocument(decPath[0].uri);
-                                    let decParser = factory.getParser(decDoc);
+                                    let decParser = await getParserForDocument(decDoc);
                                     if(decParser){
-                                        await decParser.parseFile();
                                         let decIncludes = decParser.getSymbolsType(Edk2SymbolType.decInclude);
                                         for (const decInclude of decIncludes) {
                                             if(reject.isCancellationRequested){break;}

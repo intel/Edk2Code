@@ -5,7 +5,6 @@ import { createRange, split } from "../utils";
 import { REGEX_ANY_BUT_SECTION, REGEX_DEFINE } from "./commonParser";
 import { BlockParser, DocumentParser } from "./languageParser";
 import { EdkSymbol } from "../symbols/edkSymbols";
-import { ParserFactory } from "./parserFactory";
 import * as vscode from 'vscode';
 import { DiagnosticManager, EdkDiagnosticCodes } from "../diagnostics";
 
