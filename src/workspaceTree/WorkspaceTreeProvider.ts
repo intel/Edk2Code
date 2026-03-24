@@ -191,29 +191,53 @@ function findIncludeNode(nodes: IncludeNode[], location: vscode.Location): Inclu
 
 // ─── Recursive text serializer ───────────────────────────────────────────────
 
-async function serializeSymbol(symbol: EdkSymbol, fileUri: vscode.Uri, indent: string, filter: Set<Edk2SymbolType>): Promise<string> {
-    const line = `${indent}${symbol.name}${symbol.detail ? '  - ' + symbol.detail : ''}\n`;
-    let out = line;
-    for (const child of symbol.children) {
-        const edkChild = child as EdkSymbol;
-        if (isTypeVisible(edkChild.type, filter)) {
-            out += await serializeSymbol(edkChild, fileUri, indent + '  ', filter);
+async function resolveIncludedUri(symbol: EdkSymbol): Promise<vscode.Uri | undefined> {
+    if (symbol.type !== Edk2SymbolType.dscInclude || !symbol.onDefinition) {
+        return undefined;
+    }
+    const locations = await Promise.resolve(symbol.onDefinition(symbol.parser)) as vscode.Location[] | undefined;
+    return locations?.[0]?.uri;
+}
+
+async function serializeFileSymbols(
+    fileUri: vscode.Uri,
+    indent: string,
+    filter: Set<Edk2SymbolType>,
+    expandedFiles: Set<string>
+): Promise<string> {
+    const symbols = await loadSymbols(fileUri);
+    let out = '';
+    for (const sym of symbols) {
+        if (isTypeVisible(sym.type, filter)) {
+            out += await serializeSymbol(sym, indent, filter, expandedFiles);
         }
     }
     return out;
 }
 
-async function serializeIncludeNode(node: IncludeNode, indent: string, filter: Set<Edk2SymbolType>): Promise<string> {
-    const rel = vscode.workspace.asRelativePath(node.uri, false);
-    let out = `${indent}!include ${rel}\n`;
-    const symbols = await loadSymbols(node.uri);
-    for (const sym of symbols) {
-        if (isTypeVisible(sym.type, filter)) {
-            out += await serializeSymbol(sym, node.uri, indent + '  ', filter);
+async function serializeSymbol(
+    symbol: EdkSymbol,
+    indent: string,
+    filter: Set<Edk2SymbolType>,
+    expandedFiles: Set<string>
+): Promise<string> {
+    const line = `${indent}${symbol.name}${symbol.detail ? '  - ' + symbol.detail : ''}\n`;
+    let out = line;
+    if (symbol.type === Edk2SymbolType.dscInclude) {
+        const includeUri = await resolveIncludedUri(symbol);
+        if (!includeUri || expandedFiles.has(includeUri.fsPath)) {
+            return out;
         }
+        const nextExpandedFiles = new Set(expandedFiles);
+        nextExpandedFiles.add(includeUri.fsPath);
+        out += await serializeFileSymbols(includeUri, indent + '  ', filter, nextExpandedFiles);
+        return out;
     }
-    for (const child of node.children) {
-        out += await serializeIncludeNode(child, indent + '  ', filter);
+    for (const child of symbol.children) {
+        const edkChild = child as EdkSymbol;
+        if (isTypeVisible(edkChild.type, filter)) {
+            out += await serializeSymbol(edkChild, indent + '  ', filter, expandedFiles);
+        }
     }
     return out;
 }
@@ -410,16 +434,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         const rootLabel = path.basename(ws.mainDsc.fsPath);
         const rel = vscode.workspace.asRelativePath(ws.mainDsc, false);
         let out = `${rootLabel}  (${rel})\n`;
-
-        const rootSymbols = await loadSymbols(ws.mainDsc);
-        for (const sym of rootSymbols) {
-            if (isTypeVisible(sym.type, this._activeFilters)) {
-                out += await serializeSymbol(sym, ws.mainDsc, '  ', this._activeFilters);
-            }
-        }
-        for (const node of ws.includeTree) {
-            out += await serializeIncludeNode(node, '  ', this._activeFilters);
-        }
+        out += await serializeFileSymbols(ws.mainDsc, '  ', this._activeFilters, new Set([ws.mainDsc.fsPath]));
         return out;
     }
 
