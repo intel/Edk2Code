@@ -166,7 +166,17 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('edk2code.showWorkspaceDefines', async ()=>{await cmds.showDefines();}),
 
 		vscode.commands.registerCommand('edk2code.copyWorkspaceTree', async () => {
-			const text = await edkWorkspaceTreeProvider.serializeTree();
+			const text = await vscode.window.withProgress(
+				{
+					location: vscode.ProgressLocation.Notification,
+					title: 'Serializing workspace tree',
+					cancellable: false
+				},
+				async progress => {
+					progress.report({ message: 'Building tree text for the clipboard...' });
+					return await edkWorkspaceTreeProvider.serializeTree();
+				}
+			);
 			await vscode.env.clipboard.writeText(text);
 			void vscode.window.showInformationMessage('Workspace tree copied to clipboard.');
 		}),
