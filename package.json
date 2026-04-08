@@ -2,7 +2,7 @@
   "name": "edk2code-dev",
   "displayName": "Edk2code-dev",
   "description": "EDK2 code support",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "icon": "assets/icon.png",
   "publisher": "intel-corporation",
   "homepage": "https://github.com/intel/Edk2Code/wiki",
@@ -68,10 +68,7 @@
         "command": "edk2code.debugCommand",
         "title": "EDK2: Debug command"
       },
-      {
-        "command": "edk2code.showLibraryTree",
-        "title": "EDK2: Show Module Map"
-      },
+
       {
         "command": "edk2code.saveBuildConfiguration",
         "title": "EDK2: Save build configuration file"
@@ -80,53 +77,22 @@
         "command": "edk2code.gotoInf",
         "title": "EDK2: Goto Inf"
       },
-      {
-        "command": "edk2code.references",
-        "title": "EDK2: Show Reference tree"
-      },
+
       {
         "command": "edk2code.dscUsage",
         "title": "EDK2: Goto DSC declaration"
       },
-      {
-        "command": "edk2code.libUsage",
-        "title": "EDK2: Show Library usage"
-      },
+
       {
         "command": "edk2code.dscInclusion",
         "title": "EDK2: Goto include"
       },
-      {
-        "command": "edk2code.showReferences",
-        "title": "EDK2: Show references"
-      },
+
       {
         "command": "edk2code.viewWarnings",
         "title": "EDK2: Check for warnings"
       },
-      {
-        "command": "edk2code.copyTreeData",
-        "title": "EDK2: Copy tree data",
-        "icon": "$(copy)"
-      },
-      {
-        "command": "edk2code.getItemTreePath",
-        "title": "Copy tree node path"
-      },
-      {
-        "command": "edk2code.focusOnNode",
-        "title": "Focus on Node"
-      },
-      {
-        "command": "edk2code.NodeFocusBack",
-        "title": "Node Focus Back",
-        "icon": "$(arrow-left)"
-      },
-      {
-        "command": "edk2code.showWorkspaceDefines",
-        "title": "EDK2: Show workspace Defines",
-        "icon": "$(refresh)"
-      },
+
       {
         "command": "edk2code.selectWorkspaceView",
         "title": "EDK2: Select Workspace",
@@ -240,12 +206,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "edk2code.addVscodeLinksToReferences": {
-            "order": 2,
-            "type": "boolean",
-            "markdownDescription": "Add VSCode links to copied references. When enabled, the tree output will include clickable markdown links that open files at specific line numbers when pasted in markdown documents.",
-            "default": false
           }
         }
       }
@@ -262,13 +222,9 @@
     "views": {
       "edk2code-sidebar": [
         {
+          "icon": "assets/icon.png",
           "id": "workspaceView",
           "name": "Workspace",
-          "type": "tree"
-        },
-        {
-          "id": "detailsView",
-          "name": "Edk2",
           "type": "tree"
         }
       ]
@@ -276,7 +232,13 @@
     "viewsWelcome": [
       {
         "view": "workspaceView",
-        "contents": "No workspace data available.\n[Rebuild Index](command:edk2code.rebuildIndex)"
+        "contents": "Loading workspace, please wait...",
+        "when": "edk2code.isLoading"
+      },
+      {
+        "view": "workspaceView",
+        "contents": "No workspace data available.\n[Rebuild Index](command:edk2code.rebuildIndex)",
+        "when": "!edk2code.isLoading"
       }
     ],
     "menus": {
@@ -312,10 +274,7 @@
         {
           "command": "edk2code.debugCommand"
         },
-        {
-          "command": "edk2code.showLibraryTree",
-          "when": "editorLangId == .inf"
-        },
+
         {
           "command": "edk2code.saveBuildConfiguration",
           "when": "edk2code.parseComplete"
@@ -324,50 +283,22 @@
           "command": "edk2code.gotoInf",
           "when": "editorLangId == c"
         },
-        {
-          "command": "edk2code.references",
-          "when": "editorLangId == c || editorLangId == edk2_dsc || editorLangId == edk2_inf || editorLangId == edk2_fdf"
-        },
+
         {
           "command": "edk2code.dscUsage",
           "when": "editorLangId == .inf"
         },
-        {
-          "command": "edk2code.libUsage",
-          "when": "edk2code.parseComplete"
-        },
+
         {
           "command": "edk2code.dscInclusion",
           "when": "editorLangId == edk2_dsc || editorLangId == edk2_fdf"
         },
-        {
-          "command": "edk2code.showReferences",
-          "when": "edk2code.parseComplete"
-        },
+
         {
           "command": "edk2code.viewWarnings",
           "when": "edk2code.parseComplete && (editorLangId == edk2_inf || editorLangId == edk2_dsc)"
         },
-        {
-          "command": "edk2code.copyTreeData",
-          "when": "false"
-        },
-        {
-          "command": "edk2code.getItemTreePath",
-          "when": "false"
-        },
-        {
-          "command": "edk2code.focusOnNode",
-          "when": "false"
-        },
-        {
-          "command": "edk2code.NodeFocusBack",
-          "when": "false"
-        },
-        {
-          "command": "edk2code.showWorkspaceDefines",
-          "when": "true"
-        },
+
         {
           "command": "edk2code.selectWorkspaceView",
           "when": "true"
@@ -400,11 +331,6 @@
       "editor/title": [],
       "view/title": [
         {
-          "command": "edk2code.NodeFocusBack",
-          "group": "navigation",
-          "when": "view == detailsView && edk2code.isNodeFocusBackStack"
-        },
-        {
           "command": "edk2code.selectWorkspaceView",
           "group": "navigation",
           "when": "view == workspaceView"
@@ -428,16 +354,6 @@
           "command": "edk2code.revealEditorInWorkspaceTree",
           "group": "navigation",
           "when": "view == workspaceView"
-        },
-        {
-          "command": "edk2code.copyTreeData",
-          "when": "view == detailsView",
-          "group": "navigation"
-        },
-        {
-          "command": "edk2code.showWorkspaceDefines",
-          "when": "view == detailsView",
-          "group": "navigation"
         }
       ],
       "editor/context": [
@@ -446,31 +362,19 @@
           "group": "navigation",
           "when": "editorLangId == c"
         },
-        {
-          "command": "edk2code.showLibraryTree",
-          "group": "navigation",
-          "when": "editorLangId == edk2_inf"
-        },
+
         {
           "command": "edk2code.gotoInf",
           "group": "navigation",
           "when": "editorLangId == c"
         },
-        {
-          "command": "edk2code.references",
-          "group": "navigation",
-          "when": "editorLangId == c || editorLangId == edk2_dsc || editorLangId == edk2_inf || editorLangId == edk2_fdf"
-        },
+
         {
           "command": "edk2code.dscUsage",
           "group": "navigation",
           "when": "editorLangId == edk2_inf"
         },
-        {
-          "command": "edk2code.libUsage",
-          "group": "navigation",
-          "when": "editorLangId == edk2_inf && edk2code.parseComplete"
-        },
+
         {
           "command": "edk2code.dscInclusion",
           "group": "navigation",
@@ -485,24 +389,10 @@
           "command": "edk2code.focusEditorInWorkspaceView",
           "group": "navigation",
           "when": "editorLangId == edk2_inf && edk2code.infFileInWorkspaceTree"
-        },
-        {
-          "command": "edk2code.showReferences",
-          "group": "navigation",
-          "when": "editorLangId == edk2_inf && edk2code.parseComplete"
         }
+
       ],
       "view/item/context": [
-        {
-          "command": "edk2code.getItemTreePath",
-          "group": "navigation",
-          "when": "view == detailsView"
-        },
-        {
-          "command": "edk2code.focusOnNode",
-          "group": "navigation",
-          "when": "view == detailsView"
-        },
         {
           "command": "edk2code.copyWorkspaceNodePath",
           "group": "navigation",

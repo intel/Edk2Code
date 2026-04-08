@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { edkLensTreeDetailProvider } from '../extension';
 
 export class TreeItem extends vscode.TreeItem {
     children: TreeItem[] = [];
@@ -51,12 +50,10 @@ export class TreeItem extends vscode.TreeItem {
     setLoading(){
       this.tempIcon = this.iconPath;
       this.iconPath = new vscode.ThemeIcon("loading~spin");
-      edkLensTreeDetailProvider.refresh();
     }
 
     clearLoading(){
       this.iconPath = this.tempIcon;
-      edkLensTreeDetailProvider.refresh();
     }
 
     needsExpandProcess(){
