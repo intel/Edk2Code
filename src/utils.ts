@@ -4,10 +4,8 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { cwd } from "process";
 import { gCompileCommands, gDebugLog, gEdkWorkspaces, gExtensionContext, gWorkspacePath } from "./extension";
-import { TreeDetailsDataProvider } from "./TreeDataProvider";
 import { rejects } from "assert";
 import { REGEX_PCD } from "./edkParser/commonParser";
-import { TreeItem } from "./treeElements/TreeItem";
 
 
 var normalizeCache = new Map();
@@ -279,22 +277,7 @@ export async function openTextDocument(uri: vscode.Uri) {
 
 
 
-function _copyTreeProviderToClipboardRecursive(item: TreeItem, deep: number, result: any) {
-    result["content"] += `${" ".repeat(deep)}${item.toString()}\n`;
-    for (const nextItem of item.children) {
-        _copyTreeProviderToClipboardRecursive(nextItem, deep + 1, result);
-    }
 
-}
-
-export async function copyTreeProviderToClipboard(treeProvider: TreeDetailsDataProvider) {
-    let result = { "content": "" };
-    for (const items of <TreeItem[]>treeProvider.getChildren()) {
-        _copyTreeProviderToClipboardRecursive(items, 0, result);
-    }
-    await copyToClipboard(result["content"]);
-    
-}
 
 export async function copyToClipboard(data:string, message:string="Data copied to clipboard"){
     await vscode.env.clipboard.writeText(data);

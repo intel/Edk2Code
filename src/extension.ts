@@ -18,14 +18,11 @@ import { EdkWorkspaces } from './index/edkWorkspace';
 import { Edk2CallHierarchyProvider } from './callHiearchy';
 import { copyToClipboard, findClosestCommonDirectory, getCurrentDocument, getDocsUrl, gotoFile, showVirtualFile } from './utils';
 import { getParserForDocument } from './edkParser/parserFactory';
-import { TreeDetailsDataProvider } from './TreeDataProvider';
-// import { DefinesTreeDataProvider } from './definesPanel';
 import { DiagnosticManager } from './diagnostics';
 import { WorkspaceTreeProvider, WorkspaceRootItem, IncludeTreeItem, DocumentSymbolItem, WorkspaceTreeNode, isFileInWorkspaceTree, isInfInWorkspaces } from './workspaceTree/WorkspaceTreeProvider';
 import { InfDsc } from './index/edkWorkspace';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
-import { TreeItem } from './treeElements/TreeItem';
 import { showReleaseNotes } from './newVersionPage/newVersionMessage';
 
 
@@ -49,13 +46,8 @@ export var gModuleReport: ModuleReport;
 export var gGuidProvider:GuidProvider;
 export var gDiagnosticManager:DiagnosticManager;
 
-export var edkLensTreeDetailProvider: TreeDetailsDataProvider;
-export var edkLensTreeDetailView: vscode.TreeView<vscode.TreeItem>;
-
 export var edkWorkspaceTreeProvider: WorkspaceTreeProvider;
 export var edkWorkspaceTreeView: vscode.TreeView<WorkspaceTreeNode>;
-
-// export var edkDefinesTreeProvider: DefinesTreeDataProvider;
 
 export var gMapFileManager: MapFilesManager;
 
@@ -100,11 +92,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('edk2code.gotoInf',async (fileUri)=>{await cmds.gotoInf(fileUri);}),
 		vscode.commands.registerCommand('edk2code.dscUsage', async (fileUri)=>{await cmds.gotoDscDeclaration(fileUri);}),
 		vscode.commands.registerCommand('edk2code.dscInclusion', async (fileUri)=>{await cmds.gotoDscInclusion(fileUri);}),
-		vscode.commands.registerCommand('edk2code.references', async (fileUri)=>{await cmds.showReferenceStack(fileUri);}),
-		
-		vscode.commands.registerCommand('edk2code.libUsage', async (editor)=>{await cmds.showLibUsage(editor.document.uri);}),
-		vscode.commands.registerCommand('edk2code.showReferences', ()=>{cmds.showReferences();}),
-		vscode.commands.registerTextEditorCommand('edk2code.showLibraryTree', async (editor)=>{await cmds.showEdkMap(editor.document.uri);}),
 		
 		// Internal
 		vscode.commands.registerCommand('edk2code.searchDefinition', ()=>{}),
@@ -124,46 +111,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			await showVirtualFile(doc.fileName,content);
 		}),
 
-		vscode.commands.registerCommand('edk2code.copyTreeData', () => {
-			// Your export logic here
-			let strTree = edkLensTreeDetailProvider.toString();
-			void vscode.env.clipboard.writeText(strTree);
-			void vscode.window.showInformationMessage('Details copied to clipboard.');
-		
-		  }),
 
-		  vscode.commands.registerCommand('edk2code.expandAllTree', () => {
-			// Your export logic here
-			let strTree = edkLensTreeDetailProvider.expandAll(edkLensTreeDetailView);
-		  }),
-
-		  vscode.commands.registerCommand('edk2code.focusOnNode', async (node:TreeItem) => {
-			await cmds.focusOnNode(node);
-		  }),
-
-		  vscode.commands.registerCommand('edk2code.NodeFocusBack', async () => {
-			await cmds.nodeFocusBack();
-		  }),
-
-
-		  vscode.commands.registerCommand('edk2code.getItemTreePath', (node:TreeItem) => {
-			// Your export logic here
-			let itemParent = node.getParent();
-			let pathStack = [node];
-			while(itemParent){
-				pathStack.push(itemParent);
-				itemParent = itemParent.getParent();
-			}
-			let path = "";
-			let count = 0;
-			for (const pathItem of pathStack.reverse()) {
-				path += "  ".repeat(count) + pathItem.toString() + "\n";
-				count++;
-			}
-			void copyToClipboard(path, "Path copied to clipboard");
-		  }),
-
-		vscode.commands.registerCommand('edk2code.showWorkspaceDefines', async ()=>{await cmds.showDefines();}),
 
 		vscode.commands.registerCommand('edk2code.copyWorkspaceTree', async () => {
 			const text = await vscode.window.withProgress(
@@ -288,17 +236,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	gMapFileManager = new MapFilesManager();
 	gCompileCommands = new CompileCommands();
 
-	edkLensTreeDetailProvider = new TreeDetailsDataProvider();
-	edkLensTreeDetailView = vscode.window.createTreeView('detailsView', { treeDataProvider: edkLensTreeDetailProvider, showCollapseAll:true });
-
-	// edkDefinesTreeProvider = new DefinesTreeDataProvider();
-	// vscode.window.createTreeView('definesView', { treeDataProvider: edkDefinesTreeProvider, showCollapseAll: true });
-
 	edkWorkspaceTreeProvider = new WorkspaceTreeProvider();
 	edkWorkspaceTreeView = vscode.window.createTreeView('workspaceView', { treeDataProvider: edkWorkspaceTreeProvider, showCollapseAll: true, dragAndDropController: edkWorkspaceTreeProvider });
 
 	await gEdkWorkspaces.loadConfig();
-	// edkDefinesTreeProvider.refresh();
 	gFileUseWarning = new FileUseWarning();
 
 
@@ -316,13 +257,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	
-	edkLensTreeDetailView.onDidExpandElement(async event => {
-		let node = event.element as TreeItem;
-		await node.expand();
-		edkLensTreeDetailProvider.refresh();
-	});
 
-	await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', false);
 
 	// ─── Track whether the active editor belongs to the workspace tree ─────────
 	async function updateEditorInWorkspaceContext(editor: vscode.TextEditor | undefined): Promise<void> {

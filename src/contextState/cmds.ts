@@ -4,41 +4,18 @@ import { rgSearch } from "../rg";
 import { delay, getCurrentWord, gotoFile, isWorkspacePath, listFilesRecursive, openTextDocument, pathCompare, profileEnd, profileStart, readLines, toPosix } from "../utils";
 import path = require("path");
 import * as fs from 'fs';
-import { edkLensTreeDetailProvider, edkLensTreeDetailView, edkWorkspaceTreeProvider, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gMapFileManager, gPathFind, gWorkspacePath } from "../extension";
+import { edkWorkspaceTreeProvider, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gMapFileManager, gPathFind, gWorkspacePath } from "../extension";
 import { glob } from "fast-glob";
 import { BuildFolder } from "../Languages/buildFolder";
 import { EdkWorkspace, InfDsc } from "../index/edkWorkspace";
-import { FileTreeItem, FileTreeItemLibraryTree, openLibraryNode, SectionTreeItem } from "../TreeDataProvider";
 import { getParser, getParserForDocument } from "../edkParser/parserFactory";
 import { Edk2SymbolType } from "../symbols/symbolsType";
 import * as edkStatusBar from '../statusBar';
 import { SettingsPanel } from "../settings/settingsPanel";
-import { InfParser } from "../edkParser/infParser";
-import { EdkSymbolInfLibrary } from "../symbols/infSymbols";
-import { debuglog } from "util";
 import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder";
-import { EdkInfNode, EdkInfNodeLibrary } from "../treeElements/Library";
-import { TreeItem } from "../treeElements/TreeItem";
-import { EdkModule, ModuleReport } from "../moduleReport";
 import { infoMissingCompileInfo } from "../ui/messages";
-import { DefinesRootItem } from "../treeElements/DefinesTreeItem";
 import { checkCppConfiguration } from "../cppProviders/cppUtils";
 
-
-    export async function showDefines() {
-        edkLensTreeDetailProvider.clear();
-        edkLensTreeDetailView.title = "EDK2 Defines";
-        edkLensTreeDetailView.description = "";
-
-        let definesRoot = new DefinesRootItem("DEFINES");
-        let pcdsRoot = new DefinesRootItem("PCDs");
-
-        edkLensTreeDetailProvider.addChildren(definesRoot);
-        edkLensTreeDetailProvider.addChildren(pcdsRoot);
-        
-        edkLensTreeDetailProvider.refresh();
-        await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
-    }
 
     export async function rebuildIndexDatabase(){
         gDebugLog.trace("Rebuilding index database");
@@ -140,7 +117,6 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                     void vscode.window.showInformationMessage("Build data loaded");
 
                     await gEdkWorkspaces.loadConfig();
-                    await showDefines();
                 }
 
             } else {
@@ -153,7 +129,6 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
     export async function rescanIndex() {
         gConfigAgent.reloadConfigFile();
         await reloadSymbols();
-        await showDefines();
         // Generate .ignore if setting is set and .ignore doesnt exists
         if (gConfigAgent.getIsGenIgnoreFile()) {
             await genIgnoreFile();
@@ -358,189 +333,6 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
 
 
     }
-    export async function showLibUsage(fileUri:vscode.Uri) {
-        throw new Error("Method not implemented.");
-    }
-
-
-    export function showReferences(): void {
-        throw new Error("Method not implemented.");
-    }
-
-
-
-    export async function showEdkMap(moduleUri:vscode.Uri) {
-        let parser = await getParser(moduleUri);
-        let contextModule = moduleUri;
-        let contextSelected = false;
-        if(parser && (parser instanceof InfParser) ){
-            // Check if INF file is a library
-            if(parser.isLibrary()){
-                let modulesUsage: EdkModule[] = [];
-                let modules = ModuleReport.getInstance().getModuleList();
-                for (const module of modules) {
-                    if(!module.isLibrary){
-                        for (const lib of module.libraries) {
-                            if(pathCompare(lib.path, moduleUri.fsPath)){
-                                modulesUsage.push(module);
-                            }
-                        }
-                    }
-                }
-                if(modulesUsage.length){
-                    const options = modulesUsage.map(mod => ({
-                        label: mod.name,
-                        description: mod.path,
-                        module: mod
-                    }));
-                    const selectedOption = await vscode.window.showQuickPick(options, {
-                        title: "Select a Module for context",
-                        canPickMany: false
-                    });
-                    if (!selectedOption) {
-                        return;
-                    }
-                    contextModule = vscode.Uri.file(selectedOption.module.path);
-                    contextSelected = true;
-
-                }else{
-                    
-                    // list all modules and ask for context
-                    void vscode.window.showWarningMessage("EDK2Code couldn't find a module that uses this library");
-                    return;
-                }
-            }
-
-            // Initialize tree view
-            edkLensTreeDetailProvider.clear();
-            edkLensTreeDetailProvider.refresh();
-            edkLensTreeDetailView.title = "EDK2 Module Map";
-            let description = path.basename(moduleUri.fsPath);
-            if(moduleUri.fsPath !== contextModule.fsPath){
-                description = `${path.basename(moduleUri.fsPath)} - ${path.basename(contextModule.fsPath)}`;
-            }
-            edkLensTreeDetailView.description = description;
-
-
-            let wps = await gEdkWorkspaces.getWorkspace(contextModule);
-            let libraries = parser.getSymbolsType(Edk2SymbolType.infLibrary) as EdkSymbolInfLibrary[];
-            if(libraries.length === 0){
-                void vscode.window.showWarningMessage("No libraries found in file");
-                return;
-            }
-            
-            for (const wp of wps) {
-                // let dscDeclarations = await wp.getDscDeclaration(fileUri);
-                const sectionRange = libraries[0].parent?.range.start;
-                if(sectionRange===undefined){continue;}
-                let librarySet = new Set<string>();
-                let moduleNode;
-                if(parser.isLibrary()){
-                    moduleNode = new EdkInfNodeLibrary(moduleUri, contextModule, sectionRange, wp, libraries[0].parent!, librarySet);
-                }else{
-
-                    moduleNode = new EdkInfNode(moduleUri, contextModule, sectionRange, wp, libraries[0].parent!, librarySet);
-                }
-
-                edkLensTreeDetailProvider.addChildren(moduleNode);
-
-            }
-        }
-
-        await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
-
-    }
-
-
-    export async function showReferenceStack(fileUri: Uri){
-        return await vscode.window.withProgress({
-            location: vscode.ProgressLocation.Notification,
-            title: "Looking for references...",
-            cancellable: false
-        }, async (progress, reject) => {
-            let document = await openTextDocument(fileUri);
-            return await updateInclussionTree(document);
-        });
-
-    }
-
-    let _maxDscRec = 10;
-    export async function updateInclussionTree(document: vscode.TextDocument){
-        edkLensTreeDetailProvider.clear();
-        let wps = await gEdkWorkspaces.getWorkspace(document.uri);
-        for (const wp of wps) {
-            let currentDocument = document;
-            let infReferences:vscode.Location[] = [];
-            var dscReferences:vscode.Location[] = [];
-            let rootNode = new TreeItem(`[${wp.platformName}]` || "Undefined Platform");
-            let cNode = new TreeItem("");
-            edkLensTreeDetailProvider.addChildren(rootNode);
-
-            switch (currentDocument.languageId) {
-                case "c":
-                    cNode = new FileTreeItem(document.uri, new vscode.Position(0,0),wp);
-                    rootNode.addChildren(cNode);
-                    infReferences = await wp.getInfReference(document.uri);
-                    // intentional with no break
-                case "edk2_inf":
-                    let targetNode = cNode;
-                    if(infReferences.length===0){
-                        infReferences = [new vscode.Location(document.uri, document.positionAt(0))];
-                        targetNode = rootNode;
-                    }
-
-                    for (const infRef  of infReferences) {
-                        let infNode = new FileTreeItem(infRef.uri, infRef.range.start,wp);
-                        targetNode.addChildren(infNode);
-                        dscReferences = (await wp.getDscDeclaration(infRef.uri)).map(x=>{return x.location;});
-                        for (const dscRef of dscReferences) {
-                            _maxDscRec = 10;
-                            let targetNode = new FileTreeItem(dscRef.uri, dscRef.range.start,wp);
-                            await _dscIncRefs(targetNode,wp, infNode);
-                        }
-                    }
-                    break;
-                case "edk2_fdf":
-                case "edk2_dsc" :
-
-                    dscReferences = [new vscode.Location(document.uri, document.positionAt(0))];
-
-
-                    for (const dscRef of dscReferences) {
-                        let refNode = new FileTreeItem(dscRef.uri, dscRef.range.start,wp);
-                        _maxDscRec = 10;
-                        await _dscIncRefs(refNode,wp,rootNode);
-                    }
-                    break;
-                default:
-                    edkLensTreeDetailProvider.clear();
-
-            }
-        }
-    
-
-        edkLensTreeDetailProvider.refresh();
-        edkLensTreeDetailView.title = "EDK2 References";
-        edkLensTreeDetailView.description = path.basename(document.uri.fsPath);
-        await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
-    }
-
-
-    export async function  _dscIncRefs(referenceNode:FileTreeItem, wp:EdkWorkspace, targetNode:TreeItem){
-        if(_maxDscRec === 0){return;}
-        _maxDscRec --;
-
-
-        let dscInclude = await wp.getIncludeReference(referenceNode.uri);
-        if(dscInclude.length === 0){
-            referenceNode.collapsibleState = vscode.TreeItemCollapsibleState.None;
-        }
-        targetNode.addChildren(referenceNode);
-        for (const i of dscInclude) {
-            let newNode = new FileTreeItem(i.uri, i.range.start,wp);
-            await _dscIncRefs(newNode, wp, referenceNode);
-        }
-    }
 
 
     let proccesedInfFiles:Set<string> = new Set();
@@ -712,34 +504,4 @@ export async function openWpConfigGui() {
 }
 export async function openWpConfigJson() {
     await gotoFile(gConfigAgent.getConfigFileUri());
-}
-
-
-
-
-
-var nodeStack = new Array<TreeItem[]>();
-
-export async function focusOnNode(node:TreeItem) {
-    nodeStack.push(edkLensTreeDetailProvider.data);
-	await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', true);
-
-    edkLensTreeDetailProvider.clear();
-    edkLensTreeDetailProvider.addChildren(node);
-    await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
-    edkLensTreeDetailProvider.refresh();
-    edkLensTreeDetailView.title = "EDK2 Module Map";
-}
-
-export async function nodeFocusBack(){
-    if(nodeStack.length){
-        edkLensTreeDetailProvider.clear();
-        edkLensTreeDetailProvider.data = nodeStack.pop()!;
-        await edkLensTreeDetailView.reveal(edkLensTreeDetailProvider.data[0]);
-        edkLensTreeDetailProvider.refresh();
-    }
-
-    if(nodeStack.length === 0){
-        await vscode.commands.executeCommand('setContext', 'edk2code.isNodeFocusBackStack', false);
-    }
 }

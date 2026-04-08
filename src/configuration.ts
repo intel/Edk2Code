@@ -79,10 +79,6 @@ export class ConfigAgent {
         return <boolean>this.get("enableDiagnostics");
     }
 
-    isAddVscodeLinksToReferences(){
-        return <boolean>this.get("addVscodeLinksToReferences");
-    }
-
     reloadConfigFile(){
         this.workspaceConfig = this.readWpConfig();
     }

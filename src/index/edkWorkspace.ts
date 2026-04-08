@@ -296,6 +296,7 @@ async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
         gDebugLog.trace("Loading Configuration");
         // TODO: enable to get more commands available
         //await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', false);
+        await vscode.commands.executeCommand('setContext', 'edk2code.isLoading', true);
 
         // If the previous workspace processing did not complete (e.g.
         // after a clear), build a temporary T-tree so PathFind can
@@ -317,6 +318,7 @@ async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
         // of the temporary T-tree so PathFind reverts to findFiles.
         gConfigAgent.setWorkspaceProcessComplete();
         //await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', true);
+        await vscode.commands.executeCommand('setContext', 'edk2code.isLoading', false);
     }
 }
 
@@ -611,10 +613,11 @@ export class EdkWorkspace {
             gDebugLog.trace(`# Parsing ${type} Document: ${document.uri.fsPath}`);
             for (let line of text) {
                 lineIndex++;
-                let originalLine = line;
+                
                 gDebugLog.trace(`\t\t${lineIndex}: ${line}`);
                 line = this.stripComment(line);
-    
+                let originalLine = line;
+
                 if (line.length === 0){continue;}
     
                 // PCDs
