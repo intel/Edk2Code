@@ -24,6 +24,7 @@ import { InfDsc } from './index/edkWorkspace';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
 import { showReleaseNotes } from './newVersionPage/newVersionMessage';
+import { startMcpServer, stopMcpServer } from './mcp/mcpServer';
 
 
 // Global variables
@@ -221,6 +222,14 @@ export async function activate(context: vscode.ExtensionContext) {
 					edkWorkspaceTreeView
 				);
 			}
+		}),
+
+		vscode.commands.registerCommand('edk2code.startMcpServer', async () => {
+			const portStr = vscode.workspace.getConfiguration('edk2code').get<number>('mcpServerPort', 3100);
+			await startMcpServer(portStr);
+		}),
+		vscode.commands.registerCommand('edk2code.stopMcpServer', () => {
+			stopMcpServer();
 		})
 	];
 
@@ -291,7 +300,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 // this method is called when your extension is deactivated
 export async function deactivate() {
-
+	stopMcpServer();
 }
 
 

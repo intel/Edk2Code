@@ -68,7 +68,6 @@
         "command": "edk2code.debugCommand",
         "title": "EDK2: Debug command"
       },
-
       {
         "command": "edk2code.saveBuildConfiguration",
         "title": "EDK2: Save build configuration file"
@@ -77,22 +76,18 @@
         "command": "edk2code.gotoInf",
         "title": "EDK2: Goto Inf"
       },
-
       {
         "command": "edk2code.dscUsage",
         "title": "EDK2: Goto DSC declaration"
       },
-
       {
         "command": "edk2code.dscInclusion",
         "title": "EDK2: Goto include"
       },
-
       {
         "command": "edk2code.viewWarnings",
         "title": "EDK2: Check for warnings"
       },
-
       {
         "command": "edk2code.selectWorkspaceView",
         "title": "EDK2: Select Workspace",
@@ -125,6 +120,14 @@
       {
         "command": "edk2code.focusEditorInWorkspaceView",
         "title": "EDK2: Focus on workspace view"
+      },
+      {
+        "command": "edk2code.startMcpServer",
+        "title": "EDK2: Start MCP SSE Server"
+      },
+      {
+        "command": "edk2code.stopMcpServer",
+        "title": "EDK2: Stop MCP SSE Server"
       }
     ],
     "configuration": [
@@ -192,6 +195,12 @@
             "type": "string",
             "markdownDescription": "Overwrites the calls to cscope executable path. `(reload of vscode after setup)`",
             "default": ""
+          },
+          "edk2code.mcpServerPort": {
+            "order": 3,
+            "type": "number",
+            "markdownDescription": "Port number for the MCP SSE server",
+            "default": 3100
           },
           "edk2code.extraIgnorePatterns": {
             "order": 2,
@@ -274,7 +283,6 @@
         {
           "command": "edk2code.debugCommand"
         },
-
         {
           "command": "edk2code.saveBuildConfiguration",
           "when": "edk2code.parseComplete"
@@ -283,22 +291,18 @@
           "command": "edk2code.gotoInf",
           "when": "editorLangId == c"
         },
-
         {
           "command": "edk2code.dscUsage",
           "when": "editorLangId == .inf"
         },
-
         {
           "command": "edk2code.dscInclusion",
           "when": "editorLangId == edk2_dsc || editorLangId == edk2_fdf"
         },
-
         {
           "command": "edk2code.viewWarnings",
           "when": "edk2code.parseComplete && (editorLangId == edk2_inf || editorLangId == edk2_dsc)"
         },
-
         {
           "command": "edk2code.selectWorkspaceView",
           "when": "true"
@@ -326,6 +330,14 @@
         {
           "command": "edk2code.focusEditorInWorkspaceView",
           "when": "false"
+        },
+        {
+          "command": "edk2code.startMcpServer",
+          "when": "true"
+        },
+        {
+          "command": "edk2code.stopMcpServer",
+          "when": "true"
         }
       ],
       "editor/title": [],
@@ -362,19 +374,16 @@
           "group": "navigation",
           "when": "editorLangId == c"
         },
-
         {
           "command": "edk2code.gotoInf",
           "group": "navigation",
           "when": "editorLangId == c"
         },
-
         {
           "command": "edk2code.dscUsage",
           "group": "navigation",
           "when": "editorLangId == edk2_inf"
         },
-
         {
           "command": "edk2code.dscInclusion",
           "group": "navigation",
@@ -390,7 +399,6 @@
           "group": "navigation",
           "when": "editorLangId == edk2_inf && edk2code.infFileInWorkspaceTree"
         }
-
       ],
       "view/item/context": [
         {
@@ -541,6 +549,7 @@
     "draft-release": "node scripts/create_draft_release.js"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
     "@types/vscode": "^1.77.0",
@@ -549,13 +558,15 @@
     "@vscode/test-electron": "^2.2.3",
     "eslint": "^8.39.0",
     "mocha": "^10.2.0",
-    "typescript": "^4.9.5"
+    "typescript": "~5.4"
   },
   "dependencies": {
     "@bendera/vscode-webview-elements": "^0.11.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@types/glob": "^8.1.0",
     "@vscode/codicons": "0.0.32",
     "@vscode/ripgrep": "^1.15.10",
+    "express": "^5.2.1",
     "fast-glob": "^3.3.2"
   }
 }
