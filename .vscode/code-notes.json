@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "documents": [
+    {
+      "id": "a38557d2-4221-485d-8787-cd40c34c521e",
+      "name": "OpenRelatedFile",
+      "exportOrder": [
+        "aab8a899-c214-4e5f-9232-fc2ca66b3433",
+        "08a15e0a-6778-42ea-b66f-45feee2ad377",
+        "97e94d88-992e-48d2-8f77-df3110889a26",
+        "b11c1dc8-d908-4d71-8498-f5712a8628b7",
+        "22534243-2733-4147-853e-067fbb770654",
+        "abbe66bf-8ed9-467d-aa18-c1afe36d6ba0",
+        "2569daba-e70c-43a6-8cf7-5ca6f55a8707"
+      ],
+      "createdAt": "2026-04-15T22:10:18.485Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": "aab8a899-c214-4e5f-9232-fc2ca66b3433",
+      "documentId": "a38557d2-4221-485d-8787-cd40c34c521e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\package.json",
+        "startLine": 74,
+        "endLine": 77,
+        "startChar": 0,
+        "endChar": 8
+      },
+      "language": "json",
+      "snippet": "      {\r\n        \"command\": \"edk2code.gotoInf\",\r\n        \"title\": \"EDK2: Goto Inf\"\r\n      },",
+      "noteText": "command definition\n",
+      "label": "command definition",
+      "createdAt": "2026-04-15T22:10:36.773Z"
+    },
+    {
+      "id": "08a15e0a-6778-42ea-b66f-45feee2ad377",
+      "documentId": "a38557d2-4221-485d-8787-cd40c34c521e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\contextState\\cmds.ts",
+        "startLine": 241,
+        "endLine": 268,
+        "startChar": 4,
+        "endChar": 5
+      },
+      "language": "typescript",
+      "snippet": "export async function gotoInf(fileUri: Uri) {\r\n        let locations: vscode.Location[] = [];\r\n\r\n        let wps = await gEdkWorkspaces.getWorkspace(fileUri);\r\n        if(wps.length){\r\n            for (const wp of wps) {\r\n                locations = await wp.getInfReference(fileUri);\r\n                if(locations.length){\r\n                    await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, \"gotoAndPeek\", \"Not found\");\r\n                }\r\n            }\r\n        }else{\r\n            // Skip if source hasn't been indexed. Just make a search query\r\n            let fileName = path.basename(fileUri.fsPath);\r\n            let folderPath = path.dirname(fileUri.fsPath);\r\n\r\n            let tempLocations = await rgSearch(`\\\\b${fileName}\\\\b`, [\"*.inf\"],[],true);\r\n            for (const l of tempLocations) {\r\n                // Check the INF file is relative to the source file\r\n                if (!path.relative(path.dirname(l.uri.fsPath), folderPath).includes(\"..\")) {\r\n                    locations.push(l);\r\n                }\r\n            }\r\n            await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, \"gotoAndPeek\", \"Not found\");\r\n\r\n        }\r\n\r\n    }",
+      "noteText": "Implementation",
+      "label": "Implementation",
+      "createdAt": "2026-04-15T22:10:57.162Z"
+    },
+    {
+      "id": "97e94d88-992e-48d2-8f77-df3110889a26",
+      "documentId": "a38557d2-4221-485d-8787-cd40c34c521e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\index\\edkWorkspace.ts",
+        "startLine": 873,
+        "endLine": 946,
+        "startChar": 4,
+        "endChar": 5
+      },
+      "language": "typescript",
+      "snippet": "async isFileInUse(uri: vscode.Uri) {\r\n\r\n        if (this.processComplete) {\r\n            \r\n            switch (this.getLangId(uri)) {\r\n                case \"edk2_dsc\":\r\n                case \"edk2_fdf\":\r\n                    // fdf files can be included in dsc files\r\n                    for (const dsc of this.filesDsc) {\r\n                        \r\n                        if(uri.fsPath === dsc.fileName) {\r\n                            return true;\r\n                        }\r\n                    }\r\n                    \r\n                    \r\n                \r\n                    for (const fdf of this.filesFdf) {\r\n                        if(uri.fsPath === fdf.fileName){\r\n                            return true;\r\n                        }\r\n                    }\r\n                    return false;\r\n                case \"edk2_dec\":\r\n                    break;\r\n                case \"edk2_inf\":\r\n                    for (const mods of this.filesModules) {\r\n                        if(uri.fsPath.includes(mods.path)){\r\n                            return true;\r\n                        }\r\n                    }\r\n                    for (const lib of this.filesLibraries) {\r\n                        if(uri.fsPath.includes(lib.path)){\r\n                            return true;\r\n                        }\r\n                    }\r\n                    return false;\r\n                    \r\n                case \"c\":\r\n                    let relativeInf:string[] = [];\r\n                    let cDirName = path.dirname(uri.fsPath);\r\n                    for (const mods of this.filesModules) {\r\n                        let modDir = path.dirname(mods.path);\r\n                        if(cDirName.includes(modDir)){\r\n                            relativeInf.push(mods.path);\r\n                        }\r\n                    }\r\n                    for (const lib of this.filesLibraries) {\r\n                        let libDir = path.dirname(lib.path);\r\n                        if(cDirName.includes(libDir)){\r\n                            relativeInf.push(lib.path);\r\n                        }\r\n                    }\r\n                    for (const inf of relativeInf) {\r\n                        let infLocation = await gPathFind.findPath(inf);\r\n                        \r\n                        if (infLocation.length === 0){continue;}\r\n\r\n                        let parser = await getParser(infLocation[0].uri);\r\n                        if (parser) {\r\n                            let sources = parser.getSymbolsType(Edk2SymbolType.infSource);\r\n                            for (const source of sources) {\r\n                                let sourceLocation = await gPathFind.findPath(await source.getValue(), path.dirname(infLocation[0].uri.fsPath));\r\n                                if(sourceLocation[0].uri.fsPath === uri.fsPath){\r\n                                    return true;\r\n                                }\r\n                            }\r\n                        }\r\n                    }\r\n                    return false;\r\n            }\r\n        }\r\n        return undefined;\r\n    }",
+      "noteText": "This function is used to know if a file is used in the compilation",
+      "label": "This function is used to know if a file is used in the compi",
+      "createdAt": "2026-04-15T22:12:04.212Z"
+    },
+    {
+      "id": "b11c1dc8-d908-4d71-8498-f5712a8628b7",
+      "documentId": "a38557d2-4221-485d-8787-cd40c34c521e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\symbols\\infSymbols.ts",
+        "startLine": 274,
+        "endLine": 275,
+        "startChar": 0,
+        "endChar": 0
+      },
+      "language": "typescript",
+      "snippet": "export class EdkSymbolInfLibrary extends EdkSymbol {\r\n",
+      "noteText": "Inf library symbol\n",
+      "label": "Inf library symbol",
+      "createdAt": "2026-04-15T22:14:38.943Z"
+    },
+    {
+      "id": "22534243-2733-4147-853e-067fbb770654",
+      "documentId": "a38557d2-4221-485d-8787-cd40c34c521e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\edkParser\\infParser.ts",
+        "startLine": 149,
+        "endLine": 160,
+        "startChar": 0,
+        "endChar": 1
+      },
+      "language": "typescript",
+      "snippet": "class BlockLibraryClassesSection extends BlockParser {\r\n    name = \"LibraryClasses\";\r\n    tag = /^\\[\\s*LibraryClasses/gi;\r\n    start =  undefined;\r\n    end =  /^\\[/gi;\r\n    type = Edk2SymbolType.infSectionLibraries;\r\n    visible:boolean = true;\r\n    context: BlockParser[] = [\r\n        new BlockLibrary(),\r\n        new BlockSimpleLine(),\r\n    ];\r\n}",
+      "noteText": "Library classes in INF parser\n",
+      "label": "Library classes in INF parser",
+      "createdAt": "2026-04-15T22:15:06.418Z"
+    },
+    {
+      "id": "abbe66bf-8ed9-467d-aa18-c1afe36d6ba0",
+      "documentId": "a38557d2-4221-485d-8787-cd40c34c521e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\package.json",
+        "startLine": 370,
+        "endLine": 375,
+        "startChar": 6,
+        "endChar": 10
+      },
+      "language": "json",
+      "snippet": "\"editor/context\": [\r\n        {\r\n          \"command\": \"edk2code.gotoDefinition\",\r\n          \"group\": \"navigation\",\r\n          \"when\": \"editorLangId == c\"\r\n        },",
+      "noteText": "Example of context menu for C. The open related should be available for all files used in compilation",
+      "label": "Example of context menu for C. The open related should be av",
+      "createdAt": "2026-04-15T22:16:33.581Z"
+    },
+    {
+      "id": "2569daba-e70c-43a6-8cf7-5ca6f55a8707",
+      "documentId": "a38557d2-4221-485d-8787-cd40c34c521e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\extension.ts",
+        "startLine": 249,
+        "endLine": 250,
+        "startChar": 0,
+        "endChar": 0
+      },
+      "language": "typescript",
+      "snippet": "\tedkWorkspaceTreeView = vscode.window.createTreeView('workspaceView', { treeDataProvider: edkWorkspaceTreeProvider, showCollapseAll: true, dragAndDropController: edkWorkspaceTreeProvider });\r\n",
+      "noteText": "Workspaceview",
+      "label": "Workspaceview",
+      "createdAt": "2026-04-15T22:28:15.924Z"
+    }
+  ]
+}
