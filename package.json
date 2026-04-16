@@ -128,6 +128,11 @@
       {
         "command": "edk2code.stopMcpServer",
         "title": "EDK2: Stop MCP SSE Server"
+      },
+      {
+        "command": "edk2code.gotoOverwrite",
+        "title": "Go to overwriting definition",
+        "icon": "$(go-to-file)"
       }
     ],
     "configuration": [
@@ -338,6 +343,10 @@
         {
           "command": "edk2code.stopMcpServer",
           "when": "true"
+        },
+        {
+          "command": "edk2code.gotoOverwrite",
+          "when": "false"
         }
       ],
       "editor/title": [],
@@ -415,6 +424,26 @@
           "command": "edk2code.copyWorkspaceNodePath",
           "group": "navigation",
           "when": "view == workspaceView && viewItem == symbolNode"
+        },
+        {
+          "command": "edk2code.copyWorkspaceNodePath",
+          "group": "navigation",
+          "when": "view == workspaceView && viewItem == symbolNodeOverwritten"
+        },
+        {
+          "command": "edk2code.copyWorkspaceNodePath",
+          "group": "navigation",
+          "when": "view == workspaceView && viewItem == symbolNodeInactiveOverwritten"
+        },
+        {
+          "command": "edk2code.gotoOverwrite",
+          "group": "navigation",
+          "when": "view == workspaceView && viewItem == symbolNodeOverwritten"
+        },
+        {
+          "command": "edk2code.gotoOverwrite",
+          "group": "navigation",
+          "when": "view == workspaceView && viewItem == symbolNodeInactiveOverwritten"
         }
       ]
     },

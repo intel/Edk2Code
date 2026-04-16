@@ -128,6 +128,16 @@ export class DiagnosticManager {
         return DiagnosticManager.diagnostics.get(documentUri.fsPath) || [];
     }
 
+    /**
+     * Find a diagnostic matching one of the given codes at a specific line for a URI.
+     * Returns the first matching diagnostic, or undefined.
+     */
+    public static findDiagnosticAt(documentUri: vscode.Uri, line: number, codes: EdkDiagnosticCodes[]): vscode.Diagnostic | undefined {
+        const diags = DiagnosticManager.diagnostics.get(documentUri.fsPath);
+        if (!diags) { return undefined; }
+        return diags.find(d => d.range.start.line === line && codes.includes(d.code as number));
+    }
+
     private static clearDiagnostic(documentUri: vscode.Uri) {
         DiagnosticManager.diagnostics.delete(documentUri.fsPath);
     }
