@@ -1,0 +1,78 @@
+// Corner-case VFR file for parser tests.
+
+#include "TestVfrStrDefs.h"
+
+formset
+  guid     = TEST_FORMSET_GUID,
+  title    = STRING_TOKEN(STR_FORM_SET_TITLE),
+  help     = STRING_TOKEN(STR_FORM_SET_HELP),
+
+  form formid = 1,
+    title = STRING_TOKEN(STR_FORM1_TITLE);
+
+    oneof
+      varid   = TestData.Option1,
+      prompt  = STRING_TOKEN(STR_OPTION1_PROMPT),
+      help    = STRING_TOKEN(STR_OPTION1_HELP),
+      option text = STRING_TOKEN(STR_DISABLED), value = 0, flags = DEFAULT;
+      option text = STRING_TOKEN(STR_ENABLED),  value = 1, flags = 0;
+    endoneof;
+
+    checkbox
+      varid   = TestData.Flag1,
+      prompt  = STRING_TOKEN(STR_FLAG1_PROMPT),
+      help    = STRING_TOKEN(STR_FLAG1_HELP),
+      flags   = CHECKBOX_DEFAULT,
+    endcheckbox;
+
+    numeric
+      varid   = TestData.Value1,
+      prompt  = STRING_TOKEN(STR_VALUE1_PROMPT),
+      help    = STRING_TOKEN(STR_VALUE1_HELP),
+      minimum = 0,
+      maximum = 255,
+      step    = 1,
+      default = 100,
+    endnumeric;
+
+    string
+      varid   = TestData.Name1,
+      prompt  = STRING_TOKEN(STR_NAME1_PROMPT),
+      help    = STRING_TOKEN(STR_NAME1_HELP),
+      minsize = 0,
+      maxsize = 64,
+    endstring;
+
+    password
+      varid   = TestData.Pass1,
+      prompt  = STRING_TOKEN(STR_PASS1_PROMPT),
+      help    = STRING_TOKEN(STR_PASS1_HELP),
+      minsize = 6,
+      maxsize = 20,
+    endpassword;
+
+    goto 2,
+      prompt = STRING_TOKEN(STR_GOTO_FORM2),
+      help   = STRING_TOKEN(STR_GOTO_FORM2_HELP);
+
+  endform;
+
+  form formid = 2,
+    title = STRING_TOKEN(STR_FORM2_TITLE);
+
+    oneof
+      varid   = TestData.Option2,
+      prompt  = STRING_TOKEN(STR_OPTION2_PROMPT),
+      help    = STRING_TOKEN(STR_OPTION2_HELP),
+      option text = STRING_TOKEN(STR_LOW),    value = 0, flags = DEFAULT;
+      option text = STRING_TOKEN(STR_MEDIUM), value = 1, flags = 0;
+      option text = STRING_TOKEN(STR_HIGH),   value = 2, flags = 0;
+    endoneof;
+
+    goto 1,
+      prompt = STRING_TOKEN(STR_GOTO_FORM1),
+      help   = STRING_TOKEN(STR_GOTO_FORM1_HELP);
+
+  endform;
+
+endformset;
