@@ -17,6 +17,7 @@ export const DSC_FILTER_TYPES: { type: Edk2SymbolType; label: string; descriptio
     { type: Edk2SymbolType.dscBuildOption,         label: 'Build option entries', description: 'dscBuildOption' },
     { type: Edk2SymbolType.dscPcdDefinition,       label: 'PCDs',                 description: 'dscPcdDefinition' },
     { type: Edk2SymbolType.dscInclude,             label: 'Include directives',   description: 'dscInclude' },
+    { type: Edk2SymbolType.showInactiveNodes,      label: 'Inactive elements',    description: 'Show elements inside inactive !if/!else blocks' },
 ];
 
 // Structural / container types that are always visible in the tree regardless of
@@ -29,6 +30,17 @@ const STRUCTURAL_TYPES = new Set<Edk2SymbolType>([
 /** Returns true when a symbol type should be shown in the tree. */
 function isTypeVisible(type: Edk2SymbolType, activeFilters: Set<Edk2SymbolType>): boolean {
     return activeFilters.has(type) || STRUCTURAL_TYPES.has(type);
+}
+
+/**
+ * Returns true when the symbol's selection range falls inside any of the
+ * grayout (inactive conditional) ranges for its file.
+ */
+function isSymbolInactive(symbol: EdkSymbol, fileUri: vscode.Uri, workspace: EdkWorkspace | undefined): boolean {
+    if (!workspace) { return false; }
+    const grayoutRanges = workspace.getGrayoutRangeByUri(fileUri);
+    const symLine = symbol.selectionRange.start.line;
+    return grayoutRanges.some(r => symLine >= r.start.line && symLine <= r.end.line);
 }
 
 // ─── Helper: load symbols for a URI via the parser ───────────────────────────
@@ -110,18 +122,24 @@ export class WorkspaceRootItem extends vscode.TreeItem {
 
 export class IncludeTreeItem extends vscode.TreeItem {
     public readonly treePath: string[];
+    public readonly inactive: boolean;
 
-    constructor(public readonly node: IncludeNode, parentPath: string[]) {
+    constructor(public readonly node: IncludeNode, parentPath: string[], inactive: boolean = false) {
         const label = path.basename(node.uri.fsPath);
         super(label, vscode.TreeItemCollapsibleState.Collapsed);
+        this.inactive = inactive;
         this.treePath = [...parentPath, vscode.workspace.asRelativePath(node.uri, false)];
-        this.description = vscode.workspace.asRelativePath(node.uri, false);
+        this.description = inactive
+            ? `${vscode.workspace.asRelativePath(node.uri, false)}  (inactive)`
+            : vscode.workspace.asRelativePath(node.uri, false);
         this.tooltip = new vscode.MarkdownString(
-            `**Included file**\n\n\`${node.uri.fsPath}\`\n\n` +
+            `**Included file**${inactive ? ' *(inactive)*' : ''}\n\n\`${node.uri.fsPath}\`\n\n` +
             `Directive at: \`${node.location.uri.fsPath}:${node.location.range.start.line + 1}\``
         );
-        this.iconPath = new vscode.ThemeIcon('file');
-        this.contextValue = 'includeNode';
+        this.iconPath = inactive
+            ? new vscode.ThemeIcon('file', new vscode.ThemeColor('disabledForeground'))
+            : new vscode.ThemeIcon('file');
+        this.contextValue = inactive ? 'includeNodeInactive' : 'includeNode';
         // Clicking jumps to the !include directive in the parent file
         this.command = {
             command: 'edk2code.gotoFile',
@@ -136,13 +154,15 @@ export class IncludeTreeItem extends vscode.TreeItem {
 export class DocumentSymbolItem extends vscode.TreeItem {
     public readonly symbolType: Edk2SymbolType;
     public readonly treePath: string[];
+    public readonly inactive: boolean;
 
     constructor(
         public readonly symbol: EdkSymbol,
         public readonly fileUri: vscode.Uri,
         activeFilters: Set<Edk2SymbolType>,
         parentPath: string[],
-        public readonly parent: WorkspaceRootItem | DocumentSymbolItem | undefined
+        public readonly parent: WorkspaceRootItem | DocumentSymbolItem | undefined,
+        inactive: boolean = false
     ) {
         const visibleChildren = symbol.children.filter(
             c => isTypeVisible((c as EdkSymbol).type, activeFilters)
@@ -154,16 +174,21 @@ export class DocumentSymbolItem extends vscode.TreeItem {
                 ? vscode.TreeItemCollapsibleState.Collapsed
                 : vscode.TreeItemCollapsibleState.None
         );
+        this.inactive = inactive;
         this.treePath = [...parentPath, symbol.name];
         // Include the parent path in the id so the same file/symbol included from
         // multiple places in the tree gets a unique id for each occurrence.
         const parentKey = parentPath.join('/');
         this.id = `dsi:${parentKey}:${fileUri.fsPath}:${symbol.selectionRange.start.line}:${symbol.selectionRange.start.character}`;
         this.symbolType = symbol.type;
-        this.description = symbol.detail || undefined;
-        this.tooltip = symbol.name;
-        this.iconPath = EdkSymbol.iconForKind(symbol.kind);
-        this.contextValue = 'symbolNode';
+        this.description = inactive
+            ? `${symbol.detail || ''}  (inactive)`.trim()
+            : (symbol.detail || undefined);
+        this.tooltip = inactive ? `${symbol.name} (inactive)` : symbol.name;
+        this.iconPath = inactive
+            ? new vscode.ThemeIcon(EdkSymbol.iconForKind(symbol.kind).id, new vscode.ThemeColor('disabledForeground'))
+            : EdkSymbol.iconForKind(symbol.kind);
+        this.contextValue = inactive ? 'symbolNodeInactive' : 'symbolNode';
         // Clicking navigates to the symbol's location in its file
         this.command = {
             command: 'edk2code.gotoFile',
@@ -448,47 +473,58 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
             return [];
         }
 
+        const ws = workspaces[this._activeIndex];
+
         // Root level: the single WorkspaceRootItem for the active workspace
         if (!element) {
-            const ws = workspaces[this._activeIndex];
             if (!ws) { return []; }
             return [new WorkspaceRootItem(ws, this._activeIndex)];
         }
+
+        const showInactive = this._activeFilters.has(Edk2SymbolType.showInactiveNodes);
 
         // Under the workspace root: symbols of the main DSC
         if (element instanceof WorkspaceRootItem) {
             const symbols = await loadSymbols(element.workspace.mainDsc);
             return symbols
                 .filter(s => isTypeVisible(s.type, this._activeFilters))
-                .map(s => new DocumentSymbolItem(s, element.workspace.mainDsc, this._activeFilters, element.treePath, element));
+                .map(s => new DocumentSymbolItem(s, element.workspace.mainDsc, this._activeFilters, element.treePath, element,
+                    isSymbolInactive(s, element.workspace.mainDsc, ws)))
+                .filter(s => showInactive || !s.inactive);
         }
 
         // Under an include node: symbols of that file only
         if (element instanceof IncludeTreeItem) {
+            const inactive = element.inactive;
             const symbols = await loadSymbols(element.node.uri);
             return symbols
                 .filter(s => isTypeVisible(s.type, this._activeFilters))
-                .map(s => new DocumentSymbolItem(s, element.node.uri, this._activeFilters, element.treePath, undefined));
+                .map(s => new DocumentSymbolItem(s, element.node.uri, this._activeFilters, element.treePath, undefined,
+                    inactive || isSymbolInactive(s, element.node.uri, ws)))
+                .filter(s => showInactive || !s.inactive);
         }
 
         // Under a symbol: for !include directives expand into the included file;
         // for all other symbols expand their parsed children.
         if (element instanceof DocumentSymbolItem) {
             if (element.symbolType === Edk2SymbolType.dscInclude) {
-                const ws = gEdkWorkspaces.workspaces[this._activeIndex];
                 if (ws) {
                     const node = findIncludeNode(ws.includeTree, element.symbol.location);
                     if (node) {
                         const symbols = await loadSymbols(node.uri);
                         return symbols
                             .filter(s => isTypeVisible(s.type, this._activeFilters))
-                            .map(s => new DocumentSymbolItem(s, node.uri, this._activeFilters, element.treePath, element));
+                            .map(s => new DocumentSymbolItem(s, node.uri, this._activeFilters, element.treePath, element,
+                                element.inactive || isSymbolInactive(s, node.uri, ws)))
+                            .filter(s => showInactive || !s.inactive);
                     }
                 }
             }
             return (element.symbol.children as EdkSymbol[])
                 .filter(c => isTypeVisible(c.type, this._activeFilters))
-                .map(child => new DocumentSymbolItem(child, element.fileUri, this._activeFilters, element.treePath, element));
+                .map(child => new DocumentSymbolItem(child, element.fileUri, this._activeFilters, element.treePath, element,
+                    element.inactive || isSymbolInactive(child, element.fileUri, ws)))
+                .filter(s => showInactive || !s.inactive);
         }
 
         return [];

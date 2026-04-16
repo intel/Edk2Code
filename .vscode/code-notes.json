@@ -14,6 +14,16 @@
         "2569daba-e70c-43a6-8cf7-5ca6f55a8707"
       ],
       "createdAt": "2026-04-15T22:10:18.485Z"
+    },
+    {
+      "id": "195e6f57-f53b-4be5-898c-9ae963c5970e",
+      "name": "InactiveNodes",
+      "exportOrder": [
+        "b6abd314-ee52-4f1d-a43a-62df3a67c43e",
+        "6ae6aa19-867a-4b2e-b23f-9da0b8f7deb6",
+        "d79a4050-27d5-4f01-9783-e0001b92f5ca"
+      ],
+      "createdAt": "2026-04-16T18:47:07.516Z"
     }
   ],
   "notes": [
@@ -128,6 +138,54 @@
       "noteText": "Workspaceview",
       "label": "Workspaceview",
       "createdAt": "2026-04-15T22:28:15.924Z"
+    },
+    {
+      "id": "b6abd314-ee52-4f1d-a43a-62df3a67c43e",
+      "documentId": "195e6f57-f53b-4be5-898c-9ae963c5970e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\index\\edkWorkspace.ts",
+        "startLine": 645,
+        "endLine": 646,
+        "startChar": 0,
+        "endChar": 0
+      },
+      "language": "typescript",
+      "snippet": "                let isInActiveCode = this.processConditional(line, lineIndex, document.uri);\r\n",
+      "noteText": "Here workspace parsing decides which lines are inactive",
+      "label": "Here workspace parsing decides which lines are inactive",
+      "createdAt": "2026-04-16T18:47:21.505Z"
+    },
+    {
+      "id": "6ae6aa19-867a-4b2e-b23f-9da0b8f7deb6",
+      "documentId": "195e6f57-f53b-4be5-898c-9ae963c5970e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\workspaceTree\\WorkspaceTreeProvider.ts",
+        "startLine": 175,
+        "endLine": 176,
+        "startChar": 0,
+        "endChar": 0
+      },
+      "language": "typescript",
+      "snippet": "export type WorkspaceTreeNode = WorkspaceRootItem | IncludeTreeItem | DocumentSymbolItem;\r\n",
+      "noteText": "Tree nodes. WorkspaceTreeNode should know if its active or not\n",
+      "label": "Tree nodes. WorkspaceTreeNode should know if its active or n",
+      "createdAt": "2026-04-16T18:49:17.125Z"
+    },
+    {
+      "id": "d79a4050-27d5-4f01-9783-e0001b92f5ca",
+      "documentId": "195e6f57-f53b-4be5-898c-9ae963c5970e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\workspaceTree\\WorkspaceTreeProvider.ts",
+        "startLine": 10,
+        "endLine": 20,
+        "startChar": 0,
+        "endChar": 0
+      },
+      "language": "typescript",
+      "snippet": "export const DSC_FILTER_TYPES: { type: Edk2SymbolType; label: string; description: string }[] = [\r\n    { type: Edk2SymbolType.dscDefine,              label: 'Defines',              description: 'dscDefine' },\r\n    { type: Edk2SymbolType.dscLibraryDefinition,   label: 'Library classes',      description: 'dscLibraryDefinition' },\r\n    { type: Edk2SymbolType.dscModuleDefinition,    label: 'Components',           description: 'dscModuleDefinition' },\r\n    { type: Edk2SymbolType.dscSection,             label: 'Sections',             description: 'dscSection' },\r\n    { type: Edk2SymbolType.dscBuildOptionsSection, label: 'Build options',        description: 'dscBuildOptionsSection' },\r\n    { type: Edk2SymbolType.dscBuildOption,         label: 'Build option entries', description: 'dscBuildOption' },\r\n    { type: Edk2SymbolType.dscPcdDefinition,       label: 'PCDs',                 description: 'dscPcdDefinition' },\r\n    { type: Edk2SymbolType.dscInclude,             label: 'Include directives',   description: 'dscInclude' },\r\n];\r\n",
+      "noteText": "Filters\n",
+      "label": "Filters",
+      "createdAt": "2026-04-16T18:59:06.838Z"
     }
   ]
 }

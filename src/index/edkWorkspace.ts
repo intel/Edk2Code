@@ -987,6 +987,10 @@ export class EdkWorkspace {
         return this.parsedDocuments.get(document.uri.fsPath) || [];
     }
 
+    getGrayoutRangeByUri(uri: vscode.Uri): vscode.Range[] {
+        return this.parsedDocuments.get(uri.fsPath) || [];
+    }
+
 
 
     async findDefinesFdf() {
