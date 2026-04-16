@@ -63,8 +63,15 @@ export class EdkDefinitionProvider implements vscode.DefinitionProvider {
             if (!selectedSymbol) { return []; }
             gDebugLog.trace(`Definition for: ${selectedSymbol.toString()}`);
             if (selectedSymbol.onDefinition !== undefined) {
-                let temp = await selectedSymbol.onDefinition(parser);
-                return temp;
+                let locations: vscode.Location[] = await selectedSymbol.onDefinition(parser);
+                if (!locations || locations.length === 0) { return []; }
+                // Return LocationLink[] so VS Code highlights the full symbol range on Ctrl+hover
+                return locations.map(loc => ({
+                    originSelectionRange: selectedSymbol!.selectionRange,
+                    targetUri: loc.uri,
+                    targetRange: loc.range,
+                    targetSelectionRange: loc.range,
+                } as vscode.LocationLink));
             }
         }
     }

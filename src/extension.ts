@@ -146,6 +146,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('edk2code.gotoOverwrite', async (node: DocumentSymbolItem) => {
 			if (node?.overwrittenBy) {
 				await gotoFile(node.overwrittenBy.uri, node.overwrittenBy.range);
+				await edkWorkspaceTreeProvider.revealLocation(
+					node.overwrittenBy.uri,
+					node.overwrittenBy.range.start,
+					edkWorkspaceTreeView
+				);
 			}
 		}),
 
