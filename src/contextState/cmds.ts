@@ -4,7 +4,7 @@ import { rgSearch } from "../rg";
 import { delay, getCurrentWord, gotoFile, isWorkspacePath, listFilesRecursive, openTextDocument, pathCompare, profileEnd, profileStart, readLines, toPosix } from "../utils";
 import path = require("path");
 import * as fs from 'fs';
-import { edkWorkspaceTreeProvider, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gMapFileManager, gPathFind, gWorkspacePath } from "../extension";
+import { edkWorkspaceTreeProvider, edkWorkspaceTreeView, gConfigAgent, gCscope, gDebugLog, gEdkWorkspaces, gExtensionContext, gMapFileManager, gPathFind, gWorkspacePath } from "../extension";
 import { glob } from "fast-glob";
 import { BuildFolder } from "../Languages/buildFolder";
 import { EdkWorkspace, InfDsc } from "../index/edkWorkspace";
@@ -248,6 +248,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
                 locations = await wp.getInfReference(fileUri);
                 if(locations.length){
                     await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, "gotoAndPeek", "Not found");
+                    await edkWorkspaceTreeProvider.revealInfInTree(locations[0].uri, edkWorkspaceTreeView);
                 }
             }
         }else{

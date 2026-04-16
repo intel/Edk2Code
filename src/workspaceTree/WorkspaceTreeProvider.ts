@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { EdkWorkspace, IncludeNode } from '../index/edkWorkspace';
+import { EdkWorkspace, IncludeNode, InfDsc } from '../index/edkWorkspace';
 import { getParser } from '../edkParser/parserFactory';
 import { EdkSymbol } from '../symbols/edkSymbols';
 import { Edk2SymbolType } from '../symbols/symbolsType';
@@ -205,15 +205,21 @@ export class DocumentSymbolItem extends vscode.TreeItem {
         let desc = symbol.detail || '';
         let ctx = 'symbolNode';
         if (inactive && isOverwritten) {
-            desc = `(inactive, overwritten) ${desc}`.trim();
+            desc = `${this.label} (inactive, overwritten) ${desc}`.trim();
             ctx = 'symbolNodeInactiveOverwritten';
         } else if (inactive) {
-            desc = `(inactive) ${desc}`.trim();
+            desc = `${this.label} (inactive) ${desc}`.trim();
             ctx = 'symbolNodeInactive';
         } else if (isOverwritten) {
-            desc = `(overwritten) ${desc}`.trim();
+            desc = `${this.label} (overwritten) ${desc}`.trim();
             ctx = 'symbolNodeOverwritten';
         }
+
+        if(ctx !== 'symbolNode') {
+            // The label is shown with strikethrough in the tree when overwritten, so we move the original label to the description and show the overwrite status in the label instead. This keeps the label text fully visible without truncation, while still indicating the symbol's name and status.
+            this.label = "";
+        }
+
         this.description = desc || undefined;
 
         if (isOverwritten) {
@@ -631,6 +637,24 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         }
 
         void vscode.window.showInformationMessage('Symbol not found in the workspace tree.');
+    }
+
+    /**
+     * Reveal an INF file's DSC declaration in the workspace tree.
+     */
+    async revealInfInTree(
+        infUri: vscode.Uri,
+        treeView: vscode.TreeView<WorkspaceTreeNode>
+    ): Promise<void> {
+        const wps = await gEdkWorkspaces.getWorkspace(infUri);
+        let declarations: InfDsc[] = [];
+        for (const wp of wps) {
+            declarations = declarations.concat(await wp.getDscDeclaration(infUri));
+        }
+        if (declarations.length) {
+            const decl = declarations[0];
+            await this.revealLocation(decl.location.uri, decl.location.range.start, treeView);
+        }
     }
 
     /**
