@@ -182,6 +182,10 @@ export async function activate(context: vscode.ExtensionContext) {
 			await edkWorkspaceTreeProvider.revealActiveEditor(edkWorkspaceTreeView);
 		}),
 
+		vscode.commands.registerCommand('edk2code.searchWorkspaceTree', async () => {
+			await edkWorkspaceTreeProvider.searchTree(edkWorkspaceTreeView);
+		}),
+
 		vscode.commands.registerCommand('edk2code.focusEditorInWorkspaceView', async () => {
 			const editor = vscode.window.activeTextEditor;
 			if (!editor) { return; }
