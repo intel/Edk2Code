@@ -633,6 +633,52 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         void vscode.window.showInformationMessage('Symbol not found in the workspace tree.');
     }
 
+    /**
+     * Show a filterable Quick Pick with all tree nodes. Selecting one reveals it in the tree.
+     */
+    async searchTree(treeView: vscode.TreeView<WorkspaceTreeNode>): Promise<void> {
+        type SearchPickItem = vscode.QuickPickItem & { node: WorkspaceTreeNode };
+
+        // Collect every node in the tree
+        const items: SearchPickItem[] = [];
+        const collect = async (parent?: WorkspaceTreeNode): Promise<void> => {
+            const children = await this.getChildren(parent);
+            for (const child of children) {
+                const label = child instanceof DocumentSymbolItem ? child.symbol.name
+                            : child instanceof IncludeTreeItem  ? path.basename(child.node.uri.fsPath)
+                            : (child as WorkspaceRootItem).label as string;
+                const description = child.description as string | undefined;
+                items.push({ label, description: description ?? '', node: child });
+                await collect(child);
+            }
+        };
+
+        await vscode.window.withProgress(
+            { location: { viewId: 'workspaceView' } },
+            async () => { await collect(); }
+        );
+
+        if (items.length === 0) {
+            void vscode.window.showInformationMessage('No nodes in the workspace tree.');
+            return;
+        }
+
+        const picked = await vscode.window.showQuickPick(items, {
+            placeHolder: 'Type to filter workspace tree nodes',
+            title: 'EDK2: Search workspace tree',
+            matchOnDescription: true
+        });
+
+        if (!picked) { return; }
+        await treeView.reveal(picked.node, { select: true, focus: true, expand: true });
+
+        // Also open the element in the editor
+        const cmd = picked.node.command;
+        if (cmd) {
+            await vscode.commands.executeCommand(cmd.command, ...(cmd.arguments ?? []));
+        }
+    }
+
     /** Recursively walk the tree to find a DocumentSymbolItem matching (fileUri, targetSymbol). */
     private async _findItemForSymbol(
         parent: WorkspaceTreeNode,

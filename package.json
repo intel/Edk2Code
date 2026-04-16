@@ -118,6 +118,11 @@
         "icon": "$(target)"
       },
       {
+        "command": "edk2code.searchWorkspaceTree",
+        "title": "EDK2: Search workspace tree",
+        "icon": "$(search)"
+      },
+      {
         "command": "edk2code.focusEditorInWorkspaceView",
         "title": "EDK2: Focus on workspace view"
       },
@@ -373,6 +378,11 @@
         },
         {
           "command": "edk2code.revealEditorInWorkspaceTree",
+          "group": "navigation",
+          "when": "view == workspaceView"
+        },
+        {
+          "command": "edk2code.searchWorkspaceTree",
           "group": "navigation",
           "when": "view == workspaceView"
         }
