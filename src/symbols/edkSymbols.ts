@@ -51,6 +51,21 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
     updateRange(range:vscode.Range){
         this.location.range = range;
         this.range = range;
+        // Trim selectionRange to the uncommented, non-whitespace content on the first line.
+        // _textLine is already the trimmed, comment-free text from parsing.
+        const lineStart = range.start.line;
+        const content = this._textLine;
+        if (content.length > 0 && lineStart < this.parser.document.lineCount) {
+            const rawLine = this.parser.document.lineAt(lineStart).text;
+            const idx = rawLine.indexOf(content);
+            if (idx >= 0) {
+                this.selectionRange = new vscode.Range(
+                    lineStart, idx,
+                    lineStart, idx + content.length
+                );
+                return;
+            }
+        }
         this.selectionRange = range;
     }
 
