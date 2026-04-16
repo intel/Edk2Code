@@ -1,0 +1,48 @@
+## Corner-case INF file for parser tests.
+
+[Defines]
+  INF_VERSION    = 0x00010017
+  BASE_NAME      = TestModule
+  MODULE_TYPE    = DXE_DRIVER
+  ENTRY_POINT    = TestEntryPoint
+  LIBRARY_CLASS  = TestLib
+  CONSTRUCTOR    = TestConstructor
+  DESTRUCTOR     = TestDestructor
+  DEFINE MY_FLAG = TRUE
+
+[Sources]
+  TestModule.c
+  TestModule.h
+  Subfolder/Helper.c
+
+[Sources.X64]
+  X64/Arch.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UefiBootServicesTableLib
+
+[Protocols]
+  gEfiSimpleTextOutProtocolGuid
+  gEfiDevicePathProtocolGuid
+
+[Ppis]
+  gEfiPeiMemoryDiscoveredPpiGuid
+
+[Guids]
+  gEfiGlobalVariableGuid
+  gEfiHobListGuid
+
+[FixedPcd]
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask
+
+[Depex]
+  gEfiVariableArchProtocolGuid AND
+  gEfiVariableWriteArchProtocolGuid
+
+# End of INF

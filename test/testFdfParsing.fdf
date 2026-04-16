@@ -1,0 +1,38 @@
+## Corner-case FDF file for parser tests.
+
+[FD.TestFd]
+  BaseAddress   = 0xFF000000
+  Size          = 0x01000000
+  ErasePolarity = 1
+  BlockSize     = 0x00010000
+  NumBlocks     = 0x100
+
+  DEFINE FD_VAR = SomeValue
+
+[FV.FVMAIN]
+  FvAlignment        = 16
+  ERASE_POLARITY     = 1
+  MEMORY_MAPPED      = TRUE
+
+  INF MdePkg/Test/SimpleModule.inf
+  INF MdePkg/Test/AnotherModule.inf
+
+  DEFINE FV_VAR = AnotherValue
+
+[FV.FVRECOVERY]
+  FvAlignment = 16
+
+  APRIORI DXE {
+    INF MdePkg/Test/AprioriModule.inf
+  }
+
+  INF MdePkg/Test/RecoveryModule.inf
+
+[Rule.Common.SEC]
+  FILE SEC = $(NAMED_GUID) {
+    PE32 PE32 $(INF_OUTPUT)/$(MODULE_NAME).efi
+  }
+
+!include TestFdfInclude.fdf.inc
+
+# End of FDF

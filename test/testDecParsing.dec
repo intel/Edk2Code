@@ -1,0 +1,36 @@
+## Corner-case DEC file for parser tests.
+
+[Defines]
+  DEC_SPECIFICATION = 0x00010017
+  PACKAGE_NAME      = TestPkg
+  PACKAGE_GUID      = 11223344-5566-7788-99AA-BBCCDDEEFF00
+  PACKAGE_VERSION   = 1.0
+
+[Includes]
+  Include
+  Include/Library
+
+[Includes.X64]
+  Include/X64
+
+[LibraryClasses]
+  BaseLib|Include/Library/BaseLib.h
+  DebugLib|Include/Library/DebugLib.h
+
+[Guids]
+  gTestTokenSpaceGuid = { 0x12345678, 0x1234, 0x1234, { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0 } }
+
+[Protocols]
+  gTestProtocolGuid = { 0xAABBCCDD, 0x1122, 0x3344, { 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC } }
+  gTestProtocol2Guid = { 0x11111111, 0x2222, 0x3333, { 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB } }
+
+[Ppis]
+  gTestPpiGuid = { 0xDDDDDDDD, 0xEEEE, 0xFFFF, { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77 } }
+
+[PcdsFixedAtBuild]
+  gTestTokenSpaceGuid.PcdTestFixed|0x00000001|UINT32|0x00000001
+
+[PcdsPatchableInModule]
+  gTestTokenSpaceGuid.PcdTestPatchable|0x00|UINT8|0x00000002
+
+# End of DEC
