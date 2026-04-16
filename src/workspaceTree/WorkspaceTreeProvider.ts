@@ -205,13 +205,13 @@ export class DocumentSymbolItem extends vscode.TreeItem {
         let desc = symbol.detail || '';
         let ctx = 'symbolNode';
         if (inactive && isOverwritten) {
-            desc = `${desc}  (inactive, overwritten)`.trim();
+            desc = `(inactive, overwritten) ${desc}`.trim();
             ctx = 'symbolNodeInactiveOverwritten';
         } else if (inactive) {
-            desc = `${desc}  (inactive)`.trim();
+            desc = `(inactive) ${desc}`.trim();
             ctx = 'symbolNodeInactive';
         } else if (isOverwritten) {
-            desc = `${desc}  (overwritten)`.trim();
+            desc = `(overwritten) ${desc}`.trim();
             ctx = 'symbolNodeOverwritten';
         }
         this.description = desc || undefined;

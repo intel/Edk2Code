@@ -175,35 +175,39 @@ export abstract class EdkSymbol extends vscode.DocumentSymbol {
     }
 
     static iconForKind(kind: vscode.SymbolKind): vscode.ThemeIcon {
-        const map: Partial<Record<vscode.SymbolKind, string>> = {
-            [vscode.SymbolKind.File]:          'symbol-file',
-            [vscode.SymbolKind.Module]:        'symbol-module',
-            [vscode.SymbolKind.Namespace]:     'symbol-namespace',
-            [vscode.SymbolKind.Package]:       'symbol-package',
-            [vscode.SymbolKind.Class]:         'symbol-class',
-            [vscode.SymbolKind.Method]:        'symbol-method',
-            [vscode.SymbolKind.Property]:      'symbol-property',
-            [vscode.SymbolKind.Field]:         'symbol-field',
-            [vscode.SymbolKind.Constructor]:   'symbol-constructor',
-            [vscode.SymbolKind.Enum]:          'symbol-enum',
-            [vscode.SymbolKind.Interface]:     'symbol-interface',
-            [vscode.SymbolKind.Function]:      'symbol-function',
-            [vscode.SymbolKind.Variable]:      'symbol-variable',
-            [vscode.SymbolKind.Constant]:      'symbol-constant',
-            [vscode.SymbolKind.String]:        'symbol-string',
-            [vscode.SymbolKind.Number]:        'symbol-number',
-            [vscode.SymbolKind.Boolean]:       'symbol-boolean',
-            [vscode.SymbolKind.Array]:         'symbol-array',
-            [vscode.SymbolKind.Object]:        'symbol-object',
-            [vscode.SymbolKind.Key]:           'symbol-key',
-            [vscode.SymbolKind.Null]:          'symbol-null',
-            [vscode.SymbolKind.EnumMember]:    'symbol-enum-member',
-            [vscode.SymbolKind.Struct]:        'symbol-struct',
-            [vscode.SymbolKind.Event]:         'symbol-event',
-            [vscode.SymbolKind.Operator]:      'symbol-operator',
-            [vscode.SymbolKind.TypeParameter]: 'symbol-type-parameter',
+        const map: Partial<Record<vscode.SymbolKind, { icon: string; color: string }>> = {
+            [vscode.SymbolKind.File]:          { icon: 'symbol-file',           color: 'symbolIcon.fileForeground' },
+            [vscode.SymbolKind.Module]:        { icon: 'symbol-module',         color: 'symbolIcon.moduleForeground' },
+            [vscode.SymbolKind.Namespace]:     { icon: 'symbol-namespace',      color: 'symbolIcon.namespaceForeground' },
+            [vscode.SymbolKind.Package]:       { icon: 'symbol-package',        color: 'symbolIcon.packageForeground' },
+            [vscode.SymbolKind.Class]:         { icon: 'symbol-class',          color: 'symbolIcon.classForeground' },
+            [vscode.SymbolKind.Method]:        { icon: 'symbol-method',         color: 'symbolIcon.methodForeground' },
+            [vscode.SymbolKind.Property]:      { icon: 'symbol-property',       color: 'symbolIcon.propertyForeground' },
+            [vscode.SymbolKind.Field]:         { icon: 'symbol-field',          color: 'symbolIcon.fieldForeground' },
+            [vscode.SymbolKind.Constructor]:   { icon: 'symbol-constructor',    color: 'symbolIcon.constructorForeground' },
+            [vscode.SymbolKind.Enum]:          { icon: 'symbol-enum',           color: 'symbolIcon.enumeratorForeground' },
+            [vscode.SymbolKind.Interface]:     { icon: 'symbol-interface',      color: 'symbolIcon.interfaceForeground' },
+            [vscode.SymbolKind.Function]:      { icon: 'symbol-function',       color: 'symbolIcon.functionForeground' },
+            [vscode.SymbolKind.Variable]:      { icon: 'symbol-variable',       color: 'symbolIcon.variableForeground' },
+            [vscode.SymbolKind.Constant]:      { icon: 'symbol-constant',       color: 'symbolIcon.constantForeground' },
+            [vscode.SymbolKind.String]:        { icon: 'symbol-string',         color: 'symbolIcon.stringForeground' },
+            [vscode.SymbolKind.Number]:        { icon: 'symbol-number',         color: 'symbolIcon.numberForeground' },
+            [vscode.SymbolKind.Boolean]:       { icon: 'symbol-boolean',        color: 'symbolIcon.booleanForeground' },
+            [vscode.SymbolKind.Array]:         { icon: 'symbol-array',          color: 'symbolIcon.arrayForeground' },
+            [vscode.SymbolKind.Object]:        { icon: 'symbol-object',         color: 'symbolIcon.objectForeground' },
+            [vscode.SymbolKind.Key]:           { icon: 'symbol-key',            color: 'symbolIcon.keyForeground' },
+            [vscode.SymbolKind.Null]:          { icon: 'symbol-null',           color: 'symbolIcon.nullForeground' },
+            [vscode.SymbolKind.EnumMember]:    { icon: 'symbol-enum-member',    color: 'symbolIcon.enumeratorMemberForeground' },
+            [vscode.SymbolKind.Struct]:        { icon: 'symbol-struct',         color: 'symbolIcon.structForeground' },
+            [vscode.SymbolKind.Event]:         { icon: 'symbol-event',          color: 'symbolIcon.eventForeground' },
+            [vscode.SymbolKind.Operator]:      { icon: 'symbol-operator',       color: 'symbolIcon.operatorForeground' },
+            [vscode.SymbolKind.TypeParameter]: { icon: 'symbol-type-parameter', color: 'symbolIcon.typeParameterForeground' },
         };
-        return new vscode.ThemeIcon(map[kind] ?? 'symbol-misc');
+        const entry = map[kind];
+        if (entry) {
+            return new vscode.ThemeIcon(entry.icon, new vscode.ThemeColor(entry.color));
+        }
+        return new vscode.ThemeIcon('symbol-misc');
     }
 
 }
