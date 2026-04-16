@@ -2,7 +2,7 @@
   "name": "edk2code-dev",
   "displayName": "Edk2code-dev",
   "description": "EDK2 code support",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "icon": "assets/icon.png",
   "publisher": "intel-corporation",
   "homepage": "https://github.com/intel/Edk2Code/wiki",
@@ -91,7 +91,7 @@
       {
         "command": "edk2code.selectWorkspaceView",
         "title": "EDK2: Select Workspace",
-        "icon": "$(list-selection)"
+        "icon": "$(repo)"
       },
       {
         "command": "edk2code.copyWorkspaceTree",

@@ -64,6 +64,8 @@ export enum Edk2SymbolType {
     fdfInclude,
     condition,
     unknown,
+    /** Sentinel used by the workspace tree filter to toggle visibility of inactive nodes. */
+    showInactiveNodes,
 }
 
 export var typeToStr: Map<Edk2SymbolType, string> = new Map(
