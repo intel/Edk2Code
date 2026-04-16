@@ -5,6 +5,7 @@ import { getParser } from '../edkParser/parserFactory';
 import { EdkSymbol } from '../symbols/edkSymbols';
 import { Edk2SymbolType } from '../symbols/symbolsType';
 import { edkWorkspaceTreeView, gConfigAgent, gEdkWorkspaces } from '../extension';
+import { DiagnosticManager, EdkDiagnosticCodes } from '../diagnostics';
 
 // ─── DSC symbol types available for filtering ─────────────────────────────────
 
@@ -41,6 +42,20 @@ function isSymbolInactive(symbol: EdkSymbol, fileUri: vscode.Uri, workspace: Edk
     const grayoutRanges = workspace.getGrayoutRangeByUri(fileUri);
     const symLine = symbol.selectionRange.start.line;
     return grayoutRanges.some(r => symLine >= r.start.line && symLine <= r.end.line);
+}
+
+/**
+ * If the symbol has a duplicateDefine or duplicateStatement diagnostic,
+ * returns the location of the definition that overwrites it (from relatedInformation).
+ */
+function getOverwriteLocation(symbol: EdkSymbol, fileUri: vscode.Uri): vscode.Location | undefined {
+    const diag = DiagnosticManager.findDiagnosticAt(
+        fileUri,
+        symbol.selectionRange.start.line,
+        [EdkDiagnosticCodes.duplicateDefine, EdkDiagnosticCodes.duplicateStatement]
+    );
+    if (!diag?.relatedInformation?.length) { return undefined; }
+    return diag.relatedInformation[0].location;
 }
 
 // ─── Helper: load symbols for a URI via the parser ───────────────────────────
@@ -155,6 +170,7 @@ export class DocumentSymbolItem extends vscode.TreeItem {
     public readonly symbolType: Edk2SymbolType;
     public readonly treePath: string[];
     public readonly inactive: boolean;
+    public readonly overwrittenBy: vscode.Location | undefined;
 
     constructor(
         public readonly symbol: EdkSymbol,
@@ -162,7 +178,8 @@ export class DocumentSymbolItem extends vscode.TreeItem {
         activeFilters: Set<Edk2SymbolType>,
         parentPath: string[],
         public readonly parent: WorkspaceRootItem | DocumentSymbolItem | undefined,
-        inactive: boolean = false
+        inactive: boolean = false,
+        overwrittenBy?: vscode.Location
     ) {
         const visibleChildren = symbol.children.filter(
             c => isTypeVisible((c as EdkSymbol).type, activeFilters)
@@ -175,20 +192,50 @@ export class DocumentSymbolItem extends vscode.TreeItem {
                 : vscode.TreeItemCollapsibleState.None
         );
         this.inactive = inactive;
+        this.overwrittenBy = overwrittenBy;
         this.treePath = [...parentPath, symbol.name];
         // Include the parent path in the id so the same file/symbol included from
         // multiple places in the tree gets a unique id for each occurrence.
         const parentKey = parentPath.join('/');
         this.id = `dsi:${parentKey}:${fileUri.fsPath}:${symbol.selectionRange.start.line}:${symbol.selectionRange.start.character}`;
         this.symbolType = symbol.type;
-        this.description = inactive
-            ? `${symbol.detail || ''}  (inactive)`.trim()
-            : (symbol.detail || undefined);
-        this.tooltip = inactive ? `${symbol.name} (inactive)` : symbol.name;
-        this.iconPath = inactive
-            ? new vscode.ThemeIcon(EdkSymbol.iconForKind(symbol.kind).id, new vscode.ThemeColor('disabledForeground'))
-            : EdkSymbol.iconForKind(symbol.kind);
-        this.contextValue = inactive ? 'symbolNodeInactive' : 'symbolNode';
+
+        // Build description and context based on state
+        const isOverwritten = !!overwrittenBy;
+        let desc = symbol.detail || '';
+        let ctx = 'symbolNode';
+        if (inactive && isOverwritten) {
+            desc = `${desc}  (inactive, overwritten)`.trim();
+            ctx = 'symbolNodeInactiveOverwritten';
+        } else if (inactive) {
+            desc = `${desc}  (inactive)`.trim();
+            ctx = 'symbolNodeInactive';
+        } else if (isOverwritten) {
+            desc = `${desc}  (overwritten)`.trim();
+            ctx = 'symbolNodeOverwritten';
+        }
+        this.description = desc || undefined;
+
+        if (isOverwritten) {
+            const relPath = vscode.workspace.asRelativePath(overwrittenBy.uri, false);
+            const line = overwrittenBy.range.start.line + 1;
+            this.tooltip = new vscode.MarkdownString(
+                `~~${symbol.name}~~ *(overwritten)*\n\nOverwritten by: \`${relPath}:${line}\``
+            );
+        } else {
+            this.tooltip = inactive ? `${symbol.name} (inactive)` : symbol.name;
+        }
+
+        if (inactive || isOverwritten) {
+            this.iconPath = new vscode.ThemeIcon(
+                EdkSymbol.iconForKind(symbol.kind).id,
+                new vscode.ThemeColor('disabledForeground')
+            );
+        } else {
+            this.iconPath = EdkSymbol.iconForKind(symbol.kind);
+        }
+
+        this.contextValue = ctx;
         // Clicking navigates to the symbol's location in its file
         this.command = {
             command: 'edk2code.gotoFile',
@@ -489,7 +536,8 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
             return symbols
                 .filter(s => isTypeVisible(s.type, this._activeFilters))
                 .map(s => new DocumentSymbolItem(s, element.workspace.mainDsc, this._activeFilters, element.treePath, element,
-                    isSymbolInactive(s, element.workspace.mainDsc, ws)))
+                    isSymbolInactive(s, element.workspace.mainDsc, ws),
+                    getOverwriteLocation(s, element.workspace.mainDsc)))
                 .filter(s => showInactive || !s.inactive);
         }
 
@@ -500,7 +548,8 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
             return symbols
                 .filter(s => isTypeVisible(s.type, this._activeFilters))
                 .map(s => new DocumentSymbolItem(s, element.node.uri, this._activeFilters, element.treePath, undefined,
-                    inactive || isSymbolInactive(s, element.node.uri, ws)))
+                    inactive || isSymbolInactive(s, element.node.uri, ws),
+                    getOverwriteLocation(s, element.node.uri)))
                 .filter(s => showInactive || !s.inactive);
         }
 
@@ -515,7 +564,8 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
                         return symbols
                             .filter(s => isTypeVisible(s.type, this._activeFilters))
                             .map(s => new DocumentSymbolItem(s, node.uri, this._activeFilters, element.treePath, element,
-                                element.inactive || isSymbolInactive(s, node.uri, ws)))
+                                element.inactive || isSymbolInactive(s, node.uri, ws),
+                                getOverwriteLocation(s, node.uri)))
                             .filter(s => showInactive || !s.inactive);
                     }
                 }
@@ -523,7 +573,8 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
             return (element.symbol.children as EdkSymbol[])
                 .filter(c => isTypeVisible(c.type, this._activeFilters))
                 .map(child => new DocumentSymbolItem(child, element.fileUri, this._activeFilters, element.treePath, element,
-                    element.inactive || isSymbolInactive(child, element.fileUri, ws)))
+                    element.inactive || isSymbolInactive(child, element.fileUri, ws),
+                    getOverwriteLocation(child, element.fileUri)))
                 .filter(s => showInactive || !s.inactive);
         }
 

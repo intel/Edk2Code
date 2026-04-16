@@ -21,7 +21,9 @@
       "exportOrder": [
         "b6abd314-ee52-4f1d-a43a-62df3a67c43e",
         "6ae6aa19-867a-4b2e-b23f-9da0b8f7deb6",
-        "d79a4050-27d5-4f01-9783-e0001b92f5ca"
+        "d79a4050-27d5-4f01-9783-e0001b92f5ca",
+        "1a8a3b3e-f5c7-4f6c-b77f-a09d68d7dc32",
+        "489f90e4-6146-4d35-926a-a669b3d0416f"
       ],
       "createdAt": "2026-04-16T18:47:07.516Z"
     }
@@ -186,6 +188,38 @@
       "noteText": "Filters\n",
       "label": "Filters",
       "createdAt": "2026-04-16T18:59:06.838Z"
+    },
+    {
+      "id": "1a8a3b3e-f5c7-4f6c-b77f-a09d68d7dc32",
+      "documentId": "195e6f57-f53b-4be5-898c-9ae963c5970e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\index\\edkWorkspace.ts",
+        "startLine": 705,
+        "endLine": 712,
+        "startChar": 0,
+        "endChar": 30
+      },
+      "language": "typescript",
+      "snippet": "                            DiagnosticManager.warning(\r\n                                document.uri,\r\n                                lineIndex,\r\n                                EdkDiagnosticCodes.duplicateDefine,\r\n                                `'${key}' is redefined without referencing its previous value. Use $(${key}) to extend it.`,\r\n                                [],\r\n                                relatedInfo\r\n                            );",
+      "noteText": "Warning: Duplicate defines ",
+      "label": "Warning: Duplicate defines",
+      "createdAt": "2026-04-16T19:11:30.428Z"
+    },
+    {
+      "id": "489f90e4-6146-4d35-926a-a669b3d0416f",
+      "documentId": "195e6f57-f53b-4be5-898c-9ae963c5970e",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\index\\edkWorkspace.ts",
+        "startLine": 783,
+        "endLine": 788,
+        "startChar": 26,
+        "endChar": 0
+      },
+      "language": "typescript",
+      "snippet": "  DiagnosticManager.warning(previousLibDefinition.location.uri, previousLibDefinition.location.range.start.line,\r\n                                EdkDiagnosticCodes.duplicateStatement,\r\n                                `Library overwritten: ${libName}`,\r\n                                [vscode.DiagnosticTag.Unnecessary],\r\n                                [new vscode.DiagnosticRelatedInformation(newLibDefinition.location, \"New definition\")]);\r\n",
+      "noteText": "Duplicate statement warning",
+      "label": "Duplicate statement warning",
+      "createdAt": "2026-04-16T19:11:52.130Z"
     }
   ]
 }

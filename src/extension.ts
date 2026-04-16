@@ -143,6 +143,12 @@ export async function activate(context: vscode.ExtensionContext) {
 			await edkWorkspaceTreeProvider.showFilterPicker();
 		}),
 
+		vscode.commands.registerCommand('edk2code.gotoOverwrite', async (node: DocumentSymbolItem) => {
+			if (node?.overwrittenBy) {
+				await gotoFile(node.overwrittenBy.uri, node.overwrittenBy.range);
+			}
+		}),
+
 		vscode.commands.registerCommand('edk2code.refreshWorkspaceConfig', async () => {
 			await gEdkWorkspaces.loadConfig();
 		}),
