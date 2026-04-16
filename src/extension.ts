@@ -131,11 +131,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 
 		vscode.commands.registerCommand('edk2code.copyWorkspaceNodePath', async (node: WorkspaceRootItem | IncludeTreeItem | DocumentSymbolItem) => {
-			if (!('treePath' in node)) {
+			if (!('nodePath' in node)) {
 				return;
 			}
-			const treePath = node.treePath.map((p, i) => '  '.repeat(i) + p).join('\n');
-			await vscode.env.clipboard.writeText(treePath);
+			await vscode.env.clipboard.writeText(node.nodePath);
 			void vscode.window.showInformationMessage(`Workspace path copied to clipboard`);
 		}),
 
