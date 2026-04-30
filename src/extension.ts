@@ -191,8 +191,36 @@ export async function activate(context: vscode.ExtensionContext) {
 
 			const langId = editor.document.languageId;
 
+			// Helper: switch to the workspace that contains the given URI if it's
+			// not the currently displayed one. Returns false if user cancelled.
+			async function ensureWorkspaceForUri(uri: vscode.Uri): Promise<boolean> {
+				const allWs = gEdkWorkspaces.workspaces;
+				const currentIdx = edkWorkspaceTreeProvider.activeIndex;
+				// Already showing the right workspace?
+				if (currentIdx < allWs.length && isFileInWorkspaceTree(uri, [allWs[currentIdx]])) {
+					return true;
+				}
+				// Search other workspaces
+				for (let i = 0; i < allWs.length; i++) {
+					if (i === currentIdx) { continue; }
+					if (isFileInWorkspaceTree(uri, [allWs[i]])) {
+						const wsName = allWs[i].platformName ?? path.basename(allWs[i].mainDsc.fsPath);
+						const answer = await vscode.window.showInformationMessage(
+							`File not found in the current workspace tree. Switch to "${wsName}"?`,
+							{ modal: false },
+							'Switch'
+						);
+						if (answer !== 'Switch') { return false; }
+						edkWorkspaceTreeProvider.selectWorkspace(i);
+						return true;
+					}
+				}
+				return true;
+			}
+
 			// DSC / DSC-include: reveal directly by cursor position
 			if (langId === 'edk2_dsc') {
+				if (!await ensureWorkspaceForUri(editor.document.uri)) { return; }
 				await edkWorkspaceTreeProvider.revealActiveEditor(edkWorkspaceTreeView);
 				return;
 			}
@@ -230,6 +258,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					chosen = picked.decl;
 				}
 
+				if (!await ensureWorkspaceForUri(chosen.location.uri)) { return; }
 				await edkWorkspaceTreeProvider.revealLocation(
 					chosen.location.uri,
 					chosen.location.range.start,
