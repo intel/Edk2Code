@@ -138,6 +138,10 @@
         "command": "edk2code.gotoOverwrite",
         "title": "Go to overwriting definition",
         "icon": "$(go-to-file)"
+      },
+      {
+        "command": "edk2code.compileCFile",
+        "title": "EDK2: Compile Edk2 file"
       }
     ],
     "configuration": [
