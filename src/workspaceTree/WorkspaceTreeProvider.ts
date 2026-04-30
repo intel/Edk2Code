@@ -457,8 +457,41 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         return new Set<Edk2SymbolType>(DSC_FILTER_TYPES.map(f => f.type));
     })();
 
+    /**
+     * When set, the tree only shows nodes whose `nodePath` is in this set.
+     * Used by the "Search workspace tree" command to display only the path
+     * leading to a selected node. `undefined` means no path filter is active.
+     */
+    private _searchFilter: Set<string> | undefined;
+
     get activeIndex(): number {
         return this._activeIndex;
+    }
+
+    get isSearchFilterActive(): boolean {
+        return this._searchFilter !== undefined;
+    }
+
+    /** Filter the children list against the active search filter (if any). */
+    private _applySearchFilter<T extends WorkspaceTreeNode>(items: T[]): T[] {
+        if (!this._searchFilter) { return items; }
+        const filter = this._searchFilter;
+        const filtered = items.filter(i => filter.has(i.nodePath));
+        // Force-expand surviving nodes so the path to the target is visible.
+        for (const item of filtered) {
+            if (item.collapsibleState === vscode.TreeItemCollapsibleState.Collapsed) {
+                item.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+            }
+        }
+        return filtered;
+    }
+
+    /** Clear the search-path filter and refresh the tree. */
+    clearSearchFilter(): void {
+        if (!this._searchFilter) { return; }
+        this._searchFilter = undefined;
+        void vscode.commands.executeCommand('setContext', 'edk2code.workspaceTreeSearchActive', false);
+        this._onDidChangeTreeData.fire();
     }
 
     refresh(): void {
@@ -531,7 +564,7 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         // Root level: the single WorkspaceRootItem for the active workspace
         if (!element) {
             if (!ws) { return []; }
-            return [new WorkspaceRootItem(ws, this._activeIndex)];
+            return this._applySearchFilter([new WorkspaceRootItem(ws, this._activeIndex)]);
         }
 
         const showInactive = this._activeFilters.has(Edk2SymbolType.showInactiveNodes);
@@ -539,24 +572,24 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
         // Under the workspace root: symbols of the main DSC
         if (element instanceof WorkspaceRootItem) {
             const symbols = await loadSymbols(element.workspace.mainDsc);
-            return symbols
+            return this._applySearchFilter(symbols
                 .filter(s => isTypeVisible(s.type, this._activeFilters))
                 .map(s => new DocumentSymbolItem(s, element.workspace.mainDsc, this._activeFilters, element.treePath, element, element.nodePath,
                     isSymbolInactive(s, element.workspace.mainDsc, ws),
                     getOverwriteLocation(s, element.workspace.mainDsc)))
-                .filter(s => showInactive || !s.inactive);
+                .filter(s => showInactive || !s.inactive));
         }
 
         // Under an include node: symbols of that file only
         if (element instanceof IncludeTreeItem) {
             const inactive = element.inactive;
             const symbols = await loadSymbols(element.node.uri);
-            return symbols
+            return this._applySearchFilter(symbols
                 .filter(s => isTypeVisible(s.type, this._activeFilters))
                 .map(s => new DocumentSymbolItem(s, element.node.uri, this._activeFilters, element.treePath, undefined, element.nodePath,
                     inactive || isSymbolInactive(s, element.node.uri, ws),
                     getOverwriteLocation(s, element.node.uri)))
-                .filter(s => showInactive || !s.inactive);
+                .filter(s => showInactive || !s.inactive));
         }
 
         // Under a symbol: for !include directives expand into the included file;
@@ -567,21 +600,21 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
                     const node = findIncludeNode(ws.includeTree, element.symbol.location);
                     if (node) {
                         const symbols = await loadSymbols(node.uri);
-                        return symbols
+                        return this._applySearchFilter(symbols
                             .filter(s => isTypeVisible(s.type, this._activeFilters))
                             .map(s => new DocumentSymbolItem(s, node.uri, this._activeFilters, element.treePath, element, element.nodePath,
                                 element.inactive || isSymbolInactive(s, node.uri, ws),
                                 getOverwriteLocation(s, node.uri)))
-                            .filter(s => showInactive || !s.inactive);
+                            .filter(s => showInactive || !s.inactive));
                     }
                 }
             }
-            return (element.symbol.children as EdkSymbol[])
+            return this._applySearchFilter((element.symbol.children as EdkSymbol[])
                 .filter(c => isTypeVisible(c.type, this._activeFilters))
                 .map(child => new DocumentSymbolItem(child, element.fileUri, this._activeFilters, element.treePath, element, element.nodePath,
                     element.inactive || isSymbolInactive(child, element.fileUri, ws),
                     getOverwriteLocation(child, element.fileUri)))
-                .filter(s => showInactive || !s.inactive);
+                .filter(s => showInactive || !s.inactive));
         }
 
         return [];
@@ -658,48 +691,146 @@ export class WorkspaceTreeProvider implements vscode.TreeDataProvider<WorkspaceT
     }
 
     /**
-     * Show a filterable Quick Pick with all tree nodes. Selecting one reveals it in the tree.
+     * Open an input box where the user types a query. The workspace tree is
+     * filtered live so that only paths leading to nodes matching the query
+     * remain visible. A toggle button switches between case-insensitive
+     * substring matching and regular expression matching. The filter can
+     * later be cleared via `clearSearchFilter()`.
      */
     async searchTree(treeView: vscode.TreeView<WorkspaceTreeNode>): Promise<void> {
-        type SearchPickItem = vscode.QuickPickItem & { node: WorkspaceTreeNode };
+        type CollectedNode = { node: WorkspaceTreeNode; chain: string[]; haystack: string };
 
-        // Collect every node in the tree
-        const items: SearchPickItem[] = [];
-        const collect = async (parent?: WorkspaceTreeNode): Promise<void> => {
+        // Always start the search against the unfiltered tree.
+        const previousFilter = this._searchFilter;
+        this._searchFilter = undefined;
+        // Refresh the tree so the input-box-driven filter starts from the full tree.
+        if (previousFilter) {
+            this._onDidChangeTreeData.fire();
+        }
+
+        // Collect every node and its ancestor chain (inclusive of itself).
+        const allNodes: CollectedNode[] = [];
+        const collect = async (parent: WorkspaceTreeNode | undefined, chain: string[]): Promise<void> => {
             const children = await this.getChildren(parent);
             for (const child of children) {
                 const label = child instanceof DocumentSymbolItem ? child.symbol.name
                             : child instanceof IncludeTreeItem  ? path.basename(child.node.uri.fsPath)
                             : (child as WorkspaceRootItem).label as string;
                 const description = child.description as string | undefined;
-                items.push({ label, description: description ?? '', node: child });
-                await collect(child);
+                const childChain = [...chain, child.nodePath];
+                const haystack = `${label}\n${description ?? ''}`;
+                allNodes.push({ node: child, chain: childChain, haystack });
+                await collect(child, childChain);
             }
         };
 
         await vscode.window.withProgress(
             { location: { viewId: 'workspaceView' } },
-            async () => { await collect(); }
+            async () => { await collect(undefined, []); }
         );
 
-        if (items.length === 0) {
+        if (allNodes.length === 0) {
+            this._searchFilter = previousFilter;
             void vscode.window.showInformationMessage('No nodes in the workspace tree.');
             return;
         }
 
-        const picked = await vscode.window.showQuickPick(items, {
-            placeHolder: 'Type to filter workspace tree nodes',
-            title: 'EDK2: Search workspace tree',
-            matchOnDescription: true
+        const input = vscode.window.createInputBox();
+        input.title = 'EDK2: Search workspace tree';
+        input.placeholder = 'Type to filter (case-insensitive). Toggle .* to use regex.';
+        input.prompt = 'Tree updates live. Press Enter to keep the filter, Esc to cancel.';
+
+        const regexButtonOff: vscode.QuickInputButton = {
+            iconPath: new vscode.ThemeIcon('regex'),
+            tooltip: 'Use Regular Expression (off)'
+        };
+        const regexButtonOn: vscode.QuickInputButton = {
+            iconPath: new vscode.ThemeIcon('regex'),
+            tooltip: 'Use Regular Expression (on)'
+        };
+        let useRegex = false;
+        input.buttons = [regexButtonOff];
+
+        // Track whether the user accepted (Enter) so onDidHide knows whether to revert.
+        let accepted = false;
+
+        const applyFilter = (value: string): void => {
+            if (!value) {
+                // Empty input → no filter while typing.
+                this._searchFilter = undefined;
+                input.validationMessage = undefined;
+                void vscode.commands.executeCommand('setContext', 'edk2code.workspaceTreeSearchActive', false);
+                this._onDidChangeTreeData.fire();
+                return;
+            }
+
+            let predicate: (s: string) => boolean;
+            if (useRegex) {
+                let rx: RegExp;
+                try {
+                    rx = new RegExp(value, 'i');
+                } catch (e) {
+                    input.validationMessage = `Invalid regex: ${(e as Error).message}`;
+                    return;
+                }
+                input.validationMessage = undefined;
+                predicate = (s) => rx.test(s);
+            } else {
+                input.validationMessage = undefined;
+                const needle = value.toLowerCase();
+                predicate = (s) => s.toLowerCase().includes(needle);
+            }
+
+            // Keep every nodePath that's part of an ancestor chain leading to a match.
+            const keep = new Set<string>();
+            for (const item of allNodes) {
+                if (predicate(item.haystack)) {
+                    for (const p of item.chain) { keep.add(p); }
+                }
+            }
+
+            this._searchFilter = keep.size > 0 ? keep : new Set(['__no_match__']);
+            void vscode.commands.executeCommand('setContext', 'edk2code.workspaceTreeSearchActive', true);
+            this._onDidChangeTreeData.fire();
+        };
+
+        input.onDidChangeValue(applyFilter);
+        input.onDidTriggerButton(btn => {
+            if (btn === regexButtonOff || btn === regexButtonOn) {
+                useRegex = !useRegex;
+                input.buttons = [useRegex ? regexButtonOn : regexButtonOff];
+                applyFilter(input.value);
+            }
         });
 
-        if (!picked) { return; }
-        await treeView.reveal(picked.node, { select: true, focus: true, expand: true });
+        await new Promise<void>(resolve => {
+            input.onDidAccept(() => {
+                accepted = true;
+                input.hide();
+            });
+            input.onDidHide(() => {
+                resolve();
+            });
+            input.show();
+        });
+        input.dispose();
 
-        // Also open the element in the editor
-        const cmd = picked.node.command;
-        if (cmd) {
-            await vscode.commands.executeCommand(cmd.command, ...(cmd.arguments ?? []));
+        if (!accepted) {
+            // User cancelled (Esc) → restore the previous filter state.
+            this._searchFilter = previousFilter;
+            void vscode.commands.executeCommand(
+                'setContext',
+                'edk2code.workspaceTreeSearchActive',
+                this._searchFilter !== undefined
+            );
+            this._onDidChangeTreeData.fire();
+            return;
+        }
+
+        // Accepted: keep whatever filter the live preview produced.
+        if (!this._searchFilter) {
+            // Empty query at acceptance → no filter active.
+            void vscode.commands.executeCommand('setContext', 'edk2code.workspaceTreeSearchActive', false);
         }
     }
 
