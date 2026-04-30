@@ -123,6 +123,11 @@
         "icon": "$(search)"
       },
       {
+        "command": "edk2code.clearWorkspaceTreeSearch",
+        "title": "EDK2: Clear workspace tree search",
+        "icon": "$(search-stop)"
+      },
+      {
         "command": "edk2code.focusEditorInWorkspaceView",
         "title": "EDK2: Focus on workspace view"
       },
@@ -342,6 +347,10 @@
           "when": "true"
         },
         {
+          "command": "edk2code.clearWorkspaceTreeSearch",
+          "when": "edk2code.workspaceTreeSearchActive"
+        },
+        {
           "command": "edk2code.focusEditorInWorkspaceView",
           "when": "false"
         },
@@ -389,6 +398,11 @@
           "command": "edk2code.searchWorkspaceTree",
           "group": "navigation",
           "when": "view == workspaceView"
+        },
+        {
+          "command": "edk2code.clearWorkspaceTreeSearch",
+          "group": "navigation",
+          "when": "view == workspaceView && edk2code.workspaceTreeSearchActive"
         }
       ],
       "editor/context": [
