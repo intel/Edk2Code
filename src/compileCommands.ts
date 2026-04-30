@@ -40,8 +40,8 @@ export class CompileCommandsEntry{
 
     getDefines(): string[]{
         const defines: string[] = [];
-        // Combine patterns for gcc (-D) and msbuild (/D)
-        const match = this.command.match(/(-D\s*[^ ]+)|(\/D\s*[^ ]+)/g);
+        // Match -D or /D flags preceded by whitespace (to avoid matching inside paths)
+        const match = this.command.match(/(?<=\s)-D\s*[^ ]+|(?<=\s)\/D\s*[^ ]+/g);
         if (match) {
             match.forEach((define) => {
                 // Remove leading -D or /D and trim whitespace

@@ -23,6 +23,7 @@ import { WorkspaceTreeProvider, WorkspaceRootItem, IncludeTreeItem, DocumentSymb
 import { InfDsc } from './index/edkWorkspace';
 import { MapFilesManager } from './mapParser';
 import { CompileCommands } from './compileCommands';
+import { compileCFile } from './compileFile';
 import { showReleaseNotes } from './newVersionPage/newVersionMessage';
 import { startMcpServer, stopMcpServer } from './mcp/mcpServer';
 
@@ -265,6 +266,10 @@ export async function activate(context: vscode.ExtensionContext) {
 					edkWorkspaceTreeView
 				);
 			}
+		}),
+
+		vscode.commands.registerCommand('edk2code.compileCFile', async () => {
+			await compileCFile();
 		}),
 
 		vscode.commands.registerCommand('edk2code.startMcpServer', async () => {
