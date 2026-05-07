@@ -27,25 +27,25 @@ export class DebugLog {
     }
 
     public error(text:string){
-        this.outConsole.error(text);
+        this.outConsole.error("[EDK2Code] " + text);
         let callStack = (new Error()).stack || '';
         this.outConsole.error(`[Stack]\n${callStack}`);
     }
 
     public info(text:string){
-        this.outConsole.info(text);
+        this.outConsole.info("[EDK2Code] " + text);
     }
 
     public trace(text:string){
-        this.outConsole.trace(text);
+        this.outConsole.trace("[EDK2Code] " + text);
     }
 
     public warning(text:string){
-        this.outConsole.warn(text);
+        this.outConsole.warn("[EDK2Code] " + text);
     }
 
     public debug(text:string){
-        this.outConsole.trace(text);
+        this.outConsole.trace("[EDK2Code] " + text);
     }
 
 

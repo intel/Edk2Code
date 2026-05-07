@@ -456,45 +456,49 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
             cancellable: true
         }, async (progress, reject) => {
 
-            return new Promise<void>((resolve, token) => {
-                gDebugLog.info("Generating .ignore file");
-                let cscopeFilesList = gCscope.readCscopeFile();
-                let filesSet = new Set();
-                let filesExtensions = new Set();
-                for (const cscopeFile of cscopeFilesList) {
-                    let progFileUpper = cscopeFile.toUpperCase();
-                    filesSet.add(progFileUpper);
-                    filesExtensions.add(path.extname(progFileUpper));
-                }
+            gDebugLog.info("Generating .ignore file");
+            let cscopeFilesList = gCscope.readCscopeFile();
+            gDebugLog.info(`genIgnoreFile: cscope list has ${cscopeFilesList.length} entries`);
+            let filesSet = new Set();
+            let filesExtensions = new Set();
+            for (const cscopeFile of cscopeFilesList) {
+                let progFileUpper = cscopeFile.toUpperCase();
+                filesSet.add(progFileUpper);
+                filesExtensions.add(path.extname(progFileUpper));
+            }
+            gDebugLog.info(`genIgnoreFile: tracking ${filesExtensions.size} extensions: ${[...filesExtensions].join(", ")}`);
 
-                // Glob library needs posix path
-                let lookPath = toPosix(path.join(gWorkspacePath, "**"));
-                let globFilesList = glob.sync(lookPath);
-                let ignoreList = [];
+            gDebugLog.info(`genIgnoreFile: listing workspace files under ${gWorkspacePath}`);
+            let globFilesList = (await listFilesRecursive(gWorkspacePath)).map(f => path.join(gWorkspacePath, f));
+            gDebugLog.info(`genIgnoreFile: workspace file scan returned ${globFilesList.length} files`);
+            let ignoreList = [];
 
-                // Add extra ignore patterns
-                let extraIgnores = gConfigAgent.getExtraIgnorePatterns();
-                for (const extraIgnore of extraIgnores) {
-                    ignoreList.push(extraIgnore.trim());
-                }
+            // Add extra ignore patterns
+            let extraIgnores = gConfigAgent.getExtraIgnorePatterns();
+            gDebugLog.info(`genIgnoreFile: ${extraIgnores.length} extra ignore patterns from config`);
+            for (const extraIgnore of extraIgnores) {
+                ignoreList.push(extraIgnore.trim());
+            }
 
-                let posixWorkspacePath = toPosix(gWorkspacePath);
-                gDebugLog.info(`Cscope files found: ${filesSet.size}`);
+            let posixWorkspacePath = toPosix(gWorkspacePath);
+            gDebugLog.info(`Cscope files found: ${filesSet.size}`);
 
-                for (const globFile of globFilesList) {
-                    // Just ignore EDK files
-                    let globFileUpperCase = path.resolve(globFile.toUpperCase());
-                    let extension = path.extname(globFileUpperCase);
-                    if (filesExtensions.has(extension) && !filesSet.has(globFileUpperCase)) {
+            let reportCount = 0;
+            for (const globFile of globFilesList) {
+                // Just ignore EDK files
+                const globFileUpperCase = globFile.toUpperCase();
+                const extension = path.extname(globFileUpperCase);
+                if (filesExtensions.has(extension) && !filesSet.has(globFileUpperCase)) {
+                    if (++reportCount % 100 === 0) {
                         progress.report({ message: globFile });
-
-                        ignoreList.push(toPosix(path.relative(posixWorkspacePath, globFile)));
                     }
+                    ignoreList.push(toPosix(path.relative(posixWorkspacePath, globFile)));
                 }
-                fs.writeFileSync(path.join(gWorkspacePath, ".ignore"), ignoreList.join("\n"));
-                resolve();
-            });
-
+            }
+            gDebugLog.info(`genIgnoreFile: ${ignoreList.length} entries written to .ignore (${reportCount} files ignored)`);
+            const ignoreFilePath = path.join(gWorkspacePath, ".ignore");
+            fs.writeFileSync(ignoreFilePath, ignoreList.join("\n"));
+            gDebugLog.info(`genIgnoreFile: .ignore written to ${ignoreFilePath}`);
 
         });
 

@@ -502,47 +502,19 @@ export async function listFiles(dir: string): Promise<string[]> {
 }
 
 /**
- * Recursively list all files in a directory.
+ * Recursively list all files in a directory using ripgrep.
  *
  * @param {string} dir - The directory to start listing files from.
- * @returns {Promise<string[]>} - An array of file paths.
+ * @returns {Promise<string[]>} - An array of file paths relative to `dir`.
  */
 export async function listFilesRecursive(dir: string): Promise<string[]> {
-    const files = fs.readdirSync(dir);
-    let filelist: string[] = [];
-    let baseDir = "";
-
-    for (const file of files) {
-        const filepath = path.join(dir, file);
-        const stat = fs.statSync(filepath);
-
-        if (stat.isDirectory()) {
-            filelist = await _walk(filepath, path.basename(filepath), filelist);
-        } else {
-            filelist.push(path.join(baseDir, file));
-        }
-    }
-
-    return filelist;
+    const pattern = new vscode.RelativePattern(dir, '**/*');
+    const uris = await vscode.workspace.findFiles(pattern);
+    gDebugLog.debug(`listFilesRecursive: ${uris.length} files found in ${dir}`);
+    return uris.map(uri => path.relative(dir, uri.fsPath));
 }
 
-async function _walk(dir: string, baseDir: string, filelist: string[] = []) {
-    const files = fs.readdirSync(dir);
-
-    for (const file of files) {
-        const filepath = path.join(dir, file);
-        const stat = fs.statSync(filepath);
-
-        if (stat.isDirectory()) {
-            filelist = await _walk(filepath, path.basename(filepath), filelist);
-        } else {
-            filelist.push(path.join(baseDir, file));
-        }
-    }
-    return filelist;
-}
-
-export function getCurrentVersion(): string {
+export default function getCurrentVersion(): string {
     const packageJsonPath = path.join(__dirname, '..', 'package.json');
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     return packageJson.version;
