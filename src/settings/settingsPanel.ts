@@ -7,6 +7,7 @@ import { Disposable, Webview, WebviewPanel, window, Uri, ViewColumn } from "vsco
 import { gExtensionContext } from '../extension';
 import { ConfigAgent, WorkspaceConfig, WorkspaceConfigErrors } from '../configuration';
 import { askReloadFiles } from '../ui/messages';
+import { isMcpServerRunning } from '../mcp/mcpServer';
 
 
 function deepCopy(obj: any) {
@@ -167,6 +168,15 @@ export class SettingsPanel {
             case 'selectPackagePath':
                 this.selectPackagePath();
                 break;
+            case 'toggleMcp':
+                this.toggleMcpServer();
+                break;
+            case 'autoConfigureMcp':
+                this.autoConfigureMcp();
+                break;
+            case 'changeMcpPort':
+                this.changeMcpPort(message.port);
+                break;
         }
 
 
@@ -174,6 +184,8 @@ export class SettingsPanel {
 
     initilizePanel() {
         SettingsPanel.currentPanel!.updateWebview(this.configAgent!.getWorkspaceConfig(), this.configAgent!.getWorkspaceErrors());
+        const port = vscode.workspace.getConfiguration('edk2code').get<number>('mcpServerPort', 3100);
+        void this._panel.webview.postMessage({ command: 'mcpStatus', running: isMcpServerRunning(), port });
     }
 
     updateConfig(message: any) {
@@ -227,6 +239,71 @@ export class SettingsPanel {
             const relativePath = path.relative(workspaceFolders[0].uri.fsPath, result[0].fsPath).replace(/\\/g, '/');
             void this._panel.webview.postMessage({ command: 'addPackagePath', path: relativePath });
         }
+    }
+
+    private async toggleMcpServer(): Promise<void> {
+        if (isMcpServerRunning()) {
+            await vscode.commands.executeCommand('edk2code.stopMcpServer');
+        } else {
+            await vscode.commands.executeCommand('edk2code.startMcpServer');
+        }
+        const port = vscode.workspace.getConfiguration('edk2code').get<number>('mcpServerPort', 3100);
+        void this._panel.webview.postMessage({ command: 'mcpStatus', running: isMcpServerRunning(), port });
+    }
+
+    private async changeMcpPort(port: number): Promise<void> {
+        await vscode.workspace.getConfiguration('edk2code').update('mcpServerPort', port, vscode.ConfigurationTarget.Workspace);
+    }
+
+    private async autoConfigureMcp(): Promise<void> {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'No workspace folder found.' });
+            return;
+        }
+        const vscodePath = path.join(workspaceFolders[0].uri.fsPath, '.vscode');
+        const mcpConfigPath = path.join(vscodePath, 'mcp.json');
+        const port = vscode.workspace.getConfiguration('edk2code').get<number>('mcpServerPort', 3100);
+        const expectedUrl = `http://localhost:${port}/sse`;
+
+        if (fs.existsSync(mcpConfigPath)) {
+            try {
+                const existing = JSON.parse(fs.readFileSync(mcpConfigPath, 'utf-8'));
+                const serverEntry = existing?.servers?.edk2code;
+                if (serverEntry && serverEntry.url === expectedUrl) {
+                    void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'edk2code MCP already configured correctly.' });
+                    return;
+                }
+                // Add or update the edk2code entry
+                if (!existing.servers) {
+                    existing.servers = {};
+                }
+                existing.servers.edk2code = { type: "sse", url: expectedUrl };
+                fs.writeFileSync(mcpConfigPath, JSON.stringify(existing, null, 4), 'utf-8');
+                void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'Updated edk2code entry in .vscode/mcp.json' });
+            } catch {
+                // File exists but is not valid JSON, overwrite
+                const mcpConfig = { servers: { edk2code: { type: "sse", url: expectedUrl } } };
+                fs.writeFileSync(mcpConfigPath, JSON.stringify(mcpConfig, null, 4), 'utf-8');
+                void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'Replaced invalid .vscode/mcp.json' });
+            }
+            return;
+        }
+
+        const mcpConfig = {
+            servers: {
+                "edk2code": {
+                    "type": "sse",
+                    "url": expectedUrl
+                }
+            }
+        };
+
+        if (!fs.existsSync(vscodePath)) {
+            fs.mkdirSync(vscodePath, { recursive: true });
+        }
+        fs.writeFileSync(mcpConfigPath, JSON.stringify(mcpConfig, null, 4), 'utf-8');
+        void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'Created .vscode/mcp.json' });
     }
 
 

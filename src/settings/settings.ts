@@ -46,6 +46,7 @@ class SettingsApp {
         this.addDscListEvents();
         this.addBuildDefinesEvents();
         this.addPackagePathsEvents();
+        this.addMcpEvents();
         this.vsCodeApi.postMessage({
             command: "initialized"
         });
@@ -55,6 +56,41 @@ class SettingsApp {
         document.getElementById(elementId.dscAddBtn)!.addEventListener("click", () => {
             this.vsCodeApi.postMessage({ command: "selectDscFile" });
         });
+    }
+
+    // --- MCP ---
+
+    private addMcpEvents(): void {
+        document.getElementById("mcpToggleBtn")!.addEventListener("click", () => {
+            this.vsCodeApi.postMessage({ command: "toggleMcp" });
+        });
+        document.getElementById("mcpAutoConfigBtn")!.addEventListener("click", () => {
+            this.vsCodeApi.postMessage({ command: "autoConfigureMcp" });
+        });
+        document.getElementById("mcpPort")!.addEventListener("change", () => {
+            const port = parseInt((<HTMLInputElement>document.getElementById("mcpPort")).value, 10);
+            if (port >= 1 && port <= 65535) {
+                this.vsCodeApi.postMessage({ command: "changeMcpPort", port });
+            }
+        });
+    }
+
+    private updateMcpStatus(running: boolean): void {
+        const btn = document.getElementById("mcpToggleBtn") as HTMLButtonElement;
+        const status = document.getElementById("mcpStatus")!;
+        if (running) {
+            btn.textContent = "Stop MCP Server";
+            status.textContent = "Running";
+            status.style.color = "var(--vscode-charts-green)";
+        } else {
+            btn.textContent = "Start MCP Server";
+            status.textContent = "Stopped";
+            status.style.color = "var(--vscode-foreground)";
+        }
+    }
+
+    private updateMcpConfigStatus(message: string): void {
+        document.getElementById("mcpConfigStatus")!.textContent = message;
     }
 
     private renderDscList(): void {
@@ -383,6 +419,15 @@ class SettingsApp {
                     this.renderPackagePathsList();
                     this.onPackagePathsChanged();
                 }
+                break;
+            case 'mcpStatus':
+                this.updateMcpStatus(message.running);
+                if (message.port !== undefined) {
+                    (<HTMLInputElement>document.getElementById("mcpPort")).value = message.port.toString();
+                }
+                break;
+            case 'mcpConfigResult':
+                this.updateMcpConfigStatus(message.message);
                 break;
         }
     }

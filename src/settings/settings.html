@@ -558,6 +558,26 @@
     <hr>
     <div style="height: 30px; display: block"></div>
 
+    <!-- MCP Server section -->
+    <div class="section">
+        <div class="section-title">MCP Server</div>
+        <div class="section-text">
+            <span>Control the EDK2 MCP SSE server and configure workspace MCP integration.</span>
+        </div>
+        <div style="margin-bottom: 8px;">
+          <label for="mcpPort" style="font-size: 13px;">Port:</label>
+          <input type="number" id="mcpPort" min="1" max="65535" style="width: 80px; margin-left: 4px;" />
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="mcpToggleBtn" type="button">Start MCP Server</button>
+          <span id="mcpStatus" style="font-size: 13px; color: var(--vscode-foreground);"></span>
+        </div>
+        <div style="margin-top: 8px;">
+          <button id="mcpAutoConfigBtn" type="button">Auto-configure workspace MCP</button>
+          <span id="mcpConfigStatus" style="font-size: 13px; font-style: italic; margin-left: 8px; color: var(--vscode-foreground);"></span>
+        </div>
+    </div>
+
     <!-- sections -->
     <div class="section">
         <div class="section-title">DSC relative path</div>
