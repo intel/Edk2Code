@@ -80,9 +80,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	var commands = [
 		vscode.commands.registerCommand('edk2code.rebuildIndex', async ()=>{await cmds.rebuildIndexDatabase();}),
+		vscode.commands.registerCommand('edk2code.useDiscoveredBuildFolders', async ()=>{await cmds.useDiscoveredBuildFolders();}),
+		vscode.commands.registerCommand('edk2code.discoverBuildFolders', async ()=>{await cmds.discoverBuildFolders();}),
 		vscode.commands.registerCommand('edk2code.openConfigurationUi', async ()=>{await cmds.openWpConfigGui();}),
 		vscode.commands.registerCommand('edk2code.openConfigurationJson', async ()=>{await cmds.openWpConfigJson();}),
 		vscode.commands.registerCommand('edk2code.rescanIndex', async ()=>{await cmds.rescanIndex();}),
+		vscode.commands.registerCommand('edk2code.unloadWorkspace', async ()=>{await cmds.unloadWorkspace();}),
 		vscode.commands.registerCommand('edk2code.help', async ()=>{
 			const docUrl = getDocsUrl();
 			await vscode.env.openExternal(vscode.Uri.parse(docUrl));
@@ -351,6 +354,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	await gEdkWorkspaces.loadConfig();
 	gFileUseWarning = new FileUseWarning();
 
+	// Start periodic scan for build folders in workspace
+	cmds.startBuildFolderScan();
+
 
 	
 
@@ -401,6 +407,7 @@ export async function activate(context: vscode.ExtensionContext) {
 // this method is called when your extension is deactivated
 export async function deactivate() {
 	stopMcpServer();
+	cmds.stopBuildFolderScan();
 }
 
 
