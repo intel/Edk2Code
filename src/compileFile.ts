@@ -33,30 +33,35 @@ function buildReport(entry: CompileCommandsEntry): string {
     const includes = entry.getIncludePaths();
 
     const lines: string[] = [];
-    lines.push('╔══════════════════════════════════════════════════════════════');
-    lines.push(`║  EDK2 Compile: ${fileName}`);
-    lines.push('╠══════════════════════════════════════════════════════════════');
-    lines.push(`║  Compiler:   ${compiler}`);
-    lines.push(`║  Source:     ${entry.file}`);
-    lines.push(`║  Output:     ${output}`);
-    lines.push(`║  Directory:  ${entry.directory}`);
-    lines.push('╠══════════════════════════════════════════════════════════════');
-    lines.push(`║  Defines (${defines.length}):`);
-    defines.forEach(d => lines.push(`║    -D ${d}`));
-    lines.push('╠══════════════════════════════════════════════════════════════');
-    lines.push(`║  Include Paths (${includes.length}):`);
-    includes.forEach(i => lines.push(`║    ${i}`));
-    lines.push('╚══════════════════════════════════════════════════════════════');
+    lines.push('---------------------------------------------------------------');
+    lines.push(`|  EDK2 Compile: ${fileName}`);
+    lines.push('---------------------------------------------------------------');
+    lines.push(`|  Compiler:   ${compiler}`);
+    lines.push(`|  Source:     ${entry.file}`);
+    lines.push(`|  Output:     ${output}`);
+    lines.push(`|  Directory:  ${entry.directory}`);
+    lines.push('---------------------------------------------------------------');
+    lines.push(`|  Defines (${defines.length}):`);
+    defines.forEach(d => lines.push(`|    -D ${d}`));
+    lines.push('---------------------------------------------------------------');
+    lines.push(`|  Include Paths (${includes.length}):`);
+    includes.forEach(i => lines.push(`|    ${i}`));
+    lines.push('---------------------------------------------------------------');
     return lines.join('\n');
 }
 
-export async function compileCFile() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-        void vscode.window.showErrorMessage('No active editor found.');
-        return;
+export async function compileCFile(fileUri?: vscode.Uri) {
+    let filePath: string;
+    if (fileUri) {
+        filePath = fileUri.fsPath;
+    } else {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            void vscode.window.showErrorMessage('No active editor found.');
+            return;
+        }
+        filePath = editor.document.uri.fsPath;
     }
-    const filePath = editor.document.uri.fsPath;
 
     gCompileCommands.load();
     const entry = gCompileCommands.getCompileCommandForFile(filePath);

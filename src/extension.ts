@@ -319,8 +319,14 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 
-		vscode.commands.registerCommand('edk2code.compileCFile', async () => {
-			await compileCFile();
+		vscode.commands.registerCommand('edk2code.compileCFile', async (fileUriOrItem?: vscode.Uri | vscode.TreeItem) => {
+			let uri: vscode.Uri | undefined;
+			if (fileUriOrItem instanceof vscode.Uri) {
+				uri = fileUriOrItem;
+			} else if (fileUriOrItem && 'resourceUri' in fileUriOrItem && fileUriOrItem.resourceUri) {
+				uri = fileUriOrItem.resourceUri;
+			}
+			await compileCFile(uri);
 		}),
 
 		vscode.commands.registerCommand('edk2code.startMcpServer', async () => {
