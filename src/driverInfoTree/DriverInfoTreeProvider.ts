@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { gEdkWorkspaces, gPathFind } from '../extension';
+import { gEdkWorkspaces, gPathFind, gCompileCommands } from '../extension';
 import { getParser } from '../edkParser/parserFactory';
 import { EdkSymbol } from '../symbols/edkSymbols';
 import { Edk2SymbolType } from '../symbols/symbolsType';
@@ -250,11 +250,13 @@ export class DriverInfoTreeProvider implements vscode.TreeDataProvider<DriverInf
         const sources = parser.getSymbolsType(Edk2SymbolType.infSource);
         if (sources.length) {
             const cat = new DriverInfoCategoryItem('Sources', 'files');
+            gCompileCommands.load();
             for (const src of sources) {
                 const filePath = src.textLine.replace(/\s*\|.*/, '');
                 const relPath = path.dirname(this.infUri.fsPath);
                 const locations = await gPathFind.findPath(filePath, relPath);
                 const resolvedUri = locations.length ? locations[0].uri : vscode.Uri.file(path.join(relPath, filePath));
+                const hasCompileCommand = gCompileCommands.getCompileCommandForFile(resolvedUri.fsPath) !== undefined;
                 const item = new DriverInfoLeafItem(
                     filePath,
                     '',
@@ -266,6 +268,9 @@ export class DriverInfoTreeProvider implements vscode.TreeDataProvider<DriverInf
                     } : undefined,
                     resolvedUri
                 );
+                if (hasCompileCommand) {
+                    item.contextValue = 'driverInfoCompilableSource';
+                }
                 cat.children.push(item);
             }
             this.categories.push(cat);

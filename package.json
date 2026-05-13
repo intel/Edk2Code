@@ -160,7 +160,8 @@
       },
       {
         "command": "edk2code.compileCFile",
-        "title": "EDK2: Compile Edk2 file"
+        "title": "EDK2: Compile Edk2 file",
+        "icon": "$(play)"
       },
       {
         "command": "edk2code.driverInfoGoToDefinition",
@@ -558,6 +559,11 @@
           "command": "edk2code.gotoOverwrite",
           "group": "navigation",
           "when": "view == workspaceView && viewItem == symbolNodeInactiveOverwritten"
+        },
+        {
+          "command": "edk2code.compileCFile",
+          "group": "inline",
+          "when": "view == driverInfoView && viewItem == driverInfoCompilableSource"
         }
       ]
     },
