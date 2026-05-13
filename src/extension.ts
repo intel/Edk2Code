@@ -109,13 +109,37 @@ export async function activate(context: vscode.ExtensionContext) {
 					const locArray = Array.isArray(locations) ? locations : [locations];
 					if (locArray.length > 0) {
 						const loc = locArray[0];
+						const suppressed = gDriverInfoTreeProvider.suppressNextUpdate();
 						if (loc.uri && loc.range) {
 							await gotoFile(loc.uri, loc.range);
 						} else if (loc.uri) {
-							await vscode.commands.executeCommand('vscode.open', loc.uri);
+							await vscode.commands.executeCommand('vscode.open', loc.uri, { preview: suppressed });
+						}
+						if (!suppressed) {
+							// Double-click: force update
+							const editor = vscode.window.activeTextEditor;
+							if (editor) { await gDriverInfoTreeProvider.onEditorChanged(editor); }
 						}
 					}
 				}
+			}
+		}),
+
+		vscode.commands.registerCommand('edk2code.driverInfoOpenFile', async (fileUri: vscode.Uri, options?: any) => {
+			const suppressed = gDriverInfoTreeProvider.suppressNextUpdate();
+			const openOptions = suppressed ? { ...options, preview: true } : { ...options, preview: false };
+			await vscode.commands.executeCommand('vscode.open', fileUri, openOptions);
+			if (!suppressed) {
+				// Double-click: force update
+				const editor = vscode.window.activeTextEditor;
+				if (editor) { await gDriverInfoTreeProvider.onEditorChanged(editor); }
+			}
+		}),
+
+		vscode.commands.registerCommand('edk2code.driverInfoGotoDsc', async () => {
+			const infUri = gDriverInfoTreeProvider.currentInfUri;
+			if (infUri) {
+				await cmds.gotoDscDeclaration(infUri);
 			}
 		}),
 		// vscode.commands.registerCommand("edk2code.viewWarnings", async ()=>{await gErrorReportAgent.reportErrors();}),
@@ -321,7 +345,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	edkWorkspaceTreeView = vscode.window.createTreeView('workspaceView', { treeDataProvider: edkWorkspaceTreeProvider, showCollapseAll: true, dragAndDropController: edkWorkspaceTreeProvider });
 
 	gDriverInfoTreeProvider = new DriverInfoTreeProvider();
-	vscode.window.createTreeView('driverInfoView', { treeDataProvider: gDriverInfoTreeProvider, showCollapseAll: true });
+	const driverInfoTreeView = vscode.window.createTreeView('driverInfoView', { treeDataProvider: gDriverInfoTreeProvider, showCollapseAll: true });
+	gDriverInfoTreeProvider.setTreeView(driverInfoTreeView);
 
 	await gEdkWorkspaces.loadConfig();
 	gFileUseWarning = new FileUseWarning();

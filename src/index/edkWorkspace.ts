@@ -906,7 +906,7 @@ export class EdkWorkspace {
                         if(uri.fsPath.includes(lib.path)){
                             return true;
                         }
-                    }
+                    }``
                     return false;
                     
                 case "c":

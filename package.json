@@ -151,6 +151,15 @@
       {
         "command": "edk2code.driverInfoGoToDefinition",
         "title": "EDK2: Go to definition (Driver Info)"
+      },
+      {
+        "command": "edk2code.driverInfoOpenFile",
+        "title": "EDK2: Open file (Driver Info)"
+      },
+      {
+        "command": "edk2code.driverInfoGotoDsc",
+        "title": "EDK2: Go to DSC declaration",
+        "icon": "$(references)"
       }
     ],
     "configuration": [
@@ -261,7 +270,7 @@
         },
         {
           "id": "driverInfoView",
-          "name": "Driver Info",
+          "name": "Module Info",
           "type": "tree"
         }
       ]
@@ -279,7 +288,7 @@
       },
       {
         "view": "driverInfoView",
-        "contents": "Open a source file that is part of an EDK2 module to see driver information.",
+        "contents": "Open a source file that is part of an EDK2 module to see module information.",
         "when": "!edk2code.driverInfoAvailable"
       }
     ],
@@ -383,6 +392,14 @@
         {
           "command": "edk2code.driverInfoGoToDefinition",
           "when": "false"
+        },
+        {
+          "command": "edk2code.driverInfoOpenFile",
+          "when": "false"
+        },
+        {
+          "command": "edk2code.driverInfoGotoDsc",
+          "when": "false"
         }
       ],
       "editor/title": [],
@@ -421,6 +438,11 @@
           "command": "edk2code.clearWorkspaceTreeSearch",
           "group": "navigation",
           "when": "view == workspaceView && edk2code.workspaceTreeSearchActive"
+        },
+        {
+          "command": "edk2code.driverInfoGotoDsc",
+          "group": "navigation",
+          "when": "view == driverInfoView && edk2code.driverInfoAvailable"
         }
       ],
       "editor/context": [
