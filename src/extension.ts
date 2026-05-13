@@ -26,6 +26,7 @@ import { CompileCommands } from './compileCommands';
 import { compileCFile } from './compileFile';
 import { showReleaseNotes } from './newVersionPage/newVersionMessage';
 import { startMcpServer, stopMcpServer } from './mcp/mcpServer';
+import { DriverInfoTreeProvider } from './driverInfoTree/DriverInfoTreeProvider';
 
 
 // Global variables
@@ -50,6 +51,8 @@ export var gDiagnosticManager:DiagnosticManager;
 
 export var edkWorkspaceTreeProvider: WorkspaceTreeProvider;
 export var edkWorkspaceTreeView: vscode.TreeView<WorkspaceTreeNode>;
+
+export var gDriverInfoTreeProvider: DriverInfoTreeProvider;
 
 export var gMapFileManager: MapFilesManager;
 
@@ -98,6 +101,23 @@ export async function activate(context: vscode.ExtensionContext) {
 		// Internal
 		vscode.commands.registerCommand('edk2code.searchDefinition', ()=>{}),
 		vscode.commands.registerCommand("edk2code.gotoFile", async (fileUri, selRange)=>{await gotoFile(fileUri,selRange);}),
+
+		vscode.commands.registerCommand('edk2code.driverInfoGoToDefinition', async (symbol: any) => {
+			if (symbol && symbol.onDefinition) {
+				const locations = await symbol.onDefinition(symbol.parser);
+				if (locations) {
+					const locArray = Array.isArray(locations) ? locations : [locations];
+					if (locArray.length > 0) {
+						const loc = locArray[0];
+						if (loc.uri && loc.range) {
+							await gotoFile(loc.uri, loc.range);
+						} else if (loc.uri) {
+							await vscode.commands.executeCommand('vscode.open', loc.uri);
+						}
+					}
+				}
+			}
+		}),
 		// vscode.commands.registerCommand("edk2code.viewWarnings", async ()=>{await gErrorReportAgent.reportErrors();}),
 
 
@@ -299,6 +319,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	edkWorkspaceTreeProvider = new WorkspaceTreeProvider();
 	edkWorkspaceTreeView = vscode.window.createTreeView('workspaceView', { treeDataProvider: edkWorkspaceTreeProvider, showCollapseAll: true, dragAndDropController: edkWorkspaceTreeProvider });
+
+	gDriverInfoTreeProvider = new DriverInfoTreeProvider();
+	vscode.window.createTreeView('driverInfoView', { treeDataProvider: gDriverInfoTreeProvider, showCollapseAll: true });
 
 	await gEdkWorkspaces.loadConfig();
 	gFileUseWarning = new FileUseWarning();

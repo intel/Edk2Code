@@ -26,6 +26,17 @@
         "489f90e4-6146-4d35-926a-a669b3d0416f"
       ],
       "createdAt": "2026-04-16T18:47:07.516Z"
+    },
+    {
+      "id": "10dbe163-5e51-4ba7-bdfc-b41aa754dd77",
+      "name": "driverInfo",
+      "exportOrder": [
+        "d1c71546-1cca-41e3-b6d1-207ced15e193",
+        "93cecdb2-bd0b-4edc-bf50-fa1e3540e9db",
+        "e07fbd5f-c49d-4365-8d87-6d5a6c932dbc",
+        "d9611b61-06b4-4165-8acd-2a6651186a7d"
+      ],
+      "createdAt": "2026-05-12T15:18:13.161Z"
     }
   ],
   "notes": [
@@ -220,6 +231,70 @@
       "noteText": "Duplicate statement warning",
       "label": "Duplicate statement warning",
       "createdAt": "2026-04-16T19:11:52.130Z"
+    },
+    {
+      "id": "d1c71546-1cca-41e3-b6d1-207ced15e193",
+      "documentId": "10dbe163-5e51-4ba7-bdfc-b41aa754dd77",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\index\\edkWorkspace.ts",
+        "startLine": 276,
+        "endLine": 291,
+        "startChar": 0,
+        "endChar": 5
+      },
+      "language": "typescript",
+      "snippet": "\r\n    async isFileInUse(uri: vscode.Uri) {\r\n        let isUndefined = true;\r\n        for (const workspace of this.workspaces) {\r\n            let result = await workspace.isFileInUse(uri);\r\n            if(result === true){\r\n                return true;\r\n            }\r\n            if(result === false){\r\n                isUndefined = false;\r\n                continue;\r\n            }\r\n        }\r\n        if(isUndefined){return undefined;}\r\n        return false;\r\n    }",
+      "noteText": "function to check if file is used ",
+      "label": "function to check if file is used",
+      "createdAt": "2026-05-12T15:35:42.644Z"
+    },
+    {
+      "id": "93cecdb2-bd0b-4edc-bf50-fa1e3540e9db",
+      "documentId": "10dbe163-5e51-4ba7-bdfc-b41aa754dd77",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\package.json",
+        "startLine": 249,
+        "endLine": 258,
+        "startChar": 0,
+        "endChar": 6
+      },
+      "language": "json",
+      "snippet": "    \"views\": {\r\n      \"edk2code-sidebar\": [\r\n        {\r\n          \"icon\": \"assets/icon.png\",\r\n          \"id\": \"workspaceView\",\r\n          \"name\": \"Workspace\",\r\n          \"type\": \"tree\"\r\n        }\r\n      ]\r\n    },",
+      "noteText": "side bar definition",
+      "label": "side bar definition",
+      "createdAt": "2026-05-12T15:36:11.681Z"
+    },
+    {
+      "id": "e07fbd5f-c49d-4365-8d87-6d5a6c932dbc",
+      "documentId": "10dbe163-5e51-4ba7-bdfc-b41aa754dd77",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\contextState\\cmds.ts",
+        "startLine": 241,
+        "endLine": 269,
+        "startChar": 4,
+        "endChar": 5
+      },
+      "language": "typescript",
+      "snippet": "export async function gotoInf(fileUri: Uri) {\r\n        let locations: vscode.Location[] = [];\r\n\r\n        let wps = await gEdkWorkspaces.getWorkspace(fileUri);\r\n        if(wps.length){\r\n            for (const wp of wps) {\r\n                locations = await wp.getInfReference(fileUri);\r\n                if(locations.length){\r\n                    await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, \"gotoAndPeek\", \"Not found\");\r\n                    await edkWorkspaceTreeProvider.revealInfInTree(locations[0].uri, edkWorkspaceTreeView);\r\n                }\r\n            }\r\n        }else{\r\n            // Skip if source hasn't been indexed. Just make a search query\r\n            let fileName = path.basename(fileUri.fsPath);\r\n            let folderPath = path.dirname(fileUri.fsPath);\r\n\r\n            let tempLocations = await rgSearch(`\\\\b${fileName}\\\\b`, [\"*.inf\"],[],true);\r\n            for (const l of tempLocations) {\r\n                // Check the INF file is relative to the source file\r\n                if (!path.relative(path.dirname(l.uri.fsPath), folderPath).includes(\"..\")) {\r\n                    locations.push(l);\r\n                }\r\n            }\r\n            await vscode.commands.executeCommand('editor.action.goToLocations', vscode.window.activeTextEditor?.document.uri, vscode.window.activeTextEditor?.selection.active, locations, \"gotoAndPeek\", \"Not found\");\r\n\r\n        }\r\n\r\n    }",
+      "noteText": "Function to go to .inf file of selected file",
+      "label": "Function to go to .inf file of selected file",
+      "createdAt": "2026-05-12T15:37:30.107Z"
+    },
+    {
+      "id": "d9611b61-06b4-4165-8acd-2a6651186a7d",
+      "documentId": "10dbe163-5e51-4ba7-bdfc-b41aa754dd77",
+      "location": {
+        "file": "d:\\github\\Edk2Code\\src\\symbols\\infSymbols.ts",
+        "startLine": 285,
+        "endLine": 323,
+        "startChar": 4,
+        "endChar": 6
+      },
+      "language": "typescript",
+      "snippet": "onDefinition = async (parser:DocumentParser)=>{\r\n        let libName = this.textLine.replace(/\\s*\\|.*/, \"\");\r\n\r\n\r\n        let wps = await gEdkWorkspaces.getWorkspace(this.location.uri);\r\n        if(wps.length){\r\n\r\n\r\n            // Check if this is a library\r\n            let isLibrary = await isFileEdkLibrary(this.location.uri);\r\n\r\n            if(isLibrary){\r\n                let libDeclarationLocations:vscode.Location[] = [];\r\n                for (const wp of wps) {\r\n                    libDeclarationLocations = libDeclarationLocations.concat(await wp.getLibDefinition(libName));\r\n                }\r\n                return libDeclarationLocations;\r\n            }else{\r\n                // Modules\r\n                let dscLibDeclarations:InfDsc[] = [];\r\n                for (const wp of wps) {\r\n                    dscLibDeclarations = dscLibDeclarations.concat(await wp.getLibDeclarationModule(this.location.uri, libName));\r\n                }\r\n                let libDeclarationLocations:vscode.Location[] = [];\r\n                for (const declaration of dscLibDeclarations) {\r\n                    let location = await gPathFind.findPath(declaration.path);\r\n                    if(location.length){\r\n                        libDeclarationLocations.push(location[0]);\r\n                    }\r\n                }\r\n                return libDeclarationLocations;\r\n            }\r\n\r\n        }else{\r\n            let locations = await rgSearch(`--regexp \"LIBRARY_CLASS\\\\s*=\\\\s*\\\\b${libName}\\\\b\"`,[\"*.inf\"]);\r\n            return locations;\r\n        }\r\n\r\n    };",
+      "noteText": "example of Go to library definition function",
+      "label": "example of Go to library definition function",
+      "createdAt": "2026-05-12T15:40:17.768Z"
     }
   ]
 }
