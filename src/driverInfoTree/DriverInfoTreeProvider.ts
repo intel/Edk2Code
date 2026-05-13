@@ -49,15 +49,54 @@ export class DriverInfoTreeProvider implements vscode.TreeDataProvider<DriverInf
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
     private categories: DriverInfoCategoryItem[] = [];
-    private infUri: vscode.Uri | undefined;
+    private _infUri: vscode.Uri | undefined;
+    private get infUri() { return this._infUri; }
+    private set infUri(v: vscode.Uri | undefined) { this._infUri = v; }
+    get currentInfUri(): vscode.Uri | undefined { return this._infUri; }
     private parser: DocumentParser | undefined;
+    private _treeView: vscode.TreeView<DriverInfoNode> | undefined;
+
+    /** Set the tree view reference so the provider can update its title. */
+    setTreeView(treeView: vscode.TreeView<DriverInfoNode>) {
+        this._treeView = treeView;
+    }
     private disposables: vscode.Disposable[] = [];
+    private _suppressNextUpdate = false;
+    private _lastEditorFsPath: string | undefined;
+    private _lastSuppressTime = 0;
+
+    /** Call before programmatically opening a file to prevent the driver info from refreshing.
+     *  Returns true if suppression was set (single click), false if double-click was detected. */
+    suppressNextUpdate(): boolean {
+        const now = Date.now();
+        if (now - this._lastSuppressTime < 500) {
+            // Double-click detected: cancel suppression so driver info updates
+            this._suppressNextUpdate = false;
+            this._lastSuppressTime = 0;
+            return false;
+        } else {
+            this._suppressNextUpdate = true;
+            this._lastSuppressTime = now;
+            return true;
+        }
+    }
 
     constructor() {
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async (editor) => {
                 if (editor) {
+                    if (!this._suppressNextUpdate) {
+                        this._lastEditorFsPath = editor.document.uri.fsPath;
+                    }
                     await this.onEditorChanged(editor);
+                }
+            }),
+            vscode.window.onDidChangeTextEditorSelection(async (e) => {
+                // Fires when the user clicks into an already-active editor (focus-back).
+                // Only process if the document differs from what is currently displayed.
+                if (e.textEditor.document.uri.fsPath !== this._lastEditorFsPath) {
+                    this._lastEditorFsPath = e.textEditor.document.uri.fsPath;
+                    await this.onEditorChanged(e.textEditor);
                 }
             })
         );
@@ -84,6 +123,11 @@ export class DriverInfoTreeProvider implements vscode.TreeDataProvider<DriverInf
     // ─── Editor change handler ────────────────────────────────────────────────
 
     async onEditorChanged(editor: vscode.TextEditor) {
+        if (this._suppressNextUpdate) {
+            this._suppressNextUpdate = false;
+            return;
+        }
+
         const document = editor.document;
         const langId = document.languageId;
 
@@ -167,8 +211,21 @@ export class DriverInfoTreeProvider implements vscode.TreeDataProvider<DriverInf
 
         await vscode.commands.executeCommand('setContext', 'edk2code.driverInfoAvailable', true);
 
-        // Defines
+        // Set view title to BASE_NAME
         const defines = parser.getSymbolsType(Edk2SymbolType.infDefine);
+        let baseName = '';
+        for (const def of defines) {
+            const key = await def.getKey();
+            if (key.toLowerCase() === 'base_name') {
+                baseName = await def.getValue();
+                break;
+            }
+        }
+        if (this._treeView) {
+            this._treeView.title = baseName || path.basename(this.infUri.fsPath);
+        }
+
+        // Defines
         if (defines.length) {
             const cat = new DriverInfoCategoryItem('Defines', 'symbol-constant');
             for (const def of defines) {
@@ -179,7 +236,7 @@ export class DriverInfoTreeProvider implements vscode.TreeDataProvider<DriverInf
                     value,
                     new vscode.ThemeIcon('symbol-property'),
                     {
-                        command: 'vscode.open',
+                        command: 'edk2code.driverInfoOpenFile',
                         title: 'Open',
                         arguments: [def.location.uri, { selection: def.location.range }]
                     }
@@ -203,7 +260,7 @@ export class DriverInfoTreeProvider implements vscode.TreeDataProvider<DriverInf
                     '',
                     vscode.ThemeIcon.File,
                     locations.length ? {
-                        command: 'vscode.open',
+                        command: 'edk2code.driverInfoOpenFile',
                         title: 'Open file',
                         arguments: [locations[0].uri]
                     } : undefined,
@@ -349,6 +406,9 @@ export class DriverInfoTreeProvider implements vscode.TreeDataProvider<DriverInf
         this.categories = [];
         this.infUri = undefined;
         this.parser = undefined;
+        if (this._treeView) {
+            this._treeView.title = 'Module Info';
+        }
         void vscode.commands.executeCommand('setContext', 'edk2code.driverInfoAvailable', false);
         this.refresh();
     }
