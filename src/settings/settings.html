@@ -379,6 +379,123 @@
             background-color: rgba(255, 255, 255, 0.15)
         }
 
+        .dsc-list-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            border: 1px solid var(--vscode-settings-textInputBorder);
+            background: var(--vscode-settings-textInputBackground);
+            border-radius: 3px;
+        }
+
+        .dsc-list-item .dsc-path {
+            flex: 1;
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dsc-list-item .dsc-edit-input {
+            flex: 1;
+            height: 17px;
+            font-size: 13px;
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            color: var(--vscode-settings-textInputForeground);
+            background: var(--vscode-settings-textInputBackground);
+            border: 1px solid var(--vscode-focusBorder);
+        }
+
+        .dsc-list-item button {
+            padding: 2px 8px;
+            margin-left: 4px;
+            font-size: 12px;
+        }
+
+        .define-list-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            border: 1px solid var(--vscode-settings-textInputBorder);
+            background: var(--vscode-settings-textInputBackground);
+            border-radius: 3px;
+        }
+
+        .define-list-item .define-name {
+            flex: 1;
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            font-size: 13px;
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .define-list-item .define-value {
+            flex: 1;
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-left: 8px;
+        }
+
+        .define-list-item .define-edit-input {
+            flex: 1;
+            height: 17px;
+            font-size: 13px;
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            color: var(--vscode-settings-textInputForeground);
+            background: var(--vscode-settings-textInputBackground);
+            border: 1px solid var(--vscode-focusBorder);
+            margin-right: 4px;
+        }
+
+        .define-list-item button {
+            padding: 2px 8px;
+            margin-left: 4px;
+            font-size: 12px;
+        }
+
+        .pkg-list-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            border: 1px solid var(--vscode-settings-textInputBorder);
+            background: var(--vscode-settings-textInputBackground);
+            border-radius: 3px;
+        }
+
+        .pkg-list-item .pkg-path {
+            flex: 1;
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pkg-list-item .pkg-edit-input {
+            flex: 1;
+            height: 17px;
+            font-size: 13px;
+            font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+            color: var(--vscode-settings-textInputForeground);
+            background: var(--vscode-settings-textInputBackground);
+            border: 1px solid var(--vscode-focusBorder);
+        }
+
+        .pkg-list-item button {
+            padding: 2px 8px;
+            margin-left: 4px;
+            font-size: 12px;
+        }
+
         .footer {
             padding: 25px;
             text-align: center
@@ -448,9 +565,10 @@
             <span>Main DSC file relative paths. This are the DSC files used for your platform. In your build log you will see this as <code>Active Platform</code></span>
         </div>
         <div>
-          <div class="section-note" >One DSC path per line.</div>
-          <textarea name="inputValue" id="dscPaths" rows="4" cols="93" style="width: 800px"></textarea>
-          <div id="dscPathInvalid" class="error" style="margin-top: -4px; width: 794px"></div>
+          <div class="section-note">Add .dsc files used for your platform.</div>
+          <div id="dscPathsList" style="width: 800px; margin-bottom: 8px;"></div>
+          <button id="dscAddBtn" type="button" style="margin-top: 4px;">+</button>
+          <div id="dscPathInvalid" class="error" style="margin-top: 4px; width: 794px"></div>
         </div>
     </div>
 
@@ -460,9 +578,14 @@
             <span>Build definitions injected on <code>build</code> command. Usually this are the <code>-D</code> arguments on your build command</span>
         </div>
         <div>
-          <div class="section-note" >One Build define per line in the format: <code>name=value</code></div>
-          <textarea name="inputValue" id="buildDefines" rows="20" cols="93" style="width: 800px"></textarea>
-          <div id="buildDefineInvalid" class="error" style="margin-top: -4px; width: 794px"></div>
+          <div class="section-note">Define/value pairs passed as <code>-D</code> arguments.</div>
+          <div id="buildDefinesList" style="width: 800px; margin-bottom: 8px;"></div>
+          <div id="buildDefinesAddRow" style="display: flex; align-items: center; width: 800px; margin-top: 4px;">
+            <input type="text" id="buildDefineNewName" placeholder="DEFINE" style="flex: 1; margin-right: 4px;" />
+            <input type="text" id="buildDefineNewValue" placeholder="VALUE" style="flex: 1; margin-right: 4px;" />
+            <button id="buildDefinesAddBtn" type="button" title="Add define">+</button>
+          </div>
+          <div id="buildDefineInvalid" class="error" style="margin-top: 4px; width: 794px"></div>
         </div>
     </div>
 
@@ -472,9 +595,10 @@
             <span>Workspace relative package paths. This is what you see in your build log as <code>PACKAGES_PATH</code> env variable.</span>
         </div>
         <div>
-          <div class="section-note" >One path per line.</div>
-          <textarea name="inputValue" id="packagePaths" rows="4" cols="93" style="width: 800px"></textarea>
-          <div id="packagePathInvalid" class="error" style="margin-top: -4px; width: 794px"></div>
+          <div class="section-note">Add workspace-relative package paths.</div>
+          <div id="packagePathsList" style="width: 800px; margin-bottom: 8px;"></div>
+          <button id="packagePathsAddBtn" type="button" style="margin-top: 4px;">+</button>
+          <div id="packagePathInvalid" class="error" style="margin-top: 4px; width: 794px"></div>
         </div>
     </div>
 

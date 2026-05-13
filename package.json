@@ -30,7 +30,8 @@
       },
       {
         "command": "edk2code.openConfigurationUi",
-        "title": "EDK2: Workspace configuration (UI)"
+        "title": "EDK2: Workspace configuration (UI)",
+        "icon": "$(gear)"
       },
       {
         "command": "edk2code.openConfigurationJson",
@@ -306,7 +307,7 @@
       },
       {
         "view": "workspaceView",
-        "contents": "Build folders found in workspace.\n[Use discovered folders](command:edk2code.useDiscoveredBuildFolders)\nor\n[Open EDK2 Configuration](command:edk2code.openConfigurationUi)",
+        "contents": "Build folders found in workspace.\n[Use discovered folders](command:edk2code.useDiscoveredBuildFolders)\n[Open EDK2 Configuration](command:edk2code.openConfigurationUi)",
         "when": "!edk2code.isLoading && edk2code.buildFoldersFound"
       },
       {
@@ -439,6 +440,11 @@
       ],
       "editor/title": [],
       "view/title": [
+        {
+          "command": "edk2code.openConfigurationUi",
+          "group": "navigation",
+          "when": "view == workspaceView"
+        },
         {
           "command": "edk2code.selectWorkspaceView",
           "group": "navigation",

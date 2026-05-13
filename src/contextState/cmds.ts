@@ -43,7 +43,7 @@ import { checkCppConfiguration } from "../cppProviders/cppUtils";
      * Periodically scans the workspace for BuildOptions folders.
      * When found, sets a context key so the welcome view can show the discovery action.
      */
-    export function startBuildFolderScan(intervalMs: number = 60000) {
+    export function startBuildFolderScan(intervalMs: number = 600000) {
         stopBuildFolderScan();
         // Run immediately once
         void scanWorkspaceForBuildFolders();

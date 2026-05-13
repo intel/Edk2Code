@@ -161,6 +161,12 @@ export class SettingsPanel {
                 this.initialized = true;
                 this.initilizePanel();
                 break;
+            case 'selectDscFile':
+                this.selectDscFile();
+                break;
+            case 'selectPackagePath':
+                this.selectPackagePath();
+                break;
         }
 
 
@@ -190,6 +196,37 @@ export class SettingsPanel {
 
     private addConfig(name: string): void {
         this.addConfigRequested.fire(name);
+    }
+
+    private async selectDscFile(): Promise<void> {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        const defaultUri = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].uri : undefined;
+        const result = await vscode.window.showOpenDialog({
+            canSelectMany: false,
+            openLabel: "Select DSC file",
+            defaultUri: defaultUri,
+            filters: { "DSC Files": ["dsc"] }
+        });
+        if (result && result.length > 0 && workspaceFolders && workspaceFolders.length > 0) {
+            const relativePath = path.relative(workspaceFolders[0].uri.fsPath, result[0].fsPath).replace(/\\/g, '/');
+            void this._panel.webview.postMessage({ command: 'addDscFile', path: relativePath });
+        }
+    }
+
+    private async selectPackagePath(): Promise<void> {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        const defaultUri = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].uri : undefined;
+        const result = await vscode.window.showOpenDialog({
+            canSelectMany: false,
+            canSelectFolders: true,
+            canSelectFiles: false,
+            openLabel: "Select package path",
+            defaultUri: defaultUri,
+        });
+        if (result && result.length > 0 && workspaceFolders && workspaceFolders.length > 0) {
+            const relativePath = path.relative(workspaceFolders[0].uri.fsPath, result[0].fsPath).replace(/\\/g, '/');
+            void this._panel.webview.postMessage({ command: 'addPackagePath', path: relativePath });
+        }
     }
 
 
