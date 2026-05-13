@@ -147,6 +147,10 @@
       {
         "command": "edk2code.compileCFile",
         "title": "EDK2: Compile Edk2 file"
+      },
+      {
+        "command": "edk2code.driverInfoGoToDefinition",
+        "title": "EDK2: Go to definition (Driver Info)"
       }
     ],
     "configuration": [
@@ -254,6 +258,11 @@
           "id": "workspaceView",
           "name": "Workspace",
           "type": "tree"
+        },
+        {
+          "id": "driverInfoView",
+          "name": "Driver Info",
+          "type": "tree"
         }
       ]
     },
@@ -267,6 +276,11 @@
         "view": "workspaceView",
         "contents": "No workspace data available.\n[Rebuild Index](command:edk2code.rebuildIndex)",
         "when": "!edk2code.isLoading"
+      },
+      {
+        "view": "driverInfoView",
+        "contents": "Open a source file that is part of an EDK2 module to see driver information.",
+        "when": "!edk2code.driverInfoAvailable"
       }
     ],
     "menus": {
@@ -364,6 +378,10 @@
         },
         {
           "command": "edk2code.gotoOverwrite",
+          "when": "false"
+        },
+        {
+          "command": "edk2code.driverInfoGoToDefinition",
           "when": "false"
         }
       ],
