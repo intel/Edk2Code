@@ -16,114 +16,243 @@ import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder"
 import { infoMissingCompileInfo } from "../ui/messages";
 import { checkCppConfiguration } from "../cppProviders/cppUtils";
 
+    let discoveredBuildFolders: string[] = [];
+    let buildFolderScanTimer: NodeJS.Timeout | undefined;
+    let scanInProgressPromise: Promise<void> | undefined;
 
-    export async function rebuildIndexDatabase(){
-        gDebugLog.trace("Rebuilding index database");
-        // Pick build folder
-        let buildPath = await vscode.window.showOpenDialog({
-            defaultUri: vscode.Uri.file(gWorkspacePath), canSelectFiles: false, canSelectFolders: true, canSelectMany: false,
-            filters: {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                'BuildFolder': ['Build'],
-            },
-            title: "Select EDK build folder"
+    /**
+     * Searches for BuildOptions files in the given search path.
+     * Returns an array of directory paths that contain BuildOptions files.
+     */
+    export async function findBuildOptionsFolders(searchPath: string): Promise<string[]> {
+        let lookPath = toPosix(path.join(searchPath, "**", "BuildOptions"));
+        let buildInfoFolders = await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Looking for compile info",
+            cancellable: true
+        }, async (progress, reject) => {
+            return glob(lookPath);
         });
 
-        // If build folder picked
-        if (buildPath) {
-            // Check if its part of workspace
-            if (isWorkspacePath(buildPath[0].fsPath)) {
-                let buildInfoFolders: any[] = [];
-                let configPath = buildPath[0].fsPath;
+        return buildInfoFolders.map((x) => {
+            return path.parse(String(x)).dir;
+        });
+    }
 
-                // Look for BuildOptions file in selected buildPath
-                if (configPath !== undefined) {
-                    let lookPath = toPosix(path.join(configPath, "**", "BuildOptions"));
-                    buildInfoFolders = await vscode.window.withProgress({
-                        location: vscode.ProgressLocation.Notification,
-                        title: "Looking for compile info",
-                        cancellable: true
-                    }, async (progress, reject) => {
-                        return glob(lookPath);
-                    });
-                }
+    /**
+     * Periodically scans the workspace for BuildOptions folders.
+     * When found, sets a context key so the welcome view can show the discovery action.
+     */
+    export function startBuildFolderScan(intervalMs: number = 60000) {
+        stopBuildFolderScan();
+        // Run immediately once
+        void scanWorkspaceForBuildFolders();
+        buildFolderScanTimer = setInterval(() => {
+            void scanWorkspaceForBuildFolders();
+        }, intervalMs);
+    }
 
-                // Build Options not found this is not a build folder
-                if (buildInfoFolders.length === 0) {
-                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    vscode.window.showErrorMessage(`Build data was not found in selected folder`);
-                    return;
-                }
+    export function stopBuildFolderScan() {
+        if (buildFolderScanTimer) {
+            clearInterval(buildFolderScanTimer);
+            buildFolderScanTimer = undefined;
+        }
+    }
 
-                buildInfoFolders = buildInfoFolders.map((x) => {
-                    return path.parse(String(x)).dir;
-                });
+    async function scanWorkspaceForBuildFolders() {
+        if (scanInProgressPromise) { return scanInProgressPromise; }
+        scanInProgressPromise = doScanWorkspace();
+        try {
+            await scanInProgressPromise;
+        } finally {
+            scanInProgressPromise = undefined;
+        }
+    }
 
-                // Show options for builds
-                var options: vscode.QuickPickItem[] = [];
-                for (const foundPath of buildInfoFolders) {
-                    let splitPath = foundPath.split(path.posix.sep);
+    async function doScanWorkspace() {
+        try {
+            let lookPath = toPosix(path.join(gWorkspacePath, "**", "BuildOptions"));
+            let results = await glob(lookPath);
+            let folders = results.map((x) => path.parse(String(x)).dir);
 
-                    options.push({
-                        label: splitPath[splitPath.length - 2],
-                        description: "",
-                        detail: foundPath,
-                    });
-                }
-
-
-                let selectedOptions = await vscode.window.showQuickPick(options, { title: "Select build", matchOnDescription: true, matchOnDetail: true , canPickMany:true});
-                if (selectedOptions === undefined) { return; }
-
-                let selectedFolders:string[] = [];
-
-                for (const op of selectedOptions) {
-                    if(op.detail){
-                        selectedFolders.push(op.detail);
-                    }
-                }
-
-
-                gDebugLog.trace("Loading from build");
-
-                let buildFolder = new BuildFolder(selectedFolders);
-                let buildData = await buildFolder.getBuildOptions();
-                if (buildData) {
-                    gDebugLog.trace("Delete workspace files");
-                    // await gEdkDatabase.clearWorkspace();
-                    deleteEdkCodeFolder();
-                    gConfigAgent.clearWpConfiguration();
-                    await gConfigAgent.setBuildDefines(buildData.buildDefines);
-                    await gConfigAgent.setBuildDscPaths(buildData.dscFiles);
-                    buildFolder.copyCompileInfoToRoot();
-
-                    // If cscope.file is not generated, then calculate files based on dsc parsing
-                    if(existsEdkCodeFolderFile(".missing")){
-                        infoMissingCompileInfo();
-                        await reloadSymbols();
-                    }else{
-                        await checkCppConfiguration();
-                        await gCscope.reload();
-                    }
-
-                    // Generate .ignore if setting is set and .ignore doesnt exists
-                    if (gConfigAgent.getIsGenIgnoreFile()) {
-                        await genIgnoreFile();
-                    }
-
-                    await buildFolder.copyMapFilesList();
-                    gMapFileManager.load();
-
-                    void vscode.window.showInformationMessage("Build data loaded");
-
-                    await gEdkWorkspaces.loadConfig();
-                }
-
+            if (folders.length > 0) {
+                discoveredBuildFolders = folders;
+                await vscode.commands.executeCommand('setContext', 'edk2code.buildFoldersFound', true);
             } else {
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                vscode.window.showErrorMessage(`${buildPath[0].fsPath} its outside workspace`);
+                discoveredBuildFolders = [];
+                await vscode.commands.executeCommand('setContext', 'edk2code.buildFoldersFound', false);
+            }
+        } catch (error) {
+            gDebugLog.error(`scanWorkspaceForBuildFolders: ${error}`);
+        }
+    }
+
+    /**
+     * Manually triggers discovery of build folders in the workspace.
+     * Shows a discovering state in the view while scanning.
+     */
+    export async function discoverBuildFolders() {
+        await vscode.commands.executeCommand('setContext', 'edk2code.isDiscovering', true);
+        try {
+            await scanWorkspaceForBuildFolders();
+        } finally {
+            await vscode.commands.executeCommand('setContext', 'edk2code.isDiscovering', false);
+        }
+    }
+
+    /**
+     * Called when user clicks "Use discovered folders" in the welcome view.
+     * Shows the discovered build folders and lets the user pick which ones to use.
+     */
+    export async function useDiscoveredBuildFolders() {
+        if (discoveredBuildFolders.length === 0) {
+            void vscode.window.showInformationMessage("No build folders discovered yet.");
+            return;
+        }
+
+        var options: vscode.QuickPickItem[] = [];
+        for (const foundPath of discoveredBuildFolders) {
+            let splitPath = foundPath.split(path.posix.sep);
+            options.push({
+                label: splitPath[splitPath.length - 2],
+                description: "",
+                detail: foundPath,
+            });
+        }
+
+        let selectedOptions = await vscode.window.showQuickPick(options, { title: "Select build folders to use", matchOnDescription: true, matchOnDetail: true, canPickMany: true });
+        if (selectedOptions === undefined) { return; }
+
+        let selectedFolders: string[] = [];
+        for (const op of selectedOptions) {
+            if (op.detail) {
+                selectedFolders.push(op.detail);
             }
         }
+
+        if (selectedFolders.length > 0) {
+            await vscode.commands.executeCommand('setContext', 'edk2code.isLoading', true);
+            await rebuildIndexDatabase(selectedFolders);
+            await vscode.commands.executeCommand('setContext', 'edk2code.isLoading', false);
+        }
+    }
+
+    export async function rebuildIndexDatabase(preselectedFolders?: string[]){
+        gDebugLog.trace("Rebuilding index database");
+
+        let selectedFolders: string[] = [];
+
+        if (preselectedFolders && preselectedFolders.length > 0) {
+            // Use pre-discovered folders directly
+            selectedFolders = preselectedFolders;
+        } else {
+            // Pick build folder interactively
+            let buildPath = await vscode.window.showOpenDialog({
+                defaultUri: vscode.Uri.file(gWorkspacePath), canSelectFiles: false, canSelectFolders: true, canSelectMany: false,
+                filters: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'BuildFolder': ['Build'],
+                },
+                title: "Select EDK build folder"
+            });
+
+            // If build folder picked
+            if (buildPath) {
+                // Check if its part of workspace
+                if (isWorkspacePath(buildPath[0].fsPath)) {
+                    let configPath = buildPath[0].fsPath;
+
+                    let buildInfoFolders = await findBuildOptionsFolders(configPath);
+
+                    // Build Options not found this is not a build folder
+                    if (buildInfoFolders.length === 0) {
+                        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                        vscode.window.showErrorMessage(`Build data was not found in selected folder`);
+                        return;
+                    }
+
+                    // Show options for builds
+                    var options: vscode.QuickPickItem[] = [];
+                    for (const foundPath of buildInfoFolders) {
+                        let splitPath = foundPath.split(path.posix.sep);
+
+                        options.push({
+                            label: splitPath[splitPath.length - 2],
+                            description: "",
+                            detail: foundPath,
+                        });
+                    }
+
+                    let selectedOptions = await vscode.window.showQuickPick(options, { title: "Select build", matchOnDescription: true, matchOnDetail: true, canPickMany: true });
+                    if (selectedOptions === undefined) { return; }
+
+                    for (const op of selectedOptions) {
+                        if (op.detail) {
+                            selectedFolders.push(op.detail);
+                        }
+                    }
+                } else {
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                    vscode.window.showErrorMessage(`${buildPath[0].fsPath} its outside workspace`);
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+
+        if (selectedFolders.length === 0) { return; }
+
+        gDebugLog.trace("Loading from build");
+
+        let buildFolder = new BuildFolder(selectedFolders);
+        let buildData = await buildFolder.getBuildOptions();
+        if (buildData) {
+            gDebugLog.trace("Delete workspace files");
+            // await gEdkDatabase.clearWorkspace();
+            deleteEdkCodeFolder();
+            gConfigAgent.clearWpConfiguration();
+            await gConfigAgent.setBuildDefines(buildData.buildDefines);
+            await gConfigAgent.setBuildDscPaths(buildData.dscFiles);
+            buildFolder.copyCompileInfoToRoot();
+
+            // If cscope.file is not generated, then calculate files based on dsc parsing
+            if(existsEdkCodeFolderFile(".missing")){
+                infoMissingCompileInfo();
+                await reloadSymbols();
+            }else{
+                await checkCppConfiguration();
+                await gCscope.reload();
+            }
+
+            // Generate .ignore if setting is set and .ignore doesnt exists
+            if (gConfigAgent.getIsGenIgnoreFile()) {
+                await genIgnoreFile();
+            }
+
+            await buildFolder.copyMapFilesList();
+            gMapFileManager.load();
+
+            void vscode.window.showInformationMessage("Build data loaded");
+
+            await gEdkWorkspaces.loadConfig();
+        }
+    }
+
+    export async function unloadWorkspace() {
+        const confirm = await vscode.window.showWarningMessage(
+            "Are you sure you want to unload the workspace? This will remove all indexed data.",
+            { modal: true },
+            "Unload"
+        );
+        if (confirm !== "Unload") { return; }
+
+        gDebugLog.trace("Unloading workspace");
+        deleteEdkCodeFolder();
+        gConfigAgent.clearWpConfiguration();
+        gEdkWorkspaces.workspaces = [];
+        edkWorkspaceTreeProvider.refresh();
+        void vscode.window.showInformationMessage("Workspace unloaded");
     }
 
     export async function rescanIndex() {

@@ -45,6 +45,19 @@
         "title": "EDK2: Rescan Index"
       },
       {
+        "command": "edk2code.useDiscoveredBuildFolders",
+        "title": "EDK2: Use discovered build folders"
+      },
+      {
+        "command": "edk2code.discoverBuildFolders",
+        "title": "EDK2: Discover build folders"
+      },
+      {
+        "command": "edk2code.unloadWorkspace",
+        "title": "EDK2: Unload workspace",
+        "icon": "$(close)"
+      },
+      {
         "command": "edk2code.gotoDefinition",
         "title": "EDK2: Go to Definition "
       },
@@ -278,13 +291,23 @@
     "viewsWelcome": [
       {
         "view": "workspaceView",
-        "contents": "Loading workspace, please wait...",
+        "contents": "$(loading~spin) Loading workspace, please wait...",
         "when": "edk2code.isLoading"
       },
       {
         "view": "workspaceView",
-        "contents": "No workspace data available.\n[Rebuild Index](command:edk2code.rebuildIndex)",
-        "when": "!edk2code.isLoading"
+        "contents": "$(loading~spin) Discovering build folders. This might take a few moments...",
+        "when": "edk2code.isDiscovering"
+      },
+      {
+        "view": "workspaceView",
+        "contents": "No workspace data available.\n[Discover Build Folders](command:edk2code.discoverBuildFolders)\n[Open EDK2 Configuration](command:edk2code.openConfigurationUi)",
+        "when": "!edk2code.isLoading && !edk2code.isDiscovering && !edk2code.buildFoldersFound"
+      },
+      {
+        "view": "workspaceView",
+        "contents": "Build folders found in workspace.\n[Use discovered folders](command:edk2code.useDiscoveredBuildFolders)\nor\n[Open EDK2 Configuration](command:edk2code.openConfigurationUi)",
+        "when": "!edk2code.isLoading && edk2code.buildFoldersFound"
       },
       {
         "view": "driverInfoView",
@@ -300,6 +323,18 @@
         },
         {
           "command": "edk2code.rescanIndex",
+          "when": "true"
+        },
+        {
+          "command": "edk2code.useDiscoveredBuildFolders",
+          "when": "edk2code.buildFoldersFound"
+        },
+        {
+          "command": "edk2code.discoverBuildFolders",
+          "when": "true"
+        },
+        {
+          "command": "edk2code.unloadWorkspace",
           "when": "true"
         },
         {
@@ -416,6 +451,11 @@
         },
         {
           "command": "edk2code.filterWorkspaceSymbols",
+          "group": "navigation",
+          "when": "view == workspaceView"
+        },
+        {
+          "command": "edk2code.unloadWorkspace",
           "group": "navigation",
           "when": "view == workspaceView"
         },
