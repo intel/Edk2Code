@@ -170,3 +170,133 @@ Start typing anywhere in your *.asl files and you will see autocomplete suggesti
 
 ![image](https://github.com/intel/Edk2Code/assets/62723455/2569cdfc-bf32-41f0-a9ce-aebd5aba5605)
 
+## Edk2Code sidebar
+
+Starting in version `2.0.0`, the extension installs its own activity bar container. All Edk2Code views are grouped under this entry, which exposes two views: **Workspace** and **Module Info**.
+
+![Edk2Code sidebar](../Images/sidebar.png)
+
+> **Image suggestion:** Activity bar with the Edk2Code icon highlighted and both Workspace + Module Info views expanded.
+
+### Workspace view
+
+The **Workspace** view shows your parsed EDK2 workspace as a single, persistent tree. It replaces the older *Module Map*, *Library Tree* and *Reference Tree* commands with one navigable hierarchy of DSC → INF → libraries / sources / headers.
+
+![Workspace view](../Images/workspace-view.png)
+
+> **Image suggestion:** Workspace tree expanded showing a DSC with its modules, libraries and source includes.
+
+When no workspace is loaded yet, the welcome view offers quick actions to discover build folders or open the configuration UI.
+
+![Workspace welcome](../Images/workspace-welcome.png)
+
+> **Image suggestion:** Empty Workspace view showing the `Discover Build Folders` / `Open EDK2 Configuration` buttons.
+
+The view title bar exposes the following actions:
+
+| Action | Command | Description |
+|--------|---------|-------------|
+| `$(gear)` | `EDK2: Workspace configuration (UI)` | Open the graphical configuration panel. |
+| `$(repo)` | `EDK2: Select Workspace` | Switch between loaded build configurations. |
+| `$(target)` | `EDK2: Reveal active editor in workspace tree` | Locate the active file in the tree. |
+| `$(search)` | `EDK2: Search workspace tree` | Find a node by name. |
+| `$(filter)` | `EDK2: Filter workspace symbols` | Hide grayed-out / inactive elements. |
+| `$(copy)` | `EDK2: Copy workspace tree` | Copy the tree (or a sub-tree) as text. |
+| `$(refresh)` | `EDK2: Refresh workspace config` | Reload the workspace configuration. |
+| `$(close)` | `EDK2: Unload workspace` | Clear the currently loaded configuration. |
+
+Additional capabilities:
+
+- **Drag and drop** to rearrange tree nodes.
+- **Right-click → Copy path** on any node.
+- Searching for symbols from the command palette will automatically switch to the workspace that owns the result.
+
+![Workspace search](../Images/workspace-search.png)
+
+> **Image suggestion:** Workspace tree with the search box visible and a matching node highlighted.
+
+### Module Info view
+
+The **Module Info** view shows EDK2 module information for the file currently open in the editor. As soon as you open a C, INF or related source file that belongs to a module, the view populates with:
+
+- The owning INF and its DSC declaration
+- Libraries linked to the module
+- Quick navigation actions (go to definition, open file, go to DSC declaration)
+
+Double-click any entry to jump directly to the corresponding source location.
+
+![Module Info view](../Images/module-info.png)
+
+> **Image suggestion:** Module Info view populated for an open C file, showing the parent INF, libraries and DSC declaration entries.
+
+## Build folder auto-discovery
+
+EDK2Code can scan your workspace and detect existing build output folders automatically — you don't need to point the extension at them manually.
+
+- `EDK2: Discover build folders` scans the workspace.
+- `EDK2: Use discovered build folders` loads the detected folders as workspace configurations.
+- The Workspace welcome view exposes both actions when nothing is loaded yet.
+
+![Discover build folders](../Images/discover-build-folders.png)
+
+> **Image suggestion:** Quick-pick listing the build folders that were discovered in the workspace.
+
+## Compile EDK2 file
+
+You can compile an individual EDK2 C file directly from the editor without running a full EDK2 build:
+
+- A play (`$(play)`) icon is shown in the editor title bar on supported source files.
+- The command `EDK2: Compile Edk2 file` invokes the compiler for the active `.c` file using the flags and include paths recorded in `compile_commands.json`.
+
+![Compile EDK2 file](../Images/compile-file.png)
+
+> **Image suggestion:** Editor with a C file open, the play icon visible in the editor title, and the compiler output shown in the integrated terminal.
+
+> **⚠ NOTE** This compiles the **single C file** in isolation — it runs outside the regular EDK2 build system and does **not** link or produce a final binary. It is intended as a fast feedback loop to catch syntax and type errors in a single translation unit without waiting for a full platform build.
+
+> **⚠ REQUIREMENT** This feature requires a `compile_commands.json` to be present in your workspace. This file is generated automatically when you [enable compile information](../Index-source-code.md#enable-compile-information) during your EDK2 build using the `-Y COMPILE_INFO` flag.
+
+## Goto overwriting definition
+
+When a symbol is overwritten in a DSC (libraries, PCDs, modules), a new code action lets you jump to the *overwriting* definition instead of the original.
+
+![Goto overwriting definition](../Images/goto-overwrite.png)
+
+> **Image suggestion:** DSC file with an overwritten library/PCD, showing the `Go to overwriting definition` action being invoked.
+
+## MCP server
+
+EDK2Code can expose a **[Model Context Protocol (MCP)](https://code.visualstudio.com/docs/copilot/chat/mcp-servers) SSE server** so AI agents and tools (such as GitHub Copilot or other MCP-compatible clients) can query your parsed EDK2 workspace directly.
+
+![MCP server](../Images/mcp-server.png)
+
+> **Image suggestion:** Settings UI showing the MCP section with the server status (Running/Stopped), port field, and the Auto-configure button.
+
+### Starting and stopping
+
+Open the **Workspace configuration (UI)** panel (`EDK2: Workspace configuration (UI)`) and use the **Start MCP Server** / **Stop MCP Server** button in the MCP section, or run the commands from the palette:
+
+```
+> EDK2: Start MCP SSE Server
+> EDK2: Stop MCP SSE Server
+```
+
+The `edk2code.mcpServerPort` setting controls the listening port (default `3100`).
+
+### Auto-configure workspace MCP
+
+To let VS Code and GitHub Copilot discover the server automatically, click **Auto-configure workspace MCP** in the Settings UI. This writes (or updates) the `edk2code` server entry in your workspace's `.vscode/mcp.json` file:
+
+```json
+{
+    "servers": {
+        "edk2code": {
+            "type": "sse",
+            "url": "http://localhost:3100/sse"
+        }
+    }
+}
+```
+
+Once this file exists, VS Code will list the `edk2code` server under **MCP Servers** in Copilot Chat and any other MCP-compatible client. See the [VS Code MCP documentation](https://code.visualstudio.com/docs/copilot/chat/mcp-servers) for more details on how MCP servers work.
+

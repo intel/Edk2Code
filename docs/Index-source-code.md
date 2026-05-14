@@ -1,15 +1,50 @@
 # Quick start
-Most of the extension functionality will work out of the box on any given EDK2 project. However it will have the full set of features enabled when the source code its compiled and the Index database is loaded.
+Most of the extension functionality will work out of the box on any given EDK2 project. However it will have the full set of features enabled when the source code is compiled and the workspace is loaded.
 
-## Rebuild Index Database
-Once you source code its compiled you create your workspace index with the following command from the [command palette](https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette):
+## Loading the workspace
+
+When you open a folder that contains an EDK2 project, the **Workspace** view (in the Edk2Code activity bar panel) will guide you through loading your build configuration.
+
+![Workspace welcome view](Images/workspace-welcome.png)
+
+### Option 1 — Auto-discover build folders (recommended)
+
+If you have already compiled your EDK2 project, click **Discover Build Folders**. The extension will scan your workspace and detect all existing build output folders automatically.
+
+Once discovery completes, click **Use discovered folders** to load the detected configurations. The Workspace view will populate with your DSC, INF, and source file hierarchy.
+
+You can also trigger this at any time from the [command palette](https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette):
+
+```
+> EDK2: Discover build folders
+> EDK2: Use discovered build folders
+```
+
+### Option 2 — Manual configuration
+
+Click **Open EDK2 Configuration** (or run `EDK2: Workspace configuration (UI)`) to open the settings panel and manually specify:
+
+- **DSC paths** — the main `.dsc` files for your platform
+- **Build Defines** — any `-D` flags used in your build command
+- **Package paths** — extra package roots passed to the build
+
+```
+> EDK2: Workspace configuration (UI)
+```
+
+### Rebuild / Rescan
+
+To force a full re-index after a new build, use:
 
 ```
 > EDK2: Rebuild index database
 ```
-Vscode will ask you to select your build directory. After that it will detect the compilations inside your build directory, you can chose a single or multiple compilations to be loaded in your index:
 
-![rebuildIndex](https://github.com/intel/Edk2Code/assets/62723455/fd0b5143-0d4e-4970-98a9-b3cfcf09f433)
+To reload using the existing configuration without changing any settings:
+
+```
+> EDK2: Rescan index database
+```
 
 ## Enable compile information
 
