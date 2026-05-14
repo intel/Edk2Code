@@ -60,6 +60,12 @@
                   <li class="toctree-l1"><a class="reference internal" href="../Settings/">Extension settings</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Workspace settings</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#configuration-ui">Configuration UI</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#configuration-file">Configuration file</a>
+    </li>
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../documentation/">Documentation</a>
                   </li>
@@ -67,6 +73,8 @@
               <p class="caption"><span class="caption-text">Releases</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../releases/1.0.9/">1.0.9</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../releases/2.0.0/">2.0.0</a>
                   </li>
               </ul>
       </div>
@@ -93,11 +101,23 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <p>Once you have created your <a href="https://github.com/intel/Edk2Code/wiki/Index-source-code#rebuild-index-database">workspace index</a> You will see a <code>.edkCode</code> folder in your workspace.</p>
-<p>This colder contains <code>edk2_workspace_properties.json</code> file with the configuration used to generate the index. 
-You can modify this file using one of the following commands:
-* <code>EDK2: Workspace configuration (UI)</code>
-* <code>EDK2: Workspace configuration (JSON)</code></p>
+                <h1 id="workspace-settings">Workspace settings</h1>
+<p>The workspace configuration controls which DSC files, build defines, and package paths the extension uses when parsing your EDK2 project.</p>
+<h2 id="configuration-ui">Configuration UI</h2>
+<p>The easiest way to manage the workspace settings is through the graphical configuration panel. Open it from the Workspace view title bar (<code>$(gear)</code> icon) or via the command palette:</p>
+<pre><code>&gt; EDK2: Workspace configuration (UI)
+</code></pre>
+<p><img alt="Workspace settings UI" src="../../Images/settings-ui.png" /></p>
+<p>The panel lets you set:</p>
+<ul>
+<li><strong>DSC paths</strong> — the main <code>.dsc</code> files for your platform (relative to the workspace root).</li>
+<li><strong>Build Defines</strong> — definitions injected in your build command with <code>-D</code> (e.g. <code>ARCH=X64</code>).</li>
+<li><strong>Package paths</strong> — additional package roots passed to the EDK2 build.</li>
+</ul>
+<h2 id="configuration-file">Configuration file</h2>
+<p>The settings are stored in <code>.edkCode/edk2_workspace_properties.json</code> inside your workspace. You can also edit this file directly or open it with:</p>
+<pre><code>&gt; EDK2: Workspace configuration (JSON)
+</code></pre>
 <pre><code class="language-json">{
     &quot;packagePaths&quot;: [],
     &quot;dscPaths&quot;: [
@@ -108,12 +128,11 @@ You can modify this file using one of the following commands:
     ]
 }
 </code></pre>
-<p><strong>dscPaths</strong> Each entry should be the main DSC files use for compilation.</p>
-<p><strong>buildDefines</strong> These entries are definitions injected in your build command with <code>-D</code>. You can add or modify this list accoording to your needs.</p>
+<p><strong>dscPaths</strong> — Each entry should be a main DSC file used for compilation.</p>
+<p><strong>buildDefines</strong> — Definitions injected in your build command with <code>-D</code>. Add or modify entries to match your build.</p>
 <blockquote>
-<p>after modification of this file, you will see a message in vscode asking to reload your index.</p>
+<p>After any modification to this file, VS Code will prompt you to reload the index.</p>
 </blockquote>
-<p>You can also modify this file using </p>
               
             </div>
           </div><footer>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>2.0.0 - Edk2Code Vscode Extension</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../theme/css/extra.css" rel="stylesheet" />
+        <link href="../../theme/css/codicon.min.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "2.0.0";
+        var mkdocs_page_input_path = "releases\\2.0.0.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Edk2Code Vscode Extension
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">EDK2Code</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../Index-source-code/">Quick start</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../requirements/">Requirements</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../documentation/">Index database</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../documentation/Settings/">Extension settings</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../documentation/Workspace-settings/">Workspace settings</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../documentation/documentation/">Documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Releases</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../1.0.9/">1.0.9</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">2.0.0</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#edk2code-sidebar">Edk2Code sidebar</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#workspace-view">Workspace view</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#module-info-view">Module Info view</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#build-folder-auto-discovery">Build folder auto-discovery</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#compile-edk2-file">Compile EDK2 file</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#mcp-server-integration">MCP server integration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#settings-ui">Settings UI</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#goto-overwriting-definition">Goto overwriting definition</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#other-improvements">Other improvements</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Edk2Code Vscode Extension</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Releases</li>
+      <li class="breadcrumb-item active">2.0.0</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="200">2.0.0</h1>
+<h2 id="edk2code-sidebar">Edk2Code sidebar</h2>
+<p>The extension now lives in a dedicated <strong>activity bar container</strong>. All Edk2Code views (Workspace, Module Info) are grouped together in the sidebar instead of being attached to the Explorer view.</p>
+<p><img alt="Edk2Code sidebar activity bar entry" src="../../Images/sidebar.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot of the VS Code activity bar with the Edk2Code icon highlighted, showing the Workspace and Module Info views expanded.</p>
+</blockquote>
+<hr />
+<h2 id="workspace-view">Workspace view</h2>
+<p>The new <strong>Workspace</strong> view is a single, persistent tree representation of your parsed EDK2 workspace. It replaces the previous <em>Module Map</em>, <em>Reference Tree</em> and <em>Library Tree</em> commands.</p>
+<p><img alt="Workspace view" src="../../Images/workspace-view.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot of the new Workspace view expanded, showing DSC → INF → libraries / sources / includes hierarchy.</p>
+</blockquote>
+<p>Key capabilities:</p>
+<ul>
+<li><strong>Sub-trees and includes</strong> — DSC, INF, FDF and source files are organized hierarchically. Header includes and library sub-trees are integrated into the tree.</li>
+<li>
+<p><strong>Search</strong> — Click the <code>$(search)</code> action in the view title bar to find any node in the workspace tree.</p>
+<p><img alt="Workspace search" src="../../Images/workspace-search.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot of the workspace tree with the search input box visible and a matching node highlighted.</p>
+</blockquote>
+</li>
+<li>
+<p><strong>Filter inactive elements</strong> — Toggle the <code>$(filter)</code> action to hide grayed-out (inactive) items.</p>
+<p><img alt="Filter inactive" src="../../Images/workspace-filter.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Side-by-side or before/after screenshot showing the tree with and without inactive elements hidden.</p>
+</blockquote>
+</li>
+<li>
+<p><strong>Reveal active editor</strong> — The <code>$(target)</code> action jumps from the currently open file to its location in the workspace tree.</p>
+<p><img alt="Reveal in workspace tree" src="../../Images/workspace-reveal.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot showing a C/INF file open in the editor and the corresponding tree node highlighted/selected after revealing.</p>
+</blockquote>
+</li>
+<li>
+<p><strong>Drag and drop</strong> — Reorganize nodes in the workspace tree directly with the mouse.</p>
+<p><img alt="Drag and drop" src="../../Images/workspace-dragdrop.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Animated GIF (or screenshot) showing a node being dragged into a different parent.</p>
+</blockquote>
+</li>
+<li>
+<p><strong>Multiple workspaces</strong> — When multiple build configurations are loaded, switch between them from the <code>$(repo)</code> action in the title bar. Searching for symbols automatically switches to the workspace that owns the result.</p>
+<p><img alt="Select workspace" src="../../Images/workspace-select.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot of the quick-pick that appears when selecting a workspace, listing multiple build configurations.</p>
+</blockquote>
+</li>
+<li>
+<p><strong>Copy node path / Copy tree</strong> — Quickly copy the path of a node, or export the entire tree as text via the <code>$(copy)</code> action.</p>
+</li>
+<li>
+<p><strong>Welcome view</strong> — When no workspace is loaded, the view guides you through discovering build folders or opening the configuration UI.</p>
+<p><img alt="Welcome view" src="../../Images/workspace-welcome.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot of the empty Workspace view showing the welcome buttons (<code>Discover Build Folders</code>, <code>Open EDK2 Configuration</code>).</p>
+</blockquote>
+</li>
+</ul>
+<hr />
+<h2 id="module-info-view">Module Info view</h2>
+<p>The new <strong>Module Info</strong> view shows the EDK2 module information for the file you are currently editing. As soon as you open a C, INF or related source file that belongs to a module, the view populates with:</p>
+<ul>
+<li>The owning INF and its DSC declaration</li>
+<li>Libraries linked to the module</li>
+<li>Quick navigation actions (go to definition, open file, go to DSC declaration)</li>
+</ul>
+<p>Double-click any entry to jump directly to the corresponding source location.</p>
+<p><img alt="Module Info view" src="../../Images/module-info.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot of the Module Info view populated for an open C file, showing the parent INF, libraries, and DSC declaration entries.</p>
+</blockquote>
+<hr />
+<h2 id="build-folder-auto-discovery">Build folder auto-discovery</h2>
+<p>EDK2Code can now scan your workspace and automatically detect existing build output folders, so you don't have to point the extension at them manually.</p>
+<ul>
+<li>Run <strong><code>EDK2: Discover build folders</code></strong> to scan the workspace.</li>
+<li>Once discovered, run <strong><code>EDK2: Use discovered build folders</code></strong> to load them directly.</li>
+<li>The Workspace view welcome page surfaces these actions when nothing is loaded yet.</li>
+</ul>
+<p><img alt="Build folder discovery" src="../../Images/discover-build-folders.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot of the quick-pick listing discovered build folders detected in the workspace.</p>
+</blockquote>
+<hr />
+<h2 id="compile-edk2-file">Compile EDK2 file</h2>
+<p>You can now compile an individual EDK2 file (e.g. a <code>.c</code> belonging to a module) directly from the editor.</p>
+<ul>
+<li>A play (<code>$(play)</code>) icon is shown in the editor title bar on supported source files.</li>
+<li>The command <strong><code>EDK2: Compile Edk2 file</code></strong> invokes the build for the parent module of the active file.</li>
+</ul>
+<p><img alt="Compile EDK2 file button" src="../../Images/compile-file.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot of a C/INF file open with the play icon visible in the editor title area, optionally showing the build output in the terminal.</p>
+</blockquote>
+<hr />
+<h2 id="mcp-server-integration">MCP server integration</h2>
+<p>EDK2Code now exposes an <strong>MCP (Model Context Protocol) SSE server</strong> that lets AI agents and external tools query your parsed EDK2 workspace.</p>
+<ul>
+<li>Start with <strong><code>EDK2: Start MCP SSE Server</code></strong> and stop with <strong><code>EDK2: Stop MCP SSE Server</code></strong>.</li>
+<li>Configure the listening port via the <code>edk2code.mcpServerPort</code> setting (default <code>3100</code>).</li>
+</ul>
+<p><img alt="MCP server" src="../../Images/mcp-server.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot showing the MCP server started (status bar / notification / output channel) and the setting for the port number.</p>
+</blockquote>
+<hr />
+<h2 id="settings-ui">Settings UI</h2>
+<p>A redesigned graphical <strong>Workspace configuration (UI)</strong> panel makes managing build configurations easier — no more hand-editing JSON for common setups.</p>
+<ul>
+<li>Launch from the Workspace view title bar (<code>$(gear)</code> icon) or via the <strong><code>EDK2: Workspace configuration (UI)</code></strong> command.</li>
+</ul>
+<p><img alt="Settings UI" src="../../Images/settings-ui.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot of the new Workspace configuration UI panel with DSC paths, package paths and build defines fields visible.</p>
+</blockquote>
+<hr />
+<h2 id="goto-overwriting-definition">Goto overwriting definition</h2>
+<p>When a symbol is overwritten in a DSC (libraries, PCDs, modules), a new code action lets you jump directly to the <em>overwriting</em> definition.</p>
+<p><img alt="Goto overwriting definition" src="../../Images/goto-overwrite.png" /></p>
+<blockquote>
+<p><strong>Image suggestion:</strong> Screenshot of a DSC file with an overwritten library/PCD, showing the <code>Go to overwriting definition</code> action being invoked.</p>
+</blockquote>
+<hr />
+<h2 id="other-improvements">Other improvements</h2>
+<ul>
+<li><strong>Disable cscope</strong> — A new <code>edk2code.useCscope</code> setting lets you turn off cscope integration entirely. When disabled, the cscope database is not built or queried (call hierarchy and cscope-based go-to-definition become unavailable).</li>
+<li><strong>Unload workspace</strong> — New <code>EDK2: Unload workspace</code> command to clear the currently loaded build configuration.</li>
+<li><strong>Refresh workspace config</strong> — Reload the workspace configuration without restarting VS Code.</li>
+<li><strong>Focus INF from C files</strong> — Improved navigation from C source files back to their owning INF module.</li>
+<li><strong>Better module symbols</strong> — DSC parser now recognizes module sub-context sections, build options, and provides improved symbols for libraries and modules.</li>
+<li><strong>Loading and discovery indicators</strong> — Progress indicators are shown while the workspace is being parsed or build folders are being discovered.</li>
+<li><strong>Improved grayout controller</strong> — Inactive code regions are computed and updated more reliably.</li>
+<li><strong>Path improvements</strong> — Missing paths now report folders instead of file names, and tooltips include the full path.</li>
+<li><strong>Extensive test suite</strong> — New parser and workspace tests covering ASL, DEC, DSC, FDF, INF and VFR.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../1.0.9/" class="btn btn-neutral float-left" title="1.0.9"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../1.0.9/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../theme/js/popper.min.js"></script>
+      <script src="../../theme/js/tippy-bundle.umd.min.js"></script>
+      <script src="../../theme/js/clipboard.min.js"></script>
+      <script src="../../theme/js/extra.js"></script>
+      <script src="https://buttons.github.io/buttons.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

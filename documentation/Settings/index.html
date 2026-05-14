@@ -63,6 +63,12 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#edk2code-generate-ignore-file">Edk2code: Generate Ignore File</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#edk2code-use-cscope">Edk2code: Use Cscope</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#edk2code-mcp-server-port">Edk2code: Mcp Server Port</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#edk2code-cscope-overwrite-path">Edk2code: Cscope Overwrite Path</a>
+    </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../Workspace-settings/">Workspace settings</a>
@@ -73,6 +79,8 @@
               <p class="caption"><span class="caption-text">Releases</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../releases/1.0.9/">1.0.9</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../releases/2.0.0/">2.0.0</a>
                   </li>
               </ul>
       </div>
@@ -105,6 +113,18 @@
 <hr />
 <h3 id="edk2code-generate-ignore-file">Edk2code: Generate Ignore File</h3>
 <p>Generates <code>.ignore</code> file as part of <a href="https://github.com/intel/Edk2Code/wiki/Index-source-code">source index process</a></p>
+<hr />
+<h3 id="edk2code-use-cscope">Edk2code: Use Cscope</h3>
+<p>Enable or disable cscope integration. When disabled, the cscope database will not be built or queried, and features that depend on it (call hierarchy, cscope-based <code>Go to definition</code>) will be unavailable.</p>
+<p>A reload of VS Code is required after changing this setting.</p>
+<hr />
+<h3 id="edk2code-mcp-server-port">Edk2code: Mcp Server Port</h3>
+<p>Port number used by the MCP SSE server started with <code>EDK2: Start MCP SSE Server</code>.</p>
+<p>Default: <code>3100</code>.</p>
+<hr />
+<h3 id="edk2code-cscope-overwrite-path">Edk2code: Cscope Overwrite Path</h3>
+<p>Overwrites the path used to invoke the <code>cscope</code> executable. Leave empty to use the one available on <code>PATH</code>.</p>
+<p>A reload of VS Code is required after changing this setting.</p>
 <hr />
               
             </div>
