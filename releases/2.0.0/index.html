@@ -119,53 +119,32 @@
 <h2 id="edk2code-sidebar">Edk2Code sidebar</h2>
 <p>The extension now lives in a dedicated <strong>activity bar container</strong>. All Edk2Code views (Workspace, Module Info) are grouped together in the sidebar instead of being attached to the Explorer view.</p>
 <p><img alt="Edk2Code sidebar activity bar entry" src="../../Images/sidebar.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot of the VS Code activity bar with the Edk2Code icon highlighted, showing the Workspace and Module Info views expanded.</p>
-</blockquote>
 <hr />
 <h2 id="workspace-view">Workspace view</h2>
 <p>The new <strong>Workspace</strong> view is a single, persistent tree representation of your parsed EDK2 workspace. It replaces the previous <em>Module Map</em>, <em>Reference Tree</em> and <em>Library Tree</em> commands.</p>
 <p><img alt="Workspace view" src="../../Images/workspace-view.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot of the new Workspace view expanded, showing DSC → INF → libraries / sources / includes hierarchy.</p>
-</blockquote>
 <p>Key capabilities:</p>
 <ul>
 <li><strong>Sub-trees and includes</strong> — DSC, INF, FDF and source files are organized hierarchically. Header includes and library sub-trees are integrated into the tree.</li>
 <li>
 <p><strong>Search</strong> — Click the <code>$(search)</code> action in the view title bar to find any node in the workspace tree.</p>
 <p><img alt="Workspace search" src="../../Images/workspace-search.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot of the workspace tree with the search input box visible and a matching node highlighted.</p>
-</blockquote>
 </li>
 <li>
 <p><strong>Filter inactive elements</strong> — Toggle the <code>$(filter)</code> action to hide grayed-out (inactive) items.</p>
 <p><img alt="Filter inactive" src="../../Images/workspace-filter.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Side-by-side or before/after screenshot showing the tree with and without inactive elements hidden.</p>
-</blockquote>
 </li>
 <li>
 <p><strong>Reveal active editor</strong> — The <code>$(target)</code> action jumps from the currently open file to its location in the workspace tree.</p>
 <p><img alt="Reveal in workspace tree" src="../../Images/workspace-reveal.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot showing a C/INF file open in the editor and the corresponding tree node highlighted/selected after revealing.</p>
-</blockquote>
 </li>
 <li>
 <p><strong>Drag and drop</strong> — Reorganize nodes in the workspace tree directly with the mouse.</p>
 <p><img alt="Drag and drop" src="../../Images/workspace-dragdrop.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Animated GIF (or screenshot) showing a node being dragged into a different parent.</p>
-</blockquote>
 </li>
 <li>
 <p><strong>Multiple workspaces</strong> — When multiple build configurations are loaded, switch between them from the <code>$(repo)</code> action in the title bar. Searching for symbols automatically switches to the workspace that owns the result.</p>
 <p><img alt="Select workspace" src="../../Images/workspace-select.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot of the quick-pick that appears when selecting a workspace, listing multiple build configurations.</p>
-</blockquote>
 </li>
 <li>
 <p><strong>Copy node path / Copy tree</strong> — Quickly copy the path of a node, or export the entire tree as text via the <code>$(copy)</code> action.</p>
@@ -173,9 +152,6 @@
 <li>
 <p><strong>Welcome view</strong> — When no workspace is loaded, the view guides you through discovering build folders or opening the configuration UI.</p>
 <p><img alt="Welcome view" src="../../Images/workspace-welcome.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot of the empty Workspace view showing the welcome buttons (<code>Discover Build Folders</code>, <code>Open EDK2 Configuration</code>).</p>
-</blockquote>
 </li>
 </ul>
 <hr />
@@ -188,9 +164,6 @@
 </ul>
 <p>Double-click any entry to jump directly to the corresponding source location.</p>
 <p><img alt="Module Info view" src="../../Images/module-info.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot of the Module Info view populated for an open C file, showing the parent INF, libraries, and DSC declaration entries.</p>
-</blockquote>
 <hr />
 <h2 id="build-folder-auto-discovery">Build folder auto-discovery</h2>
 <p>EDK2Code can now scan your workspace and automatically detect existing build output folders, so you don't have to point the extension at them manually.</p>
@@ -200,9 +173,6 @@
 <li>The Workspace view welcome page surfaces these actions when nothing is loaded yet.</li>
 </ul>
 <p><img alt="Build folder discovery" src="../../Images/discover-build-folders.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot of the quick-pick listing discovered build folders detected in the workspace.</p>
-</blockquote>
 <hr />
 <h2 id="compile-edk2-file">Compile EDK2 file</h2>
 <p>You can now compile an individual EDK2 file (e.g. a <code>.c</code> belonging to a module) directly from the editor.</p>
@@ -211,9 +181,6 @@
 <li>The command <strong><code>EDK2: Compile Edk2 file</code></strong> invokes the build for the parent module of the active file.</li>
 </ul>
 <p><img alt="Compile EDK2 file button" src="../../Images/compile-file.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot of a C/INF file open with the play icon visible in the editor title area, optionally showing the build output in the terminal.</p>
-</blockquote>
 <hr />
 <h2 id="mcp-server-integration">MCP server integration</h2>
 <p>EDK2Code now exposes an <strong>MCP (Model Context Protocol) SSE server</strong> that lets AI agents and external tools query your parsed EDK2 workspace.</p>
@@ -222,9 +189,6 @@
 <li>Configure the listening port via the <code>edk2code.mcpServerPort</code> setting (default <code>3100</code>).</li>
 </ul>
 <p><img alt="MCP server" src="../../Images/mcp-server.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot showing the MCP server started (status bar / notification / output channel) and the setting for the port number.</p>
-</blockquote>
 <hr />
 <h2 id="settings-ui">Settings UI</h2>
 <p>A redesigned graphical <strong>Workspace configuration (UI)</strong> panel makes managing build configurations easier — no more hand-editing JSON for common setups.</p>
@@ -232,16 +196,10 @@
 <li>Launch from the Workspace view title bar (<code>$(gear)</code> icon) or via the <strong><code>EDK2: Workspace configuration (UI)</code></strong> command.</li>
 </ul>
 <p><img alt="Settings UI" src="../../Images/settings-ui.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot of the new Workspace configuration UI panel with DSC paths, package paths and build defines fields visible.</p>
-</blockquote>
 <hr />
 <h2 id="goto-overwriting-definition">Goto overwriting definition</h2>
 <p>When a symbol is overwritten in a DSC (libraries, PCDs, modules), a new code action lets you jump directly to the <em>overwriting</em> definition.</p>
 <p><img alt="Goto overwriting definition" src="../../Images/goto-overwrite.png" /></p>
-<blockquote>
-<p><strong>Image suggestion:</strong> Screenshot of a DSC file with an overwritten library/PCD, showing the <code>Go to overwriting definition</code> action being invoked.</p>
-</blockquote>
 <hr />
 <h2 id="other-improvements">Other improvements</h2>
 <ul>
