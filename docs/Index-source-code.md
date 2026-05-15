@@ -3,7 +3,11 @@ Most of the extension functionality will work out of the box on any given EDK2 p
 
 ## Loading the workspace
 
-When you open a folder that contains an EDK2 project, the **Workspace** view (in the Edk2Code activity bar panel) will guide you through loading your build configuration.
+When you open a folder that contains an EDK2 project, look for the **Edk2Code icon** in the activity bar on the left side of VS Code. Clicking it opens the Edk2Code sidebar, which contains the **Workspace** and **Module Info** views.
+
+![Edk2Code sidebar](Images/sidebar.png)
+
+The **Workspace** view will guide you through loading your build configuration. If nothing is loaded yet, you will see the welcome screen:
 
 ![Workspace welcome view](Images/workspace-welcome.png)
 
