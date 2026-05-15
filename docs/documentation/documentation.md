@@ -176,7 +176,6 @@ Starting in version `2.0.0`, the extension installs its own activity bar contain
 
 ![Edk2Code sidebar](../Images/sidebar.png)
 
-> **Image suggestion:** Activity bar with the Edk2Code icon highlighted and both Workspace + Module Info views expanded.
 
 ### Workspace view
 
@@ -184,13 +183,11 @@ The **Workspace** view shows your parsed EDK2 workspace as a single, persistent 
 
 ![Workspace view](../Images/workspace-view.png)
 
-> **Image suggestion:** Workspace tree expanded showing a DSC with its modules, libraries and source includes.
 
 When no workspace is loaded yet, the welcome view offers quick actions to discover build folders or open the configuration UI.
 
 ![Workspace welcome](../Images/workspace-welcome.png)
 
-> **Image suggestion:** Empty Workspace view showing the `Discover Build Folders` / `Open EDK2 Configuration` buttons.
 
 The view title bar exposes the following actions:
 
@@ -213,7 +210,6 @@ Additional capabilities:
 
 ![Workspace search](../Images/workspace-search.png)
 
-> **Image suggestion:** Workspace tree with the search box visible and a matching node highlighted.
 
 ### Module Info view
 
@@ -227,7 +223,6 @@ Double-click any entry to jump directly to the corresponding source location.
 
 ![Module Info view](../Images/module-info.png)
 
-> **Image suggestion:** Module Info view populated for an open C file, showing the parent INF, libraries and DSC declaration entries.
 
 ## Build folder auto-discovery
 
@@ -239,7 +234,6 @@ EDK2Code can scan your workspace and detect existing build output folders automa
 
 ![Discover build folders](../Images/discover-build-folders.png)
 
-> **Image suggestion:** Quick-pick listing the build folders that were discovered in the workspace.
 
 ## Compile EDK2 file
 
@@ -250,7 +244,6 @@ You can compile an individual EDK2 C file directly from the editor without runni
 
 ![Compile EDK2 file](../Images/compile-file.png)
 
-> **Image suggestion:** Editor with a C file open, the play icon visible in the editor title, and the compiler output shown in the integrated terminal.
 
 > **⚠ NOTE** This compiles the **single C file** in isolation — it runs outside the regular EDK2 build system and does **not** link or produce a final binary. It is intended as a fast feedback loop to catch syntax and type errors in a single translation unit without waiting for a full platform build.
 
@@ -262,7 +255,6 @@ When a symbol is overwritten in a DSC (libraries, PCDs, modules), a new code act
 
 ![Goto overwriting definition](../Images/goto-overwrite.png)
 
-> **Image suggestion:** DSC file with an overwritten library/PCD, showing the `Go to overwriting definition` action being invoked.
 
 ## MCP server
 
@@ -270,7 +262,6 @@ EDK2Code can expose a **[Model Context Protocol (MCP)](https://code.visualstudio
 
 ![MCP server](../Images/mcp-server.png)
 
-> **Image suggestion:** Settings UI showing the MCP section with the server status (Running/Stopped), port field, and the Auto-configure button.
 
 ### Starting and stopping
 
