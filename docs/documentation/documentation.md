@@ -1,5 +1,5 @@
 # Documentation
-Before you start testing the functionality of the extension, please index [source code](https://github.com/intel/Edk2Code/wiki/Index-source-code).
+Before you start testing the functionality of the extension, please index your [source code](../Index-source-code.md).
 
 ## Configuration
 You can check your workspace configuration with command:
@@ -8,7 +8,7 @@ You can check your workspace configuration with command:
 > EDK2: Workspace configuration (UI)
 ```
 
-This configuration will be automatically populated after you indexed your [source code](https://github.com/intel/Edk2Code/wiki/Index-source-code). 
+This configuration will be automatically populated after you indexed your [source code](../Index-source-code.md). 
 
 - **DSC relative path** Are the main `DSC` files for your workspace
 - **Build Defines** Build defines that were injected in your EDK2 build command
@@ -39,7 +39,7 @@ Will show a list of all the modules compiled.
 
 
 #### EDK2: Rebuild index database
-This will clean up the current source index and will create a new one. [See](https://github.com/intel/Edk2Code/wiki/Index-source-code).
+This will clean up the current source index and will create a new one. See [Quick start](../Index-source-code.md) for details.
 
 #### EDK2: Rescan index database
 This will use the previous index configuration and will recreate the index without changing the workspace settings
@@ -47,7 +47,7 @@ This will use the previous index configuration and will recreate the index witho
 ## EDK2 language support
 After you source code has been indexed you will see some of the features of using Edk2Code extension
 
-> **⚠ IMPORTANT** Before continuing please index your code following this [instructions](https://github.com/intel/Edk2Code/wiki/Index-source-code) 
+> **⚠ IMPORTANT** Before continuing please index your code following this [instructions](../Index-source-code.md) 
 
 
 ### INF files
@@ -96,10 +96,10 @@ This will show what modules are using your library:
 ### DSC Files
 
 #### Syntax highlight
-[See](https://github.com/intel/Edk2Code/wiki/Functionality#inf-files-will-show-syntax-highlight)
+DSC files have full syntax highlighting for sections, conditionals (`!if`, `!else`, `!endif`), includes (`!include`), macros, PCDs, and module entries.
 
 #### Outline
-[See](https://github.com/intel/Edk2Code/wiki/Functionality#outline-tree)
+The Outline view shows all sections (`[LibraryClasses]`, `[Components]`, `[PcdsFixedAtBuild]`, etc.) and their entries, allowing quick navigation within large DSC files.
 
 #### Variable defines resolution
 DSC files will dim source that hasn't been compiled based on DEFINES.
@@ -119,10 +119,10 @@ Right click and select `Go to DSC Inclusion` to see if this DSC file was include
 ### DEC
 
 #### Syntax highlight
-[See](https://github.com/intel/Edk2Code/wiki/Functionality#inf-files-will-show-syntax-highlight)
+DEC files have syntax highlighting for section headers, GUID definitions, PCD declarations, library class definitions, and include paths.
 
 #### Outline
-[See](https://github.com/intel/Edk2Code/wiki/Functionality#outline-tree)
+The Outline view shows all sections (`[Guids]`, `[Protocols]`, `[Ppis]`, `[LibraryClasses]`, `[Pcds*]`, etc.) for easy navigation.
 
 ### C files
 #### Call Hierarchy
@@ -147,18 +147,18 @@ Right click on a C symbol (function, variable, etc) and select `EDK2: Go To Defi
 ### VFR
 
 #### Syntax highlight
-[See](https://github.com/intel/Edk2Code/wiki/Functionality#inf-files-will-show-syntax-highlight)
+VFR (Visual Forms Representation) files have syntax highlighting for form definitions, questions, one-of selections, checkboxes, strings, and other HII form elements.
 
 #### Outline
-[See](https://github.com/intel/Edk2Code/wiki/Functionality#outline-tree)
+The Outline view shows the form set, individual forms, and their question elements, making it easy to navigate complex VFR layouts.
 
 ### ACPI
 
 #### Syntax highlight
-[See](https://github.com/intel/Edk2Code/wiki/Functionality#inf-files-will-show-syntax-highlight)
+ASL (ACPI Source Language) files have syntax highlighting for device definitions, methods, operators, named objects, and resource descriptors.
 
 #### Outline
-[See](https://github.com/intel/Edk2Code/wiki/Functionality#outline-tree)
+The Outline view shows the ASL definition block structure including devices, methods, scopes, and named objects for easy navigation.
 
 #### Help
 Hover on keywords of your ASL code and you will see help extracted from ACPI specification (6.3)
