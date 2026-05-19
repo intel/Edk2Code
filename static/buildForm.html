@@ -180,9 +180,6 @@
 </div>
 <h2>
     EDK2 Build Configuration
-    <span class="doc-link">
-        <a href="https://github.com/tianocore/tianocore.github.io/wiki/Build-Command" title="Open EDK2 build command documentation">📖 Documentation</a>
-    </span>
 </h2>
 <p class="subtitle">Configure build arguments, then click <b>Build</b>. Settings for individual modules are saved automatically.</p>
 
@@ -473,7 +470,7 @@
         // Selects
         const archOptions = ['IA32','X64','AARCH64','ARM','RISCV64','LOONGARCH64','EBC'];
         const targetOptions = ['DEBUG','RELEASE','NOOPT'];
-        const toolchainOptions = ['GCC','VS2022','VS2019','VS2017','CLANGPDB','CLANGDWARF','CLANGGCC','XCODE5'];
+        const git = ['GCC','VS2022','VS2019','VS2017','CLANGPDB','CLANGDWARF','CLANGGCC','XCODE5'];
         const actionOptions = ['','all','fds','genc','genmake','clean','cleanall','cleanlib','modules','libraries','run'];
 
         populateSelect('platform', s.dscPaths || [s.platform], s.platform);
