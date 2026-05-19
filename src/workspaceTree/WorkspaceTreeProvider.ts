@@ -208,6 +208,7 @@ export class DocumentSymbolItem extends vscode.TreeItem {
 
         // Build description and context based on state
         const isOverwritten = !!overwrittenBy;
+        const isBuildable = (symbol.type === Edk2SymbolType.dscModuleDefinition);
         let desc = symbol.detail || '';
         let ctx = 'symbolNode';
         if (inactive && isOverwritten) {
@@ -219,9 +220,11 @@ export class DocumentSymbolItem extends vscode.TreeItem {
         } else if (isOverwritten) {
             desc = `${this.label} (overwritten) ${desc}`.trim();
             ctx = 'symbolNodeOverwritten';
+        } else if (isBuildable) {
+            ctx = 'symbolNodeBuildable';
         }
 
-        if(ctx !== 'symbolNode') {
+        if(ctx !== 'symbolNode' && ctx !== 'symbolNodeBuildable') {
             // The label is shown with strikethrough in the tree when overwritten, so we move the original label to the description and show the overwrite status in the label instead. This keeps the label text fully visible without truncation, while still indicating the symbol's name and status.
             this.label = "";
         }

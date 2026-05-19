@@ -100,6 +100,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('edk2code.gotoInf',async (fileUri)=>{await cmds.gotoInf(fileUri);}),
 		vscode.commands.registerCommand('edk2code.dscUsage', async (fileUri)=>{await cmds.gotoDscDeclaration(fileUri);}),
 		vscode.commands.registerCommand('edk2code.dscInclusion', async (fileUri)=>{await cmds.gotoDscInclusion(fileUri);}),
+		vscode.commands.registerCommand('edk2code.buildEdk2Workspace', async ()=>{await cmds.buildEdk2Workspace();}),
+		vscode.commands.registerCommand('edk2code.buildFromTree', async (node)=>{await cmds.buildFromTree(node);}),
 		
 		// Internal
 		vscode.commands.registerCommand('edk2code.searchDefinition', ()=>{}),

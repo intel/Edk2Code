@@ -63,7 +63,7 @@ export class ConfigAgent {
 
     }
 
-    reloadVscodeSettings(){
+    reloadVscodeSettings(event?: vscode.ConfigurationChangeEvent){
         this.vscodeSettings = vscode.workspace.getConfiguration('edk2code');
     }
 
@@ -252,7 +252,8 @@ export class ConfigAgent {
 
         let toSave: string[] = [];
         for (const [key, value] of defines.entries()) {
-            toSave.push(`${key.trim()}=${value.trim()}`);
+            // Normalize double backslashes to single to avoid over-escaping in JSON
+            toSave.push(`${key.trim()}=${value.trim().replace(/\\\\/g, '\\')}`);
         }
         this.workspaceConfig.buildDefines = toSave;
         this.writeWorkspaceConfig(this.workspaceConfig);
@@ -267,7 +268,8 @@ export class ConfigAgent {
                 toSave.push(def);
             }
         }
-        toSave.push(`${name}=${value.trim()}`);
+        // Normalize double backslashes to single to avoid over-escaping in JSON
+        toSave.push(`${name}=${value.trim().replace(/\\\\/g, '\\')}`);
         this.workspaceConfig.buildDefines = toSave;
         this.writeWorkspaceConfig(this.workspaceConfig);
     }
@@ -294,7 +296,11 @@ export class ConfigAgent {
         let paths = this.workspaceConfig.packagePaths;
         let retPaths = [];
         for (const p  of paths) {
-            retPaths.push(path.join(gWorkspacePath, p));
+            if (path.isAbsolute(p)) {
+                retPaths.push(p);
+            } else {
+                retPaths.push(path.join(gWorkspacePath, p));
+            }
         }
         return retPaths;
     }
@@ -302,6 +308,10 @@ export class ConfigAgent {
 
     pushBuildPackagePaths(path:string) {
         if(this.workspaceConfig.packagePaths.includes(path)){
+            return;
+        }
+        // EDK2 build system does not allow spaces in PACKAGES_PATH entries
+        if(path.includes(' ')){
             return;
         }
         this.workspaceConfig.packagePaths.push(path);
@@ -353,6 +363,22 @@ export class ConfigAgent {
 
     getCscopeOverwritePath() {
         return (<string>this.get("cscopeOverwritePath")).trim();
+    }
+
+    getBuildToolchain(): string {
+        return <string>this.get("buildToolchain") || (process.platform === 'win32' ? "VS2022" : "GCC5");
+    }
+
+    getBuildArch(): string {
+        return <string>this.get("buildArch") || "X64";
+    }
+
+    getBuildTarget(): string {
+        return <string>this.get("buildTarget") || "DEBUG";
+    }
+
+    getBuildExtraArgs(): string[] {
+        return <string[]>this.get("buildExtraArgs") || [];
     }
 
     getIsGenGuidXrefFile() {

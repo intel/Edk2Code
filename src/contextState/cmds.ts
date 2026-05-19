@@ -15,6 +15,73 @@ import { SettingsPanel } from "../settings/settingsPanel";
 import { deleteEdkCodeFolder, existsEdkCodeFolderFile } from "../edk2CodeFolder";
 import { infoMissingCompileInfo } from "../ui/messages";
 import { checkCppConfiguration } from "../cppProviders/cppUtils";
+import { buildEdk2Workspace as buildEdk2WorkspaceImpl } from "../buildEdk2";
+import { DocumentSymbolItem, WorkspaceRootItem, WorkspaceTreeNode } from "../workspaceTree/WorkspaceTreeProvider";
+
+    export async function buildEdk2Workspace() {
+        await buildEdk2WorkspaceImpl();
+    }
+
+    /**
+     * Build command launched from the workspace tree.
+     * - On a WorkspaceRootItem: builds the whole DSC.
+     * - On a DocumentSymbolItem (library/module): builds just that module via `-m`.
+     */
+    export async function buildFromTree(node: WorkspaceTreeNode | undefined) {
+        if (!node) {
+            await buildEdk2WorkspaceImpl();
+            return;
+        }
+        // Keep the node selected so the user knows which module will be built
+        edkWorkspaceTreeView.reveal(node, { select: true, focus: false });
+        if (node instanceof WorkspaceRootItem) {
+            await buildEdk2WorkspaceImpl({ dscPath: node.workspace.mainDsc.fsPath });
+            return;
+        }
+        if (node instanceof DocumentSymbolItem) {
+            // Walk up parent chain to find the owning WorkspaceRootItem (DSC).
+            let cur: WorkspaceRootItem | DocumentSymbolItem | undefined = node.parent;
+            while (cur && !(cur instanceof WorkspaceRootItem)) {
+                cur = (cur as DocumentSymbolItem).parent;
+            }
+            const dscPath = cur instanceof WorkspaceRootItem ? cur.workspace.mainDsc.fsPath : undefined;
+
+            // Extract the INF path directly from the DSC text line.
+            // textLine already resolves parser-level defines; we also call
+            // gEdkWorkspaces.replaceDefines() for workspace-level variables
+            // like $(SOME_VARIABLE) that might still be present.
+            let modulePath: string | undefined;
+            try {
+                const sym: any = node.symbol;
+
+                if (sym.type === Edk2SymbolType.dscLibraryDefinition) {
+                    void vscode.window.showWarningMessage(
+                        'Libraries cannot be built standalone with `build -m`. Only components (modules) listed in [Components] can be built individually.'
+                    );
+                    return;
+                }
+
+                const textLine: string = sym.textLine || '';
+                if (sym.type === Edk2SymbolType.dscModuleDefinition) {
+                    // Format: "Path/To/Module.inf" possibly followed by " { ... }"
+                    const rawPath = textLine.replace(/\s*\{.*/, '').trim();
+                    if (rawPath) {
+                        modulePath = await gEdkWorkspaces.replaceDefines(node.fileUri, rawPath);
+                    }
+                }
+            } catch {
+                // ignore
+            }
+            if (!modulePath) {
+                void vscode.window.showErrorMessage('Could not resolve INF path for selected node.');
+                return;
+            }
+            await buildEdk2WorkspaceImpl({ dscPath, modulePath });
+            return;
+        }
+        // Unknown node type – fall back to generic build.
+        await buildEdk2WorkspaceImpl();
+    }
 
     let discoveredBuildFolders: string[] = [];
     let buildFolderScanTimer: NodeJS.Timeout | undefined;

@@ -175,6 +175,16 @@
         "command": "edk2code.driverInfoGotoDsc",
         "title": "EDK2: Go to DSC declaration",
         "icon": "$(references)"
+      },
+      {
+        "command": "edk2code.buildEdk2Workspace",
+        "title": "EDK2: Build workspace",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "edk2code.buildFromTree",
+        "title": "EDK2: Build",
+        "icon": "$(tools)"
       }
     ],
     "configuration": [
@@ -259,6 +269,58 @@
               ".gitignore",
               ".edkCode/**/*"
             ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "edk2code.buildToolchain": {
+            "order": 4,
+            "type": "string",
+            "markdownDescription": "EDK2 toolchain tag (`TOOL_CHAIN_TAG`) to use for building.",
+            "default": "VS2022",
+            "enum": [
+              "GCC5",
+              "GCC49",
+              "GCC48",
+              "VS2022",
+              "VS2019",
+              "VS2017",
+              "CLANGPDB",
+              "CLANGDWARF",
+              "CLANGGCC",
+              "XCODE5"
+            ]
+          },
+          "edk2code.buildArch": {
+            "order": 4,
+            "type": "string",
+            "markdownDescription": "Target architecture for EDK2 build.",
+            "default": "X64",
+            "enum": [
+              "X64",
+              "IA32",
+              "AARCH64",
+              "ARM",
+              "RISCV64",
+              "LOONGARCH64"
+            ]
+          },
+          "edk2code.buildTarget": {
+            "order": 4,
+            "type": "string",
+            "markdownDescription": "Build target type.",
+            "default": "DEBUG",
+            "enum": [
+              "DEBUG",
+              "RELEASE",
+              "NOOPT"
+            ]
+          },
+          "edk2code.buildExtraArgs": {
+            "order": 4,
+            "type": "array",
+            "markdownDescription": "Extra arguments appended verbatim to the `build` command.",
+            "default": [],
             "items": {
               "type": "string"
             }
@@ -423,6 +485,14 @@
           "when": "true"
         },
         {
+          "command": "edk2code.buildEdk2Workspace",
+          "when": "edk2code.parseComplete"
+        },
+        {
+          "command": "edk2code.buildFromTree",
+          "when": "false"
+        },
+        {
           "command": "edk2code.gotoOverwrite",
           "when": "false"
         },
@@ -564,6 +634,21 @@
           "command": "edk2code.compileCFile",
           "group": "inline",
           "when": "view == driverInfoView && viewItem == driverInfoCompilableSource"
+        },
+        {
+          "command": "edk2code.buildFromTree",
+          "group": "inline",
+          "when": "view == workspaceView && viewItem == workspaceRoot"
+        },
+        {
+          "command": "edk2code.buildFromTree",
+          "group": "inline",
+          "when": "view == workspaceView && viewItem == symbolNodeBuildable"
+        },
+        {
+          "command": "edk2code.copyWorkspaceNodePath",
+          "group": "navigation",
+          "when": "view == workspaceView && viewItem == symbolNodeBuildable"
         }
       ]
     },

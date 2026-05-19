@@ -294,8 +294,7 @@ async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
     async loadConfig() {
         this.workspaces = [];
         gDebugLog.trace("Loading Configuration");
-        // TODO: enable to get more commands available
-        //await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', false);
+        await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', false);
         await vscode.commands.executeCommand('setContext', 'edk2code.isLoading', true);
 
         // If the previous workspace processing did not complete (e.g.
@@ -317,7 +316,7 @@ async getWorkspace(uri: vscode.Uri): Promise<EdkWorkspace[]> {
         // Workspace processing is complete – mark flag and dispose
         // of the temporary T-tree so PathFind reverts to findFiles.
         gConfigAgent.setWorkspaceProcessComplete();
-        //await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', true);
+        await vscode.commands.executeCommand('setContext', 'edk2code.parseComplete', true);
         await vscode.commands.executeCommand('setContext', 'edk2code.isLoading', false);
     }
 }
