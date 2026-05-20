@@ -29,13 +29,16 @@ interface GlobalBuildConfig {
     iaslPrefix: string;
     /** Path to EDK2 BaseTools binaries. Exported as EDK_TOOLS_BIN. */
     edkToolsBin: string;
+    /** Optional WORKSPACE directory override. Empty = auto-compute from platform DSC location. */
+    workspaceDir: string;
 }
 
 const DEFAULT_GLOBAL_CONFIG: GlobalBuildConfig = {
     edkSetupPath: '',
     nasmPrefix: '',
     iaslPrefix: '',
-    edkToolsBin: ''
+    edkToolsBin: '',
+    workspaceDir: ''
 };
 
 interface DefineEntry {
@@ -161,6 +164,17 @@ export async function buildEdk2Workspace(options?: BuildInvocation) {
 
     // Determine pre-selected DSC
     let selectedDsc: string | undefined = options?.dscPath;
+    if (selectedDsc) {
+        // Normalize: if dscPath is absolute, find the matching relative entry in dscPaths
+        const match = dscPaths.find(d =>
+            d === selectedDsc ||
+            path.resolve(gWorkspacePath, d) === path.resolve(selectedDsc!) ||
+            path.normalize(d) === path.normalize(selectedDsc!)
+        );
+        if (match) {
+            selectedDsc = match;
+        }
+    }
     if (!selectedDsc) {
         if (dscPaths.length === 1) {
             selectedDsc = dscPaths[0];
@@ -273,9 +287,7 @@ function validateGlobalConfig(config: GlobalBuildConfig): ValidationError[] {
         } else if (fs.statSync(nasmPath).isDirectory()) {
             errors.push({ field: 'nasmPrefix', message: `Expected a file (nasm executable), got a directory: ${nasmPath}` });
         }
-    } else if (!process.env['NASM_PREFIX']) {
-        errors.push({ field: 'nasmPrefix', message: `NASM path is not configured and NASM_PREFIX is not set in environment` });
-    }
+    } 
 
     // IASL Prefix: must point to iasl executable
     const rawIasl = config.iaslPrefix.trim();
@@ -351,10 +363,14 @@ async function runBuild(state: BuildFormState, edkRoot: string, isWindows: boole
     const moduleArg = toEdkRelative(state.module);
 
     // Compute the effective workspace root (WORKSPACE env variable / CWD for edksetup).
-    // EDK2 resolves relative -p paths as WORKSPACE/path. We find where the platform DSC
-    // actually lives and derive the workspace root from that.
+    // If the user explicitly set workspaceDir in global config, use that.
+    // Otherwise, auto-compute from platform DSC location.
     let workspaceRoot = edkRoot;
-    if (platformArg && !path.isAbsolute(platformArg)) {
+    if (globalConfig.workspaceDir) {
+        workspaceRoot = path.isAbsolute(globalConfig.workspaceDir)
+            ? globalConfig.workspaceDir
+            : path.resolve(gWorkspacePath, globalConfig.workspaceDir);
+    } else if (platformArg && !path.isAbsolute(platformArg)) {
         const candidates = new Set<string>();
         candidates.add(edkRoot);
         for (const p of packagePaths) {
@@ -376,10 +392,18 @@ async function runBuild(state: BuildFormState, edkRoot: string, isWindows: boole
         ? path.join(edkRoot, setupScript)
         : setupScript;
 
-    // Compose build args
+    // Compose build args — use absolute paths for -p and -m
+    // Note: platformArg/moduleArg are relative to gWorkspacePath (VS Code workspace root),
+    // not to workspaceRoot (EDK2 WORKSPACE), so resolve against gWorkspacePath.
     const args: string[] = [];
-    if (platformArg) { args.push(`-p ${platformArg}`); }
-    if (moduleArg) { args.push(`-m ${moduleArg}`); }
+    if (platformArg) {
+        const absPlat = path.isAbsolute(platformArg) ? platformArg : path.resolve(gWorkspacePath, platformArg);
+        args.push(`-p ${absPlat}`);
+    }
+    if (moduleArg) {
+        const absMod = path.isAbsolute(moduleArg) ? moduleArg : path.resolve(gWorkspacePath, moduleArg);
+        args.push(`-m ${absMod}`);
+    }
     if (state.arch) {
         // Support multiple architectures separated by space or comma (e.g. "IA32 X64")
         const archs = state.arch.split(/[\s,]+/).filter(Boolean);
@@ -520,7 +544,7 @@ function showBuildForm(initial: BuildFormState, defaults: BuildFormState, global
     if (buildFormPanel) {
         // If already open, just reveal and re-init
         buildFormPanel.reveal();
-        buildFormPanel.webview.postMessage({ command: 'init', state: initial, globalConfig });
+        buildFormPanel.webview.postMessage({ command: 'init', state: initial, globalConfig, workspacePath: gWorkspacePath });
         return;
     }
 
@@ -544,7 +568,7 @@ function showBuildForm(initial: BuildFormState, defaults: BuildFormState, global
         if (!msg) { return; }
         if (msg.command === 'ready') {
             // Send initial state + global config to webview
-            panel.webview.postMessage({ command: 'init', state: initial, globalConfig });
+            panel.webview.postMessage({ command: 'init', state: initial, globalConfig, workspacePath: gWorkspacePath });
         } else if (msg.command === 'build') {
             const state = msg.state as BuildFormState;
             const formGlobal = msg.globalConfig as GlobalBuildConfig;

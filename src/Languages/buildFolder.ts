@@ -1,7 +1,7 @@
 import path = require("path");
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { gCscope, gDebugLog, gWorkspacePath } from "../extension";
+import { gConfigAgent, gCscope, gDebugLog, gWorkspacePath } from "../extension";
 import { getRealPath, getRealPathRelative, isWorkspacePath, normalizePath, readLines, split, toPosix } from "../utils";
 import glob = require("fast-glob");
 import { writeEdkCodeFolderFile } from "../edk2CodeFolder";
@@ -168,7 +168,14 @@ export class BuildFolder {
         let filteredCscope = [];
         for (const value of cscopeMap.values()) {
             try {
-                filteredCscope.push(value.replace(/\n$/, ""));     
+                let cleanValue = value.replace(/\n$/, "");
+                filteredCscope.push(cleanValue);
+                // For .dec files, add the package directory to package paths
+                let unquoted = cleanValue.replace(/^"|"$/g, "");
+                if(unquoted.toLowerCase().endsWith(".dec")){
+                    let decPackageDir = getRealPathRelative(path.dirname(unquoted));
+                    gConfigAgent.pushBuildPackagePaths(decPackageDir);
+                }
             } catch (error) {
                 
             }

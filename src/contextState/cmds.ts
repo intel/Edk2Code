@@ -578,12 +578,16 @@ import { DocumentSymbolItem, WorkspaceRootItem, WorkspaceTreeNode } from "../wor
                         let document = await openTextDocument(p[0].uri);
                         let parser = await getParserForDocument(document);
                         if(parser){
+                            
+                            // Parse source files
                             let sources = parser.getSymbolsType(Edk2SymbolType.infSource);
                             filesList.push(parser.document.fileName);
                             for (const source of sources) {
                                 if(reject.isCancellationRequested){break;}
                                 filesList.push(await source.getValue());
                             }
+
+                            // Parse DEC files
                             let decs = parser.getSymbolsType(Edk2SymbolType.infPackage);
                             for (const dec of decs) {
                                 if(reject.isCancellationRequested){break;}

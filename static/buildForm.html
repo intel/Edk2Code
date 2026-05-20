@@ -192,9 +192,11 @@
 <div class="grid">
     <label title="DSC platform file to build (-p PLATFORMFILE)">Platform (-p)<span class="tip">Active DSC</span></label>
     <select id="platform"></select>
+    <span class="resolved-path" id="platformResolved"></span>
 
     <label title="Build a single module INF (-m MODULEFILE). Leave empty to build the whole platform.">Module (-m)<span class="tip">INF path (optional)</span></label>
     <input type="text" id="module" placeholder="e.g. MdeModulePkg/Universal/.../.inf">
+    <span class="resolved-path" id="moduleResolved"></span>
 
     <label title="Target architecture. Overrides TARGET_ARCH in target.txt. (-a ARCH)">Arch (-a)<span class="tip">IA32, X64, AARCH64…</span></label>
     <select id="arch"></select>
@@ -326,6 +328,9 @@
 
     <label title="Path to EDK2 BaseTools binaries directory. Must be a folder. Exported as EDK_TOOLS_BIN. Can be relative to workspace root or absolute.">EDK Tools Bin<span class="tip">EDK_TOOLS_BIN folder</span></label>
     <input type="text" id="edkToolsBin" placeholder="e.g. C:\edk2\BaseTools\Bin\Win32">
+
+    <label title="Optional WORKSPACE directory override. If empty, it is auto-computed from the platform DSC file location. Set this if your build requires a specific WORKSPACE root.">Workspace Directory<span class="tip">Optional WORKSPACE override</span></label>
+    <input type="text" id="workspaceDir" placeholder="Leave empty to auto-compute from platform DSC location">
 </div>
 
 <div id="validationBanner" class="validation-banner"></div>
@@ -470,7 +475,7 @@
         // Selects
         const archOptions = ['IA32','X64','AARCH64','ARM','RISCV64','LOONGARCH64','EBC'];
         const targetOptions = ['DEBUG','RELEASE','NOOPT'];
-        const git = ['GCC','VS2022','VS2019','VS2017','CLANGPDB','CLANGDWARF','CLANGGCC','XCODE5'];
+        const toolchainOptions = ['GCC','VS2022','VS2019','VS2017','CLANGPDB','CLANGDWARF','CLANGGCC','XCODE5'];
         const actionOptions = ['','all','fds','genc','genmake','clean','cleanall','cleanlib','modules','libraries','run'];
 
         populateSelect('platform', s.dscPaths || [s.platform], s.platform);
@@ -541,6 +546,7 @@
         setVal('nasmPrefix', g.nasmPrefix);
         setVal('iaslPrefix', g.iaslPrefix);
         setVal('edkToolsBin', g.edkToolsBin);
+        setVal('workspaceDir', g.workspaceDir);
     }
 
     // ─── Add buttons ─────────────────────────────────────────────────
@@ -608,7 +614,8 @@
             edkSetupPath: val('edkSetupPath'),
             nasmPrefix: val('nasmPrefix'),
             iaslPrefix: val('iaslPrefix'),
-            edkToolsBin: val('edkToolsBin')
+            edkToolsBin: val('edkToolsBin'),
+            workspaceDir: val('workspaceDir')
         };
     }
 
