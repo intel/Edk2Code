@@ -532,7 +532,7 @@ function showBuildForm(initial: BuildFormState, defaults: BuildFormState, global
         'edk2code.buildForm',
         'EDK2 Build Configuration',
         vscode.ViewColumn.Active,
-        { enableScripts: true, retainContextWhenHidden: true }
+        { enableScripts: true, retainContextWhenHidden: true, enableFindWidget: true }
     );
     buildFormPanel = panel;
 

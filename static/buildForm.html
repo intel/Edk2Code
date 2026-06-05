@@ -473,7 +473,7 @@
         // Selects
         const archOptions = ['IA32','X64','AARCH64','ARM','RISCV64','LOONGARCH64','EBC'];
         const targetOptions = ['DEBUG','RELEASE','NOOPT'];
-        const toolchainOptions = ['GCC5','GCC49','GCC48','VS2022','VS2019','VS2017','CLANGPDB','CLANGDWARF','CLANGGCC','XCODE5'];
+        const toolchainOptions = ['GCC','VS2022','VS2019','VS2017','CLANGPDB','CLANGDWARF','CLANGGCC','XCODE5'];
         const actionOptions = ['','all','fds','genc','genmake','clean','cleanall','cleanlib','modules','libraries','run'];
 
         populateSelect('platform', s.dscPaths || [s.platform], s.platform);

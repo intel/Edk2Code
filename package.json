@@ -179,12 +179,12 @@
       {
         "command": "edk2code.buildEdk2Workspace",
         "title": "EDK2: Build workspace",
-        "icon": "$(tools)"
+        "icon": "$(build)"
       },
       {
         "command": "edk2code.buildFromTree",
         "title": "EDK2: Build",
-        "icon": "$(tools)"
+        "icon": "$(build)"
       }
     ],
     "configuration": [
@@ -272,24 +272,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "edk2code.buildToolchain": {
-            "order": 4,
-            "type": "string",
-            "markdownDescription": "EDK2 toolchain tag (`TOOL_CHAIN_TAG`) to use for building.",
-            "default": "VS2022",
-            "enum": [
-              "GCC5",
-              "GCC49",
-              "GCC48",
-              "VS2022",
-              "VS2019",
-              "VS2017",
-              "CLANGPDB",
-              "CLANGDWARF",
-              "CLANGGCC",
-              "XCODE5"
-            ]
           },
           "edk2code.buildArch": {
             "order": 4,

@@ -366,7 +366,7 @@ export class ConfigAgent {
     }
 
     getBuildToolchain(): string {
-        return <string>this.get("buildToolchain") || (process.platform === 'win32' ? "VS2022" : "GCC5");
+        return process.platform === 'win32' ? "VS2019" : "GCC";
     }
 
     getBuildArch(): string {
