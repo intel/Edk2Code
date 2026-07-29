@@ -1,9 +1,10 @@
 import * as http from 'http';
+import * as crypto from 'crypto';
 import * as vscode from 'vscode';
 import path = require('path');
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
-import { gDebugLog, gEdkWorkspaces, gPathFind, gWorkspacePath } from '../extension';
+import { gDebugLog, gEdkWorkspaces, gExtensionContext, gPathFind, gWorkspacePath } from '../extension';
 import { openTextDocument } from '../utils';
 import { getParserForDocument } from '../edkParser/parserFactory';
 import { Edk2SymbolType } from '../symbols/symbolsType';
@@ -11,7 +12,105 @@ import { z } from 'zod';
 
 let httpServer: http.Server | undefined;
 let mcpServer: McpServer | undefined;
+let serverToken: string | undefined;
 const transports: Record<string, SSEServerTransport> = {};
+
+/** The server is only ever reachable through the loopback interface. */
+const BIND_ADDRESS = '127.0.0.1';
+
+/** Host names that are accepted in the `Host` and `Origin` headers. */
+const ALLOWED_HOST_NAMES = new Set(['localhost', '127.0.0.1', '::1']);
+
+/**
+ * Extracts the host name (without port and without IPv6 brackets) from a
+ * `Host` header value.
+ */
+function parseHostName(hostHeader: string | undefined): string | undefined {
+    if (!hostHeader) {
+        return undefined;
+    }
+    const value = hostHeader.trim();
+    // IPv6 literal, e.g. "[::1]:3100"
+    if (value.startsWith('[')) {
+        const end = value.indexOf(']');
+        return end === -1 ? undefined : value.slice(1, end).toLowerCase();
+    }
+    return value.split(':')[0].toLowerCase();
+}
+
+/**
+ * Rejects requests that do not target the loopback interface by name.
+ * This is what defeats DNS rebinding attacks: the browser keeps sending the
+ * attacker controlled host name (e.g. "evil.com") in the `Host`/`Origin`
+ * headers even after the DNS record points at 127.0.0.1.
+ */
+function isAllowedOriginAndHost(req: http.IncomingMessage): boolean {
+    const hostName = parseHostName(req.headers.host);
+    if (!hostName || !ALLOWED_HOST_NAMES.has(hostName)) {
+        return false;
+    }
+
+    const origin = req.headers.origin;
+    if (origin !== undefined && origin !== 'null') {
+        try {
+            const originHost = new URL(origin).hostname.replace(/^\[|\]$/g, '').toLowerCase();
+            if (!ALLOWED_HOST_NAMES.has(originHost)) {
+                return false;
+            }
+        } catch {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/** Constant time comparison of the presented bearer token. */
+function isAuthorized(req: http.IncomingMessage): boolean {
+    if (!serverToken) {
+        return false;
+    }
+    const header = req.headers.authorization;
+    if (!header) {
+        return false;
+    }
+    const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+    if (!match) {
+        return false;
+    }
+    const presented = Buffer.from(match[1], 'utf8');
+    const expected = Buffer.from(serverToken, 'utf8');
+    if (presented.length !== expected.length) {
+        return false;
+    }
+    return crypto.timingSafeEqual(presented, expected);
+}
+
+/** Returns the bearer token required by MCP clients, if the server is running. */
+export function getMcpServerToken(): string | undefined {
+    return serverToken;
+}
+
+const TOKEN_SECRET_KEY = 'edk2code.mcpServerToken';
+
+/**
+ * Returns the persisted access token, creating one on first use.
+ * The token is kept in VS Code SecretStorage so that MCP clients do not need
+ * to be reconfigured every time the server restarts.
+ */
+export async function getOrCreateMcpToken(): Promise<string> {
+    const secrets = gExtensionContext?.secrets;
+    if (!secrets) {
+        // No storage available: fall back to an ephemeral token.
+        return serverToken ?? crypto.randomBytes(32).toString('hex');
+    }
+    let token = await secrets.get(TOKEN_SECRET_KEY);
+    if (!token) {
+        token = crypto.randomBytes(32).toString('hex');
+        await secrets.store(TOKEN_SECRET_KEY, token);
+    }
+    return token;
+}
 
 function createMcpServer(): McpServer {
     const server = new McpServer(
@@ -306,9 +405,34 @@ export async function startMcpServer(port: number): Promise<void> {
     }
 
     mcpServer = createMcpServer();
+    serverToken = await getOrCreateMcpToken();
 
     httpServer = http.createServer(async (req, res) => {
-        const url = new URL(req.url ?? '', `http://localhost:${port}`);
+        const url = new URL(req.url ?? '', `http://${BIND_ADDRESS}:${port}`);
+
+        // Reject cross-origin / rebound-DNS requests before doing any work.
+        if (!isAllowedOriginAndHost(req)) {
+            gDebugLog.warning(
+                `MCP SSE: rejected request with host "${req.headers.host}" origin "${req.headers.origin}"`
+            );
+            res.writeHead(403);
+            res.end('Forbidden');
+            return;
+        }
+
+        // Health check (no token required, loopback only).
+        if (req.method === 'GET' && url.pathname === '/health') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'ok' }));
+            return;
+        }
+
+        if (!isAuthorized(req)) {
+            gDebugLog.warning('MCP SSE: rejected unauthenticated request');
+            res.writeHead(401, { 'WWW-Authenticate': 'Bearer' });
+            res.end('Unauthorized');
+            return;
+        }
 
         // SSE stream endpoint
         if (req.method === 'GET' && url.pathname === '/sse') {
@@ -344,29 +468,30 @@ export async function startMcpServer(port: number): Promise<void> {
             return;
         }
 
-        // Health check
-        if (req.method === 'GET' && url.pathname === '/health') {
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ status: 'ok' }));
-            return;
-        }
-
         res.writeHead(404);
         res.end('Not Found');
     });
 
     return new Promise<void>((resolve, reject) => {
-        httpServer!.listen(port, () => {
-            gDebugLog.info(`MCP SSE server listening on http://localhost:${port}/sse`);
+        httpServer!.listen(port, BIND_ADDRESS, () => {
+            gDebugLog.info(`MCP SSE server listening on http://${BIND_ADDRESS}:${port}/sse (loopback only)`);
             vscode.window.showInformationMessage(
-                `EDK2 MCP SSE server started on http://localhost:${port}/sse`
-            );
+                `EDK2 MCP SSE server started on http://${BIND_ADDRESS}:${port}/sse. ` +
+                'Clients must send an "Authorization: Bearer <token>" header.',
+                'Copy Access Token'
+            ).then(async (selection) => {
+                if (selection === 'Copy Access Token' && serverToken) {
+                    await vscode.env.clipboard.writeText(serverToken);
+                    vscode.window.showInformationMessage('EDK2 MCP access token copied to clipboard');
+                }
+            });
             resolve();
         });
         httpServer!.on('error', (err) => {
             gDebugLog.error(`MCP SSE server error: ${err}`);
             vscode.window.showErrorMessage(`Failed to start MCP server: ${err.message}`);
             httpServer = undefined;
+            serverToken = undefined;
             reject(err);
         });
     });
@@ -384,6 +509,7 @@ export function stopMcpServer(): void {
     httpServer.close();
     httpServer = undefined;
     mcpServer = undefined;
+    serverToken = undefined;
     gDebugLog.info('MCP SSE server stopped');
     vscode.window.showInformationMessage('EDK2 MCP SSE server stopped');
 }
