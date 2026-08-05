@@ -1,5 +1,29 @@
 # Change Log
 
+## [2.1.0]
+
+### Security
+- **MCP server hardening:**
+  - The MCP SSE server now binds to `127.0.0.1` instead of all network interfaces, so it is no longer reachable from other hosts on the LAN. 🔒
+  - Requests with non-loopback `Host`/`Origin` headers are rejected, defeating DNS rebinding attacks from malicious web pages. 🛡️
+  - `/sse` and `/messages` require an `Authorization: Bearer <token>` header. The 32-byte random token is stored in VS Code SecretStorage and compared using `timingSafeEqual`. 🔑
+  - A **Copy Access Token** action is offered when the server starts. 📋
+  - Auto configuration writes `.vscode/mcp.json` with the loopback URL and an `Authorization` header sourced from a password input, so the token is never written to disk. 🗝️
+
+### Enhancements
+- **Build:**
+  - Reworked the EDK2 build command and build form for more reliable module and workspace builds. 🛠️
+  - Removed the `edk2code.buildToolchain` setting; the toolchain is now resolved from the build configuration. 🧹
+  - Updated build command icons to `$(build)`. 🎨
+- **Workspace configuration:**
+  - Improvements to the workspace settings panel and configuration handling. ⚙️
+- **Branding:**
+  - Updated extension icon. 🖼️
+
+### Miscellaneous
+- **Version Update:**
+  - Updated version in `package.json` from `2.0.1` to `2.1.0`. 🚀🆙
+
 ## [1.0.8]
 
 ### Enhancements
