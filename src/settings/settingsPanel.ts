@@ -7,7 +7,7 @@ import { Disposable, Webview, WebviewPanel, window, Uri, ViewColumn } from "vsco
 import { gExtensionContext } from '../extension';
 import { ConfigAgent, WorkspaceConfig, WorkspaceConfigErrors } from '../configuration';
 import { askReloadFiles } from '../ui/messages';
-import { isMcpServerRunning } from '../mcp/mcpServer';
+import { getOrCreateMcpToken, isMcpServerRunning } from '../mcp/mcpServer';
 
 
 function deepCopy(obj: any) {
@@ -264,38 +264,60 @@ export class SettingsPanel {
         const vscodePath = path.join(workspaceFolders[0].uri.fsPath, '.vscode');
         const mcpConfigPath = path.join(vscodePath, 'mcp.json');
         const port = vscode.workspace.getConfiguration('edk2code').get<number>('mcpServerPort', 3100);
-        const expectedUrl = `http://localhost:${port}/sse`;
+        // The server only listens on the loopback interface.
+        const expectedUrl = `http://127.0.0.1:${port}/sse`;
+        const tokenInputId = 'edk2code-mcp-token';
+        // The token is never written to disk: it is requested from the user and
+        // kept by VS Code, so that mcp.json can be safely committed.
+        const tokenInput = {
+            id: tokenInputId,
+            type: 'promptString',
+            description: 'EDK2Code MCP access token',
+            password: true
+        };
+        const serverEntryValue = {
+            type: 'sse',
+            url: expectedUrl,
+            headers: { Authorization: `Bearer \${input:${tokenInputId}}` }
+        };
+
+        const mergeInputs = (inputs: any): any[] => {
+            const list = Array.isArray(inputs) ? inputs : [];
+            const index = list.findIndex((i) => i && i.id === tokenInputId);
+            if (index === -1) {
+                list.push(tokenInput);
+            } else {
+                list[index] = tokenInput;
+            }
+            return list;
+        };
 
         if (fs.existsSync(mcpConfigPath)) {
             try {
                 const existing = JSON.parse(fs.readFileSync(mcpConfigPath, 'utf-8'));
-                const serverEntry = existing?.servers?.edk2code;
-                if (serverEntry && serverEntry.url === expectedUrl) {
-                    void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'edk2code MCP already configured correctly.' });
-                    return;
-                }
                 // Add or update the edk2code entry
                 if (!existing.servers) {
                     existing.servers = {};
                 }
-                existing.servers.edk2code = { type: "sse", url: expectedUrl };
+                existing.inputs = mergeInputs(existing.inputs);
+                existing.servers.edk2code = serverEntryValue;
                 fs.writeFileSync(mcpConfigPath, JSON.stringify(existing, null, 4), 'utf-8');
-                void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'Updated edk2code entry in .vscode/mcp.json' });
+                await this.copyMcpTokenToClipboard();
+                void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'Updated edk2code entry in .vscode/mcp.json. Access token copied to clipboard, paste it when VS Code asks for it.' });
             } catch {
                 // File exists but is not valid JSON, overwrite
-                const mcpConfig = { servers: { edk2code: { type: "sse", url: expectedUrl } } };
+                const mcpConfig = { inputs: [tokenInput], servers: { edk2code: serverEntryValue } };
                 fs.writeFileSync(mcpConfigPath, JSON.stringify(mcpConfig, null, 4), 'utf-8');
-                void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'Replaced invalid .vscode/mcp.json' });
+                await this.copyMcpTokenToClipboard();
+                void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'Replaced invalid .vscode/mcp.json. Access token copied to clipboard, paste it when VS Code asks for it.' });
             }
             return;
         }
 
         const mcpConfig = {
+            inputs: [tokenInput],
             servers: {
-                "edk2code": {
-                    "type": "sse",
-                    "url": expectedUrl
-                }
+                "edk2code": serverEntryValue
             }
         };
 
@@ -303,7 +325,13 @@ export class SettingsPanel {
             fs.mkdirSync(vscodePath, { recursive: true });
         }
         fs.writeFileSync(mcpConfigPath, JSON.stringify(mcpConfig, null, 4), 'utf-8');
-        void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'Created .vscode/mcp.json' });
+        await this.copyMcpTokenToClipboard();
+        void this._panel.webview.postMessage({ command: 'mcpConfigResult', message: 'Created .vscode/mcp.json. Access token copied to clipboard, paste it when VS Code asks for it.' });
+    }
+
+    private async copyMcpTokenToClipboard(): Promise<void> {
+        const token = await getOrCreateMcpToken();
+        await vscode.env.clipboard.writeText(token);
     }
 
 
