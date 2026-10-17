@@ -691,8 +691,9 @@ export class EdkWorkspace {
                     } else {
                         // Warn if DEFINE is being redefined without referencing itself
                         let defines = type === 'DSC' ? this.defines : this.definesFdf;
-                        if (defines.isDefined(key)) {
-                            let previousLocation = defines.getDefinitionLocation(key);
+                        const previousDefinition = defines.getSourceDefinition(key);
+                        if (previousDefinition) {
+                            const previousLocation = previousDefinition.location;
                             let relatedInfo: vscode.DiagnosticRelatedInformation[] | undefined;
                             if (previousLocation) {
                                 relatedInfo = [

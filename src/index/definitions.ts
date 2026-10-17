@@ -14,7 +14,7 @@ export interface EdkDefinition {
 
 export class WorkspaceDefinitions {
     defines:Map<string,EdkDefinition>;
-    
+    private buildOverrides = new Map<string, string>();
 
     private static instance: WorkspaceDefinitions;
 
@@ -26,35 +26,35 @@ export class WorkspaceDefinitions {
     }
 
     resetDefines(){
-        let buildDefines = new Map(gConfigAgent.getBuildDefines());
+        // Build overrides have precedence over definitions in source files
+        this.buildOverrides = new Map(
+            [...gConfigAgent.getBuildDefines()]
+                .filter(([, value]) => value.length > 0)
+        );
         this.defines = new Map();
-        // Clean empty definitions
-        for (const [key,value] of buildDefines.entries()) {
-            if(value.length > 0){
-                this.defines.set(key, {name: key, value:value, location:undefined});
-            }
-        }
-        
     }
 
-    getDefinitions(){
-        return this.defines;
+    getDefinitions(): Map<string, EdkDefinition> {
+        const definitions = new Map(this.defines);
+        for (const [name, value] of this.buildOverrides) {
+            definitions.set(name, {name, value, location: undefined});
+        }
+        return definitions;
     }
 
     getDefinition(key:string){
-        let val = this.defines.get(key);
-        if(val){
-            return val.value;
-        }
-        return undefined;
+        return this.buildOverrides.get(key) ?? this.defines.get(key)?.value;
     }
 
     getDefinitionLocation(key:string){
-        let val = this.defines.get(key);
-        if(val){
-            return val.location;
+        if (this.buildOverrides.has(key)) {
+            return undefined;
         }
-        return undefined;
+        return this.defines.get(key)?.location;
+    }
+
+    getSourceDefinition(key:string){
+        return this.defines.get(key);
     }
 
     isBoolean(value:string){
@@ -62,8 +62,7 @@ export class WorkspaceDefinitions {
         return value === "true" || value === "false";
     }
 
-    setDefinition(key:string, value:string, location:vscode.Location|undefined){
-
+    setDefinition(key:string, value:string, location:vscode.Location|undefined) {
         // Expand any existing definitions referenced in the value
         value = this.replaceDefines(value);
 
@@ -76,7 +75,7 @@ export class WorkspaceDefinitions {
     }
 
     isDefined(text:string){
-        return this.defines.has(text);
+        return this.buildOverrides.has(text) || this.defines.has(text);
     }
 
     replaceDefines(text: string) {
@@ -92,7 +91,7 @@ export class WorkspaceDefinitions {
             }
 
             replaced = false;
-            for (const [key,value] of this.defines.entries()) {
+            for (const [key,value] of this.getDefinitions()) {
                 if(text.includes(`$(${key})`)){
                     replaced = true;
                     let replacement;
